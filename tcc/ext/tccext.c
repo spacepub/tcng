@@ -62,7 +62,7 @@ static char *stralloc(const char *s)
 /* ----- Location support -------------------------------------------------- */
 
 
-static int log10(int value)
+static int log10i(int value)
 {
     int len;
 
@@ -96,7 +96,7 @@ static char *make_location(const char *fmt,...)
 		    len += strlen(va_arg(ap,char *))-2;
 		    break;
 		case 'd':
-		    len += log10(va_arg(ap,int))-2;
+		    len += log10i(va_arg(ap,int))-2;
 		    break;
 		case '%':
 		    len--;

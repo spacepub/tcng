@@ -1,0 +1,19 @@
+Source: tcng
+Section: net
+Priority: extra
+Maintainer: Debian QA Group <packages@qa.debian.org>
+Build-Depends: debhelper (>= 8.0.0), bison, flex, transfig, texlive-latex-base, texlive-latex-recommended
+Standards-Version: 3.9.3
+Vcs-Svn: http://angband.pl/svn/deb/tcng/trunk/
+Vcs-Browser: http://angband.pl/viewvc/deb/tcng/trunk/
+
+Package: tcng
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, iproute, cpp
+Description: Linux traffic control language interpreter
+ Using /sbin/tc (to configure Linux network traffic flow control) is
+ painful. This package attempts to reduce the pain with two new input
+ languages (one for humans, and XML ;-). The output is XML, or /sbin/tc
+ commands to configure the kernel.
+ .
+ The "tcsim" traffic simulator is not included in Debian.

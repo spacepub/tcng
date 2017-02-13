@@ -44,7 +44,7 @@ src_compile() {
         dodir /usr/bin
  
         ./configure --no-tcsim \
-                --install-directory ${D}usr
+                --install-directory ${D}usr --data-directory ${D}usr/lib/tcng
         emake || die
  
 #       echo

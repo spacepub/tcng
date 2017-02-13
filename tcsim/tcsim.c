@@ -310,7 +310,7 @@ int main(int argc,char *const *argv)
 #endif
     tcng_topdir = getenv("TCNG_TOPDIR");
     include = alloc_sprintf("%s/lib/tcng/include",
-      tcng_topdir ? tcng_topdir : TOPDIR);
+      tcng_topdir ? tcng_topdir : DATA_DIR);
     if (tcng_topdir) tcc_cmd = alloc_sprintf("%s/bin/tcng",tcng_topdir);
     cpp_argv[cpp_argc++] = alloc_sprintf("-I%s",include); /* @@@ leak */
     while ((c = getopt(argc,argv,"cdgjhk:npqs:vD:U:I:VX:")) != EOF)

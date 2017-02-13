@@ -18,8 +18,8 @@
 #define DEV_NULL	"/dev/null"  /* dummy file system object */
 #define MAX_COMMENT	1024	/* maximum comment line(s) in tc output */
 #define TCC_MODULE_CMD	"tcc-module"
-#define TCNG_BIN_DIR	"lib/tcng/bin"
-#define TCNG_INC_DIR	"lib/tcng/include"
+#define TCNG_BIN_DIR	"bin"
+#define TCNG_INC_DIR	"include"
 #define MAX_DEBUG_DEPTH	100	/* stack depth for debugf; okay to guess */
 #define MAX_PARAM_DEPTH	100	/* parameter stack depth */
 #define MAX_MODULE_ARGS	1024	/* maximum length of tcc-module arguments */

@@ -1,0 +1,7 @@
+The Debian Package tcng
+-----------------------
+
+Upstream also has a traffic control simulator (tcsim). At the moment
+this program is not packaged.
+
+Matthias Urlichs <smurf@debian.org>, Fri, 26 Mar 2004 21:16:32 +0100

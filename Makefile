@@ -333,22 +333,22 @@ check-install-dir:
 install-tcng:		tcc check-install-dir scripts/localize.sh
 			ln -sf scripts/localize.sh .
 			tar cfh - $(TCC_BINDIST) | \
-			  (cd $(INSTALL_DIR) && tar xf -)
-			cd $(INSTALL_DIR) && ./localize.sh
-			rm -f localize.sh $(INSTALL_DIR)/localize.sh
+			  (cd $(DESTDIR)$(INSTALL_DIR) && tar xf -)
+			cd $(DESTDIR)$(INSTALL_DIR) && ./localize.sh $(DESTDIR)
+			rm -f localize.sh $(DESTDIR)$(INSTALL_DIR)/localize.sh
 
 install-tcsim:		tcsim check-install-dir scripts/localize.sh
 			ln -sf scripts/localize.sh .
-			tar --ignore-failed-read -chf - $(TCSIM_BINDIST) | \
-			  (cd $(INSTALL_DIR) && tar xf -)
-			cd $(INSTALL_DIR) && ./localize.sh
-			rm -f localize.sh $(INSTALL_DIR)/localize.sh
+			tar --ignore-failed-read cfh - $(TCSIM_BINDIST) | \
+			  (cd $(DESTDIR)$(INSTALL_DIR) && tar xf -)
+			cd $(DESTDIR)$(INSTALL_DIR) && ./localize.sh $(DESTDIR)
+			rm -f localize.sh $(DESTDIR)$(INSTALL_DIR)/localize.sh
 
 install-tests:		tcsim check-install-dir
-			mkdir -p $(INSTALL_DIR)/lib/tcng/tests
+			mkdir -p $(DESTDIR)$(INSTALL_DIR)/lib/tcng/tests
 			ln -sf scripts/run-all-tests .
 			tar cfh - $(TCNG_TESTS_BINDIST) | \
-			  (cd $(INSTALL_DIR)/lib/tcng/tests && tar xf -)
+			  (cd $(DESTDIR)$(INSTALL_DIR)/lib/tcng/tests && tar xf -)
 			rm -f run-all-tests
 
 install:
@@ -360,26 +360,26 @@ install:
 # ----- uninstall -------------------------------------------------------------
 
 uninstall-tcc uninstall-tcng:
-			scripts/uninstall.sh $(INSTALL_DIR) $(TCC_BINDIST)
-			rm -f $(INSTALL_DIR)/bin/tcc.bin
-			rm -f $(INSTALL_DIR)/bin/tcng
+			scripts/uninstall.sh $(DESTDIR)$(INSTALL_DIR) $(TCC_BINDIST)
+			rm -f $(DESTDIR)$(INSTALL_DIR)/bin/tcc.bin
+			rm -f $(DESTDIR)$(INSTALL_DIR)/bin/tcng
 
 uninstall-tcsim:
-			scripts/uninstall.sh $(INSTALL_DIR) $(TCSIM_BINDIST)
-			-rmdir $(INSTALL_DIR)/lib/tcng/include/ulib
-			-rmdir $(INSTALL_DIR)/lib/tcng/include
-			rm -f $(INSTALL_DIR)/bin/tcsim.bin
+			scripts/uninstall.sh $(DESTDIR)$(INSTALL_DIR) $(TCSIM_BINDIST)
+			-rmdir $(DESTDIR)$(INSTALL_DIR)/lib/tcng/include/ulib
+			-rmdir $(DESTDIR)$(INSTALL_DIR)/lib/tcng/include
+			rm -f $(DESTDIR)$(INSTALL_DIR)/bin/tcsim.bin
 			
 uninstall-tests:
-			scripts/uninstall.sh $(INSTALL_DIR)/lib/tcng/tests \
+			scripts/uninstall.sh $(DESTDIR)$(INSTALL_DIR)/lib/tcng/tests \
 			  $(TCNG_TESTS_BINDIST)
-			-rmdir $(INSTALL_DIR)/lib/tcng/tests/tcsim
-			-rmdir $(INSTALL_DIR)/lib/tcng/tests
+			-rmdir $(DESTDIR)$(INSTALL_DIR)/lib/tcng/tests/tcsim
+			-rmdir $(DESTDIR)$(INSTALL_DIR)/lib/tcng/tests
 
 uninstall:		uninstall-tcng uninstall-tcsim
-			[ ! -d $(INSTALL_DIR)/lib/tcng/tests ] || \
+			[ ! -d $(DESTDIR)$(INSTALL_DIR)/lib/tcng/tests ] || \
 			  $(MAKE) uninstall-tests
-			-rmdir $(INSTALL_DIR)/lib/tcng
+			-rmdir $(DESTDIR)$(INSTALL_DIR)/lib/tcng
 
 # ----- RPMs ------------------------------------------------------------------
 

@@ -227,7 +227,7 @@ int main(int argc,char *const *argv)
 #endif
     tcng_topdir = getenv("TCNG_TOPDIR");
     include = alloc_sprintf("%s/" TCNG_INC_DIR,
-      tcng_topdir ? tcng_topdir : TOPDIR);
+      tcng_topdir ? tcng_topdir : DATA_DIR);
     cpp_argv[cpp_argc++] = alloc_sprintf("-I%s",include); /* @@@ leak */
     /*
      * Reserved options (strong Unix tradition):

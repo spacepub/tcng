@@ -1,0 +1,7 @@
+tcng (10b-1) unstable; urgency=low
+
+  The tcng compiler, "tcc", has been renamed to "tcng".  Because of a conflict
+  with the "tcc" package, no compatibility symlink is provided.  You are free
+  to create one, but this is a bad idea if you'll ever want to install "tcc".  
+
+ -- Adam Borowski <kilobyte@angband.pl>  Tue, 20 Jun 2006 14:09:54 +0200

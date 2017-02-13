@@ -18,6 +18,7 @@ OBJS=tcsim.o jiffies.o timer.o command.o var.o host.o attr.o \
 CFLAGS_USER=$(CFLAGS_WARN) -I../shared -I. \
   -DVERSION=\"`cat ../VERSION`\" \
   $(shell sed '/TOPDIR=\(.*\)/s//-DTOPDIR=\\\"\1\\\"/p;d' <../config) \
+  $(shell sed '/DATA_DIR=\(.*\)/s//-DDATA_DIR=\\\"\1\\\"/p;d' <../config) \
   $(shell sed '/DOLLAR=true/s//-DDOLLAR/p;d' <../config) \
   $(shell sed '/TCC=\(.*\)/s//-DTCC_CMD=\\\"\1\\\"/p;d' <../config) \
   $(shell sed '/KFULLVERSION=\(.*\)/s//-DKFULLVERSION=\\\"\1\\\"/p;d' \

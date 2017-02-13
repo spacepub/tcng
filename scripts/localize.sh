@@ -13,7 +13,8 @@ if [ ! -d bin ]; then
     exit 1
 fi
 
-[ -z "$TCNG_INSTALL_CWD" ] && TCNG_INSTALL_CWD=`pwd`
+TCNG_INSTALL_CWD=/usr/lib/tcng
+DESTDIR=$1
 
 wrap()
 {
@@ -23,12 +24,8 @@ wrap()
 	fi
 	[ ! -x ${2:-$1} ] || mv ${2:-$1} ${2:-$1}.bin
     fi
-    echo Creating wrapper for $1
-    cat <<EOF >$1
-#!/bin/sh
-TCNG_TOPDIR=$TCNG_INSTALL_CWD exec $TCNG_INSTALL_CWD/${2:-$1}.bin "\$@"
-EOF
-    chmod 755 $1
+    echo Creating link for $1
+    ln -s $TCNG_INSTALL_CWD/${2:-$1} $1
 }
 
 
@@ -36,7 +33,7 @@ fix()
 {
     [ -f $1 -a -x $1 ] || return 0
     perl -pi -e \
-     '$pwd = "'$TCNG_INSTALL_CWD'"; s/topdir=[^\$].*/topdir=$pwd/;' $1
+     'BEGIN { $pwd = "'$TCNG_INSTALL_CWD'" } s/topdir=[^\$].*/topdir=$pwd/;' $1
 }
 
 

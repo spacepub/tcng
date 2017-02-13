@@ -1,0 +1,95 @@
+tcng (10b-4) unstable; urgency=low
+
+  * Orphan the package.
+  * Add textlive-latex-recommended to Build-Depends, needed for url.sty
+    (Closes: #666336).
+  * Bump standards to 3.9.3 (no changes), debhelper to 8 (dh_prep).
+  * Fix CFLAGS and LDFLAGS being ignored, get them from dpkg-buildflags.
+  * Implement missing build-{arch,indep}.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 04 Apr 2012 20:50:00 +0200
+
+tcng (10b-3) unstable; urgency=low
+
+  * Patch to make tcng.y compile with the new, more picky, version of bison
+    (Closes: #527530).
+
+ -- Adam Borowski <kilobyte@angband.pl>  Fri, 08 May 2009 15:34:08 +0200
+
+tcng (10b-2) unstable; urgency=low
+
+  * TeX transition: build-depend on texlive-latex-base instead of tetex-*,
+    this cuts down half a gig of dependencies (Closes: #450739).
+  * Non-stub manpage for tcng(8).
+  * Mention in the package description that the "tcsim" half of package is
+    not provided in Debian (and never was).  It would be nice to have it,
+    but porting it to modern kernels is non-trivial.
+  * Reorder #includes to make new glibc on amd64 happy (Closes: #451463).
+  * Add Vcs-Svn and Vcs-Browser.
+  * Properly clean ingress on -r (Closes: #451002).
+  * Configure differently for in-place use and for packaged installs instead
+    of using wrapper hacks (Closes: #439444).
+  * Add a watch file.
+  * doc-base section: net -> System/Administration.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 05 Mar 2008 13:53:41 +0100
+
+tcng (10b-1) unstable; urgency=low
+
+  * New maintainer.
+  * New upstream release (closes: #290559).
+    - This does rename the main binary from "tcc" to "tcng"!  I'm not providing
+      a compatibility symlink, as the old name conflicted with Policy 10.1.
+    - Use "conform-exceed" instead of "action" (closes: #323301).
+  * Make configure use /bin/bash, it's crawling with bashisms.
+  * examples/examples -> examples (closes: #290558).
+  * Install all examples provided by the upstream (closes: #259571).
+  * Install the upstream changelog as changelog.gz.
+  * Suppress useless fw filters, thanks Henrique de Moraes Holschuh
+    (closes: #259949).
+
+ -- Adam Borowski <kilobyte@angband.pl>  Mon, 19 Jun 2006 23:47:30 +0200
+
+tcng (9m-1) unstable; urgency=low
+
+  * New Upstream version.
+    - Closes: #259107
+
+ -- Matthias Urlichs <smurf@debian.org>  Tue, 13 Jul 2004 09:27:47 +0200
+
+tcng (9l-5) unstable; urgency=medium
+
+  * Move manpage to section 8.
+    - Closes: #249582 (this time for sure)
+  * Don't install example SCCS files.  :-/
+
+ -- Matthias Urlichs <smurf@debian.org>  Wed,  7 Jul 2004 08:41:26 +0200
+
+tcng (9l-4) unstable; urgency=medium
+
+  * Move tcc to /usr/sbin; it's useable mostly by root and tcc in /usr/bin
+    conflicts with package "tcc".
+    - Closes: #249582
+
+ -- Matthias Urlichs <smurf@debian.org>  Tue, 18 May 2004 13:16:28 +0200
+
+tcng (9l-3) unstable; urgency=low
+
+  * Reworked pah resolution
+
+ -- Matthias Urlichs <smurf@debian.org>  Sat,  1 May 2004 15:37:25 +0200
+
+tcng (9l-2) unstable; urgency=low
+
+  * Depend on cpp.
+  * Set the base directory correctly.
+
+ -- Matthias Urlichs <smurf@debian.org>  Sat,  1 May 2004 13:06:42 +0200
+
+tcng (9l-1) unstable; urgency=low
+
+  * Initial Release.
+    - Closes: #240321
+
+ -- Matthias Urlichs <smurf@debian.org>  Fri, 26 Mar 2004 21:16:32 +0100
+

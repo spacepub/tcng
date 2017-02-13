@@ -77,6 +77,8 @@ void dump_devices(void)
 	if (remove_qdiscs) {
 	    tc_more("tc qdisc del dev %s root",device->name);
 	    tc_nl();
+	    tc_more("tc qdisc del dev %s ingress",device->name);
+	    tc_nl();
 	}
 	if (!device->egress && !device->ingress) continue;
 	tc_comment('=',"Device %s",device->name);

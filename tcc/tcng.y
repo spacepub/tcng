@@ -268,7 +268,7 @@ static double si_prefix(char prefix,double f,int warn_milli)
 %token		TOK_PRAGMA
 %token		TOK_PASS TOK_RECLASSIFY TOK_CONTINUE TOK_FIELD TOK_TAG
 %token		TOK_FIELD_ROOT
-%token		TOK_CONFORM TOK_COUNT TOK_PRECOND TOK_DROP TOK_IF_ANCHOR
+%token		TOK_CONFORM TOK_COUNT TOK_PRECOND TOK_DROP
 %token		TOK_CBQ TOK_DSMARK TOK_FIFO TOK_GRED TOK_HTB TOK_PRIO TOK_RED
 %token		TOK_SFQ TOK_TBF
 %token		TOK_INGRESS TOK_EGRESS
@@ -625,15 +625,15 @@ global_expression:
 qdisc_expression:
     TOK_QDISC variable_expression
 	{
-	    $$ = data_convert($2,dt_qdisc);
-	    if ($$.u.qdisc->parent.device != parent.device)
+	    $<data>$ = data_convert($2,dt_qdisc);
+	    if ($<data>$.u.qdisc->parent.device != parent.device)
 		yyerror("qdisc was created in different scope");
 	    $<parent>1 = parent; /* a little hackish ... @@@ */
-	    parent.qdisc = $$.u.qdisc;
+	    parent.qdisc = $<data>$.u.qdisc;
 	    parent.class = NULL;
 	    parent.filter = NULL;
 	    parent.tunnel = NULL;
-	    begin_scope($$);
+	    begin_scope($<data>$);
 	}
       opt_qdisc_or_class_body
 	{
@@ -650,15 +650,15 @@ qdisc_expression:
 class_expression:
     TOK_CLASS variable_expression
 	{
-	    $$ = data_convert($2,dt_class);
-	    if ($$.u.class->parent.qdisc != parent.qdisc ||
-	      $$.u.class->parent.class != parent.class)
+	    $<data>$ = data_convert($2,dt_class);
+	    if ($<data>$.u.class->parent.qdisc != parent.qdisc ||
+	      $<data>$.u.class->parent.class != parent.class)
 		yyerror("class was created in different scope");
-	    $$.u.class->parent = parent;
+	    $<data>$.u.class->parent = parent;
 		/* okay to change it a little - the fields we may modify are
 		   only used temporarily during construction anyway */
-	    parent.class = $$.u.class;
-	    begin_scope($$);
+	    parent.class = $<data>$.u.class;
+	    begin_scope($<data>$);
 	}
       opt_selectors opt_qdisc_or_class_body
 	{
@@ -696,13 +696,13 @@ short_filter_expression:
 filter_expression:
     TOK_FILTER variable_expression
 	{
-	    $$ = data_convert($2,dt_filter);
-	    if ($$.u.filter->parent.qdisc != parent.qdisc)
+	    $<data>$ = data_convert($2,dt_filter);
+	    if ($<data>$.u.filter->parent.qdisc != parent.qdisc)
 		yyerror("filter was created in different scope");
-	    $$.u.filter->parent.filter = parent.filter;
-	    parent.filter = $$.u.filter;
+	    $<data>$.u.filter->parent.filter = parent.filter;
+	    parent.filter = $<data>$.u.filter;
 	    /* we don't dare to touch any other fields of parent */
-	    begin_scope($$);
+	    begin_scope($<data>$);
 	}
       opt_filter_body
 	{
@@ -1312,34 +1312,34 @@ qdisc_spec:
     qdisc_name
 	{
 	    if (!parent.device) yyerror("qdisc without device");
-	    $$ = alloc_t(QDISC);
-	    $$->parent = parent;
-	    $$->dsc = $1;
-	    $$->number = UNDEF_U32;
-	    $$->location = current_location();
-	    $$->classes = NULL;
-	    $$->filters = NULL;
-	    $$->if_expr = data_none();
-	    parent.qdisc = $$;
+	    $<qdisc>$ = alloc_t(QDISC);
+	    $<qdisc>$->parent = parent;
+	    $<qdisc>$->dsc = $1;
+	    $<qdisc>$->number = UNDEF_U32;
+	    $<qdisc>$->location = current_location();
+	    $<qdisc>$->classes = NULL;
+	    $<qdisc>$->filters = NULL;
+	    $<qdisc>$->if_expr = data_none();
+	    parent.qdisc = $<qdisc>$;
 	    parent.class = NULL;
 	    parent.filter = NULL;
 	    param_def = $1->qdisc_param;
-	    number_anchor = $1 != &ingress_dsc ? &$$->number : NULL;
-	    tag_anchor = &$$->location.tag;
-	    begin_scope(data_qdisc($$));
+	    number_anchor = $1 != &ingress_dsc ? &$<qdisc>$->number : NULL;
+	    tag_anchor = &$<qdisc>$->location.tag;
+	    begin_scope(data_qdisc($<qdisc>$));
 	}
       opt_parameters
 	{
-	    $$ = $<qdisc>2;
-	    $$->params = $3;
-	    check_required($3,$$->dsc->qdisc_param->required,
+	    $<qdisc>$ = $<qdisc>2;
+	    $<qdisc>$->params = $3;
+	    check_required($3,$<qdisc>$->dsc->qdisc_param->required,
 	      current_location());
 	}
       opt_qdisc_or_class_body
 	{
 	    /* end_scope is called in opt_qdisc_or_class_body */
-	    $$ = $<qdisc>2;
-	    parent = $$->parent;
+	    $<qdisc>$ = $<qdisc>2;
+	    parent = $<qdisc>$->parent;
 	}
     ;
 
@@ -1879,7 +1879,7 @@ forward_class_list:
 	}
     | variable
 	{
-	    $$ = data_list_element(var_forward());
+	    $<list>$ = data_list_element(var_forward());
 	}
 	  forward_class_list
 	{
@@ -1918,7 +1918,7 @@ pragma_list:
 class_spec:
     TOK_CLASS
 	{
-	    $$ = begin_class(0);
+	    $<class>$ = begin_class(0);
 	}
       opt_parameters opt_selectors opt_qdisc_or_class_body
 	{
@@ -2062,7 +2062,7 @@ opt_element:
 filter_spec:
     filter_name
 	{
-	    $$ = begin_filter($1);
+	    $<filter>$ = begin_filter($1);
 	}
 	  opt_parameters opt_filter_body
 	{
@@ -2074,7 +2074,7 @@ filter_spec:
 short_filter_spec:
     filter_name
 	{
-	    $$ = begin_filter($1);
+	    $<filter>$ = begin_filter($1);
 	}
 	  opt_parameters
 	{
@@ -2200,46 +2200,46 @@ opt_police:
 police_spec:
     TOK_POLICE
 	{
-	    $$ = alloc_t(POLICE);
-	    $$->number = UNDEF_U32;
-	    $$->location = current_location();
-	    number_anchor = &$$->number;
-	    tag_anchor = &$$->location.tag;
+	    $<police>$ = alloc_t(POLICE);
+	    $<police>$->number = UNDEF_U32;
+	    $<police>$->location = current_location();
+	    number_anchor = &$<police>$->number;
+	    tag_anchor = &$<police>$->location.tag;
 	    param_def = &police_def;
 	}
       parameters
 	{
-	    $$ = $<police>2;
-	    $$->params = $3;
+	    $<police>$ = $<police>2;
+	    $<police>$->params = $3;
 	    check_required($3,police_def.required,current_location());
 	}
       opt_policing_decision opt_else
 	{
-	    $$ = $<police>2;
-	    $$->out_profile = $5;
-	    $$->in_profile = $6;
-	    add_police($$);
+	    $<police>$ = $<police>2;
+	    $<police>$->out_profile = $5;
+	    $<police>$->in_profile = $6;
+	    add_police($<police>$);
 	}
     ;
 
 bucket_spec:
     TOK_BUCKET
 	{
-	    $$ = alloc_t(POLICE);
-	    $$->number = UNDEF_U32;
-	    $$->location = current_location();
-	    number_anchor = &$$->number;
-	    tag_anchor = &$$->location.tag;
+	    $<police>$ = alloc_t(POLICE);
+	    $<police>$->number = UNDEF_U32;
+	    $<police>$->location = current_location();
+	    number_anchor = &$<police>$->number;
+	    tag_anchor = &$<police>$->location.tag;
 	    param_def = &bucket_def;
 	}
       parameters
 	{
-	    $$ = $<police>2;
-	    $$->params = $3;
+	    $<police>$ = $<police>2;
+	    $<police>$->params = $3;
 	    check_required($3,bucket_def.required,current_location());
-	    $$->out_profile = pd_reclassify;
-	    $$->in_profile = pd_ok; 
-	    add_police($$);
+	    $<police>$->out_profile = pd_reclassify;
+	    $<police>$->in_profile = pd_ok; 
+	    add_police($<police>$);
 	}
     ;
 

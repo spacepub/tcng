@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 #
 # configure - Configure directories and system environment for tcc and tcsim
 #
@@ -29,6 +29,7 @@ fi
 kdir=
 idir=
 install_dir=
+data_dir=
 with_tcsim=
 with_manual=
 bytesex=
@@ -44,6 +45,7 @@ if [ "$1" != --no-defaults ]; then
 	kdir=$KSRC
 	idir=$ISRC
 	install_dir=$INSTALL_DIR
+	data_dir=$DATA_DIR
 	with_tcsim=$TCSIM
 	with_manual=$BUILD_MANUAL
 	bytesex=$BYTEORDER
@@ -57,7 +59,7 @@ fi
 
 topdir=`pwd`
 [ -z "$idir" -o ! -d "$idir" ] && \
-  idir="`find tcsim -name 'iproute2*' -type d -maxdepth 1 | sed 1q`"
+  idir="`find tcsim -maxdepth 1 -type d -name 'iproute2*' | sed 1q`"
 [ -z "$with_tcsim" ] && with_tcsim=true
 [ -z "$with_manual" ] && with_manual=true
 tcc=
@@ -77,11 +79,13 @@ usage()
     cat <<EOF 1>&2
 usage: $0 [--no-defaults] [--kernel <dir_or_tar.bz2>]
                  [--iproute2 <dir_or_tar.gz>] [--tcng <path>]
-                 [--install-directory <dir>] [--no-tcsim|--with-tcsim]
-                 [--no-manual|--with-manual] [--big-endian|--little-endian]
-		 [--action|--conform-exceed] [--yacc <command>] [-$|--c99]
+                 [--install-directory <dir>] [--data-directory <dir>]
+                 [--no-tcsim|--with-tcsim] [--no-manual|--with-manual]
+                 [--big-endian|--little-endian] [--action|--conform-exceed]
+                 [--yacc <command>] [-$|--c99]
   abbreviations: -k for --kernel, -i for --iproute2,
                  -t for --tcng, -d for --install-directory,
+                 -D for --data-directory,
                  -n for --no-tcsim, -N for --with-tcsim,
                  -m for --no-manual, -M for --with-manual,
                  -b for --big-endian, -l for --little-endian,
@@ -109,6 +113,10 @@ while [ ! -z "$*" ]; do
 	-d|--install-directory)
 	    [ ! -z "$2" ] || usage
 	    install_dir="$2"
+	    shift;;
+	-D|--data-directory)
+	    [ ! -z "$2" ] || usage
+	    data_dir="$2"
 	    shift;;
 	-n|--no-tcsim)
 	    with_tcsim=false;;
@@ -414,6 +422,7 @@ TCSIM=$with_tcsim
 BUILD_MANUAL=$with_manual
 NO_TESTS="$no_tests"
 INSTALL_DIR=$install_dir
+DATA_DIR=${data_dir:-$topdir}
 YACC="$yacc"
 DOLLAR=$dollar
 ACTION=$action

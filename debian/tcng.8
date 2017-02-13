@@ -1,0 +1,201 @@
+.TH tcng 1 2007-11-15 Debian TCNG
+.SH NAME
+tcng \- Traffic control compiler
+.SH SYNOPSIS
+.B tcng
+[
+.B -c
+] [
+.BI -d " ..."
+] [
+.B -E
+] [
+.BI -i " <default_interface>"
+] [
+.BI -l " <location_file>"
+] [
+.B -n
+] [
+.B -q
+] [
+.B -r
+] [
+.B -w
+] [
+.BI -W " [no]<condition>"
+] [
+.BI -O " [no]<option>"
+] [
+.BI -x " <element>:<ext_target> ..."
+] [
+.BI -t " [no]<target> ..."
+] [
+.BI -u " <var_use_file>"
+] [
+.BI -X " <phase>,<argument>"
+] [
+.I <cpp_option>
+] [
+.I <file>
+]
+.SH DESCRIPTION
+The
+.B tcng
+language is extensively described in several formats, you can find
+these files in 
+.IR "/usr/share/doc/tcng" "."
+This manpage describes nothing but command-line arguments.
+.P
+.B tcng
+reads traffic control specifications in the tcng language and 
+generates command or files for a number of mechanisms that are used to 
+implement traffic control functionality.
+.TP
+.BI -c
+only check validity of input, don't build a configuration. If 
+requested, the location file and the variable use file are also 
+generated when using -c 
+.TP
+.BI -d
+increase debugging level
+.TP
+.BI -E
+only run cpp, and send its output to standard output. This is useful 
+for separately running files through cpp, while using the default 
+includes added by tcng. 
+.TP
+.BI -i " <default_interface>"
+interface to use if none is specified in the 
+description file. See section \*(lqInterfaces revisited\*(rq for further 
+details. 
+.TP
+.BI -l " <location_file>"
+write a list of source code locations of traffic 
+control elements to the specified file. See section \*(lqLocation map\*(rq for 
+details. Using the special file name \*(lqstderr\*(rq sends the output to 
+standard error. 
+.TP
+.BI -n
+do not include \*(lqdefault.tc\*(rq. By default, tcng includes this file, 
+which in turn includes the files described in section \*(lqInclude files\*(rq. 
+This can be undesirable, e.g. if operating in a non-TCP/IP context, or 
+if using a different default include file with application-specific 
+definitions. In the latter case, the following options should be used:
+tcng ... -n ... -Xp,--include -Xp,/<directory>/<file> ... 
+.TP
+.BI -O "[no]<option>"
+enable or disable the specified optimization. The 
+following optimizations are recognized: 
+.RS
+.I \*(lqcse\*(rq
+common subexpression elimination 
+.br
+.I \*(lqne\*(rq
+turn != into multiple ==s 
+.br
+.I \*(lqprefix\*(rq
+generate prefix matches instead of bit tests 
+.RE
+By default, all optimizations except \*(lqcse\*(rq are turned off. 
+.TP
+.BI -q
+quiet, produce terse output 
+.TP
+.BI -r
+remove old queuing disciplines before adding new ones ("tc" only) 
+.TP
+.BI -t " [<elem:>][no]<target> ..."
+enable or disable target (see section 
+\*(lqTargets\*(rq). The only element currently supported is \*(lqif\*(rq. Supported 
+targets are \*(lqall\*(rq, \*(lqtc\*(rq (default), \*(lqc\*(rq, and \*(lqext\*(rq. The -t options can 
+be repeated to enable or disable multiple targets. 
+.TP
+.BI -u "<var_use_file>"
+for each variable, write its name and value to the 
+specified file. See section \*(lqVariable use list\*(rq for details. Using the 
+special file name \*(lqstderr\*(rq sends the output to standard error. 
+.TP
+.BI -V
+print version number and exit 
+.TP
+.BI -w
+suppress all warnings 
+.TP
+.BI -W "[no]<condition>"
+enable or disable issuing a warning message on the 
+specified condition. The following conditions are recognized: 
+.RS
+.I \*(lqconstpfx\*(rq
+warn if using the / (mask) operator on a constant IPv4 or 
+IPv6 address, as in ip_src == 1.2.3.0/24, which should probably be 
+ip_src/24 == 1.2.3.0 
+.br
+.I \*(lqexpensive\*(rq
+generate warnings when encountering \*(lqexpensive\*(rq 
+constructs in \*(lqif\*(rq classifier. A construct is considered 
+\*(lqexpensive\*(rq if processing it may take tcng an unusual amount of 
+time. Operations like negation, certain tests for non-equality, or 
+static classification that follows metering, are \*(lqexpensive\*(rq.
+.br
+Because \*(lqexpensive\*(rq may be overly pessimistic, \*(lqexppostopt\*(rq should 
+be used whenever possible. 
+.br
+.I \*(lqexperror\*(rq
+turns warnings from \*(lqexpensive\*(rq or \*(lqexppostopt\*(rq into 
+fatal errors. Setting \*(lqexperror\*(rq without also setting \*(lqexpensive\*(rq 
+or \*(lqexppostopt\*(rq has no effect. 
+.br
+.I \*(lqexplicit\*(rq
+warn if a class if explicitly specified for the inner 
+queuing discipline of \*(lqdsmark\*(rq, \*(lqegress\*(rq, or \*(lqingress\*(rq 
+.br
+.I \*(lqexppostopt\*(rq
+like \*(lqexpensive\*(rq, but test for \*(lqexpensive\*(rq constructs 
+after trying to optimize the expression, which may eliminate some 
+apparently expensive constructs. \*(lqexppostopt\*(rq can only indicate in 
+which \*(lqif\*(rq classifier the expression occurred, not in which 
+selector of that classifier. \*(lqexpensive\*(rq has no effect if 
+\*(lqexppostopt\*(rq is set.
+.br
+Note that neither \*(lqexpensive\*(rq nor \*(lqexppostopt\*(rq are useful when 
+using \*(lqnocombine\*(rq (see sectionbarriers). 
+.br
+.I \*(lqredefine\*(rq
+warn if re-defining variables 
+.br
+.I \*(lqtruncate\*(rq
+warn if truncating values, e.g. when converting a 
+floating-point number to an integer 
+.br
+.I \*(lqunused\*(rq
+report unused variables 
+.br
+    By default, all warnings except "explicit" and "unused" are turned off. 
+.RE
+.TP
+.BI -x " <element>:<ext_target> ..."
+register external target (see section 
+\*(lqTargets\*(rq). The -x option can be repeated to register multiple external 
+targets. 
+.TP
+.BI -X "<phase>,<argument>"
+verbatim argument for specific build phase. See 
+section \*(lqPhases underneath tcng\*(rq for details. 
+.TP
+.I "<cpp_option>"
+one of the following options for the C pre-processor: 
+.BI -I "<dir>"
+,
+.BI -D "<name>[=<value>]"
+, or 
+.BI -U "<name> "
+.P
+.B tcng
+also recognizes a number of undocumented options, such as 
+.B -B
+and
+.B -N. 
+These options usually enable experimental features, like alternative 
+algorithms for processing \*(lqif\*(rq expressions, and they are not recommended 
+for normal use of tcng. Changes to undocumented options are mentioned in 
+tcng's change log (file /usr/share/doc/tcng/CHANGES).

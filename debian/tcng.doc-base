@@ -1,0 +1,25 @@
+Document: tcng
+Title: Traffic Control - Next Generation: Reference Manual
+Author: Werner Almesberger
+Abstract: This document describes the "next generation" system for configuring
+ traffic control on the Linux platform. We give a general overview of
+ the system in this chapter, continue with a definition of the tcng
+ configuration language in chapter "The tcng language", with additional
+ background information in chapters "Under the hood" and "Historical
+ constructs", describe the traffic control compiler tcc and the
+ simulation framework tcsim in chapters "Traffic control compiler" and
+ "Traffic control simulator", respectively, and conclude with a
+ description of the interface tcc uses to communicate with external
+ programs (for specialized traffic control mechanisms) in chapter "The
+ external interface".
+Section: System/Administration
+
+Format: dvi
+Files: /usr/share/doc/tcng/tcng.dvi.gz
+
+Format: postscript
+Files: /usr/share/doc/tcng/tcng.ps.gz
+
+Format: text
+Files: /usr/share/doc/tcng/tcng.txt.gz
+

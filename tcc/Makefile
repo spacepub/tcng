@@ -40,6 +40,7 @@ IMMACULATE=ports.tc port-numbers
 
 CFLAGS_CONFIG=-DVERSION=\"`cat ../VERSION`\" \
   $(shell sed '/TOPDIR=\(.*\)/s//-DTOPDIR=\\\"\1\\\"/p;d' <../config) \
+  $(shell sed '/DATA_DIR=\(.*\)/s//-DDATA_DIR=\\\"\1\\\"/p;d' <../config) \
   $(shell sed '/DOLLAR=true/s//-DDOLLAR/p;d' <../config) \
   $(shell sed '/ACTION=false/s//-DCONFIRM_EXCEED/p;d' <../config)
 CFLAGS=$(CC_OPTS) $(CFLAGS_WARN) -I../shared $(CFLAGS_CONFIG)

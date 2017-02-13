@@ -6,11 +6,10 @@
  * Copyright 2002 by Werner Almesberger
  */
 
-
+#include "util.h"
 #include <stddef.h>
 #include <linux/if_ether.h>
 
-#include "util.h"
 #include "error.h"
 #include "param.h"
 #include "tree.h"
@@ -45,9 +44,6 @@ static void fw_dump_tc(FILTER *filter)
 {
     ELEMENT *element;
 
-    tc_pragma(filter->params);
-    tc_filter_add(filter,ETH_P_ALL);
-    tc_nl();
     for (element = filter->elements; element; element = element->next) {
 	tc_pragma(element->params);
 	tc_element_add(element,ETH_P_ALL);

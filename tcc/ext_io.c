@@ -144,7 +144,7 @@ static void child(char **argv,int err_fds[2])
 	char *new_path;
 
 	tcng_topdir = getenv("TCNG_TOPDIR");
-	if (!tcng_topdir) tcng_topdir = TOPDIR;
+	if (!tcng_topdir) tcng_topdir = DATA_DIR;
 	new_path = alloc(strlen(path)+strlen(tcng_topdir)+strlen(TCNG_BIN_DIR)+
 	  3);
 	sprintf(new_path,"%s:%s/%s",path,tcng_topdir,TCNG_BIN_DIR);

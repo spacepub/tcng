@@ -302,7 +302,7 @@ void dump_if_c(const FILTER *filter)
     }
     tcng_topdir = getenv("TCNG_TOPDIR");
     cmd = alloc_sprintf("%s/" TCNG_BIN_DIR "/" TCC_MODULE_CMD "%s cls %s %s",
-      tcng_topdir ? tcng_topdir : TOPDIR,tcc_module_args,file_name,name);
+      tcng_topdir ? tcng_topdir : DATA_DIR,tcc_module_args,file_name,name);
     fflush(stdout);
     fflush(stderr);
     if (system(cmd)) errorf("system(%s) failed",cmd);
