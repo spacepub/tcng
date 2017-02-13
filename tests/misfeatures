@@ -1,0 +1,208 @@
+# "external" does not detect redundancy across rules --------------------------
+tcc -xif:err 2>&1 | sed '/^match/s/ action.*//p;d'
+prio {
+    class if raw[0] == 5 || raw[0] == 4;
+}
+
+// Should yield:
+// match 0:0:7=0x02
+
+EOF
+match 0:0:8=0x05
+match 0:0:8=0x04
+match
+# "external" sometimes generates grossly redundant rule sets ------------------
+tcc -xif:err 2>&1 | grep -c '^match'
+/* well, it's not *that* bad anymore ... */
+
+$p1 = police(rate 1kbps,mtu 1kB,burst 1kB);
+prio {
+    class if (raw[0] == 5 || raw[2] == 7) && conform police $p1;
+    class if raw[0] == 5 || (raw[2] == 7 && conform police $p1);
+    class if 1;
+}
+EOF
+7
+# TCP ports can cross-dress as UDP, etc. --------------------------------------
+tcc | sed '/.* ipproto/s//ipproto/p;d'
+prio {
+    class 
+        on rsvp(ipproto "udp") element (dst 1.2.3.4,sport "finger");
+}
+EOF
+ipproto 17 session 1.2.3.4 sender any/79 classid 1:1
+# "if" cannot be anchored at classes ------------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 5kbps) {
+        $f = if;
+        class (rate 2kbps)
+            if filter $f 1;
+    }
+}
+EOF
+ERROR
+<stdin>:5: "if" anchor doesn't work yet and will be re-designed near "if"
+# "if" cannot be combined with other filters (1/3) ----------------------------
+tcc 2>&1
+prio {
+    class on fw element (1);
+    class if 1;
+}
+EOF
+ERROR
+<stdin>:5: cannot combine if with other filters (yet) near ""
+# "if" cannot be combined with other filters (2/3) ----------------------------
+tcc 2>&1
+prio {
+    fw;
+    class (1);
+    class if 1;
+}
+EOF
+ERROR
+<stdin>:6: cannot combine if with other filters (yet) near ""
+# "if" cannot be combined with other filters (3/3) ----------------------------
+tcc 2>&1
+prio {
+    class if 0;
+    class on fw element (0);
+}
+EOF
+ERROR
+<stdin>:5: cannot combine if with other filters (yet) near ""
+# assignment of qdisc does not work with default device -----------------------
+echo '$q = prio;  qdisc $q;' | tcc 2>&1
+ERROR
+<stdin>:1: syntax error near "prio"
+# "if ... police" isn't supported yet -----------------------------------------
+tcc 2>&1
+prio {
+    class if 1 police(rate 1Mbps,burst 2kB);
+}
+EOF
+ERROR
+<stdin>:2: syntax error near "police"
+# if_ext may be too aggressive when combining bit strings ---------------------
+tcc -xif:err 2>&1 >/dev/null | grep match
+field x = raw[0].b;
+field y = raw[1].b if x == 0;
+
+prio {
+    class if y == 0;
+}
+EOF
+match 0:0:16=0x0000 action 1
+match action 0
+# iflib_bit may be too aggressive when combining bit strings ------------------
+tcc -xif:err -B 2>&1 >/dev/null | grep match
+field x = raw[0].b;
+field y = raw[1].b if x == 0;
+
+prio {
+    class if y == 0;
+}
+EOF
+match 0:0:16=0x0 action 1
+match action 0
+# iflib_act fails on && with side-effects -------------------------------------
+tcc -xif:err 2>&1 >/dev/null
+$p = police(rate 1Mbps,burst 2kB);
+
+prio {
+    class if count $p && raw[0] == 1;
+}
+EOF
+ERROR
+can't dump subexpression (iflib_act.c, too many side effects)
+# -N -B crashes with double counting ------------------------------------------
+tcc -xif:err -N -B 2>&1 | grep -c Assertion
+$p = police(rate 1Mbps,burst 1kB);
+
+#define drop_if drop if count $p && 
+
+dsmark (default_index 0) {
+    class (1) if raw == 1;
+    drop_if raw == 1;
+    class (2) if raw == 2 && count $p ;
+    drop_if 1;
+}
+EOF
+1
+# -B does not crash with double counting --------------------------------------
+tcc -xif:err -B 2>&1 >/dev/null | grep -v '^#'
+$p = police(rate 1Mbps,burst 1kB);
+
+#define drop_if drop if count $p && 
+
+dsmark (default_index 0) {
+    class (1) if raw == 1;
+    drop_if raw == 1;
+    class (2) if raw == 2 && count $p ;
+    drop_if 1;
+}
+EOF
+block eth0 egress
+bucket 1 = 125000 0 1024 1024 0
+action 0 = drop
+action 1 = count 1 action 0
+action 2 = count 1 action 1
+action 3 = class 1:2
+action 4 = count 1 action 3
+action 5 = count 1 action 4
+action 6 = class 1:1
+match 0:0:8=0x1 action 6
+match 0:0:8=0x2 action 5
+match action 2
+# "old" algorithm fails with double counting ----------------------------------
+tcc -xif:file -Xx,file=/dev/null 2>&1 >/dev/null
+$p = police(rate 1Mbps,burst 1kB);
+
+#define drop_if drop if count $p && 
+
+dsmark (default_index 0) {
+    class (1) if raw == 1;
+    drop_if raw == 1;
+    class (2) if raw == 2 && count $p;
+    drop_if 1;
+}
+EOF
+ERROR
+can't dump subexpression (iflib_act.c, too many side effects)
+# "pragma" should accept regular expressions ----------------------------------
+tcc 2>&1
+fifo(pragma "te"+"st");
+EOF
+ERROR
+<stdin>:1: syntax error near "+"
+# dsmark with class selection path gets confused over default index -----------
+tcc -xif:err -Xx,all -Xx,nounspec 2>&1
+dsmark (default_index 0) {
+    class (<$x>) if raw[0] == 0;
+    prio {
+	$x = class {}
+    }
+}
+EOF
+ERROR
+<stdin>:3: dump_all found no matching choice for value 0x0 in tcindex
+# mask operator :: is mis-parsed as IPv6 address ------------------------------
+tcc -c 2>&1
+$a = 1.2.3.4::8;
+EOF
+ERROR
+<stdin>:1: Sorry, mis-parsed "::". Please use ": :" instead. near "::8"
+# : : works, though -----------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4: :8;
+EOF
+$a = 0.0.0.4
+# ($var).fld regrettfully doesn't work ----------------------------------------
+tcc -c 2>&1
+$var.fld = 5;
+($var).fld = 2;
+EOF
+ERROR
+<stdin>:2: syntax error near "("

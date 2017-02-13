@@ -1,0 +1,18 @@
+eth0 {
+    prio (bands 10) {
+	class { fifo (limit 1p); }
+	rsvp (ipproto tcp) {
+	  class { fifo (limit 2p); }
+	  class on (dst 1.2.3.0) { fifo (limit 3p); }
+	    tunnel (skip 5B) on (dst 1.2.3.1) {
+		class on (dst 1.2.3.2);
+		tunnel (skip 2B) on (dst 1.2.3.3) {
+		    class on (dst 1.2.3.4);
+		}
+	    }
+	    tunnel (skip 5B) on (dst 1.2.3.5) {
+		class on (dst 1.2.3.6) { fifo; }
+	    }
+	}
+    }
+}

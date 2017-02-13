@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# kmod_cc - Compilation script for kernel modules to be used by tcsim
+#
+# Written 2001,2004 by Werner Almesberger
+# Copyright 2001 EPFL-ICA, Network Robots
+# Copyright 2004 Werner Almesberger
+#
+# This script is modified by the Makefile to include TOPDIR
+
+args=
+shared=-shared
+for n in "$@"; do
+    if [ "$n" = -r ]; then
+	# allow incremental builds
+	shared=
+	args=-c
+    fi
+    [ "$n" != -c ] && args="$args $n"
+done
+
+topdir=$TOPDIR
+[ -z "$TCNG_TOPDIR" ] || topdir=$TCNG_TOPDIR
+
+${CC:-cc} -fPIC -nostdinc -I$topdir/lib/tcng/include/klib \
+  -I$topdir/lib/tcng/include/klib/include \
+  -I`dirname \`gcc -print-libgcc-file-name\``/include \
+  $shared $args

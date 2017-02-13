@@ -1,0 +1,14 @@
+/*
+ * Nested headers, for tcng-2u
+ */
+
+
+field h1_len = raw[0];
+field h2 = raw[h1_len << 2];
+field h2_len = h2[2];
+field h3 = h2[h2_len << 3];
+field h3_x = h3[3];
+
+prio {
+    class if h3_x == 5;
+}

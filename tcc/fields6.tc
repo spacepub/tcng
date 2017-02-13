@@ -1,0 +1,40 @@
+/*
+ * IPv6 field definitions for tcng
+ *
+ * Written 2002 by Werner Almesberger
+ * Copyright 2002 Bivio Networks, Werner Almesberger
+ */
+
+#ifndef __INCLUDED_FROM_FIELDS_TC
+#warning fields6.tc should only be included from fields.tc
+#endif
+
+#ifndef FIELDS6_TC
+#define FIELDS6_TC
+
+/*
+ * IPv6 header (RFC2460)
+ *
+ * Naming is BSD-style (from /usr/include/netinet/ip6.h), except for cases
+ * where odd bit alignment would be too messy for C (i.e. ip6_*_vfc)
+ */
+
+#ifdef USE_META_PROTOCOL
+field ip6_hdr = raw if meta_protocol == ETH_P_IPV6; /* base */
+#else
+field ip6_hdr = raw;			/* base */
+#endif
+
+field ip6_v = ip6_hdr[0] >> 4;		/* version */
+field ip6_tc = (ip6_hdr[0].ns >> 4) & 0xff; /* traffic class */
+field ip6_flow = ip6_hdr[0].nl & 0xfffff;    /* flow label */
+field ip6_plen = ip6_hdr[4].ns;		/* payload length */
+field ip6_nxt = ip6_hdr[6];		/* next header */
+field ip6_hlim = ip6_hdr[7];		/* hop limit */
+field ip6_src = ip6_hdr[8].ipv6;	/* source address */
+field ip6_dst = ip6_hdr[24].ipv6;	/* destination address */
+field ip6_nexthdr = ip6_hdr[40];	/* next header */
+
+/* All the rest is FFS :-) */
+
+#endif /* FIELDS6_TC */

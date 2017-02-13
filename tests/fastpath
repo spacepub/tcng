@@ -1,0 +1,47 @@
+# tcc handles self-contained policing expression optimally --------------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+$p = police(rate 1Mbps,burst 10kB);
+
+prio {
+    class (1)
+	if (raw[0] == 1 || raw[0] == 2) &&
+	  ((conform($p) && count($p)) || drop);
+}
+EOF
+match 0:0:8=0x01 action 4
+match 0:0:8=0x02 action 4
+match action 0
+# tcc handles self-contained multi-color marker optimally (srTCM) -------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+#include "meters.tc"
+
+set_srTCM($x,cir 1 kbps,cbs 1kB,ebs 500B);
+
+#define C (raw[0] == 1 || raw[0] == 2)
+
+prio {
+    class (1) if C && __srTCM_green($x);
+    class (2) if C && __srTCM_yellow($x);
+    class (3) if C && __srTCM_red($x);
+}
+EOF
+match 0:0:8=0x01 action 7
+match 0:0:8=0x02 action 7
+match action 0
+# tcc handles self-contained multi-color marker optimally (trTCM) -------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+#include "meters.tc"
+
+set_trTCM($x,cir 1 kbps,cbs 1kB,pir 2kbps,pbs 500B,mtu 1000B);
+
+#define C (raw[0] == 1 || raw[0] == 2)
+
+prio {
+    class (1) if C && __trTCM_green($x);
+    class (2) if C && __trTCM_yellow($x);
+    class (3) if C && __trTCM_red($x);
+}
+EOF
+match 0:0:8=0x01 action 9
+match 0:0:8=0x02 action 9
+match action 0

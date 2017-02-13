@@ -1,0 +1,163 @@
+# ingress accepts inner qdisc (plain)  ----------------------------------------
+tcc -c
+ingress {
+    fifo;
+}
+EOF
+# ingress accepts inner qdisc (with class)  -----------------------------------
+tcc -c 2>&1
+ingress {
+    class {
+	fifo;
+    }
+}
+EOF
+<stdin>:2: warning: class for shared qdisc should be implicit
+# ingress suggests unnumbered class for inner qdisc ---------------------------
+tcc -c 2>&1
+ingress {
+    class (1) {
+        fifo;
+    }
+}
+EOF
+<stdin>:2: warning: suggest unnumbered class for ingress' inner qdisc
+<stdin>:2: warning: class for shared qdisc should be implicit
+# ingress does not complain about class numbers in other cases ----------------
+tcc -c
+ingress {
+    class (1) if raw[0] == 1;
+    class (2) if raw[0] == 2;
+}
+EOF
+# ingress refuses more than one inner qdisc (plain) ---------------------------
+tcc -c 2>&1
+ingress {
+    fifo;
+    fifo;
+}
+EOF
+ERROR
+<stdin>:3: ingress has only one inner qdisc
+# ingress refuses more than one inner qdisc (with unnumbered class) -----------
+tcc -c 2>&1
+ingress {
+    class {
+	fifo;
+    }
+    class {
+	fifo;
+    }
+}
+EOF
+ERROR
+<stdin>:6: ingress has only one inner qdisc
+# ingress refuses more than one inner qdisc (with numbered class) -------------
+tcc -c 2>&1
+ingress {
+    class (1) {
+	fifo;
+    }
+    class (2) {
+	fifo;
+    }
+}
+EOF
+ERROR
+<stdin>:2: warning: suggest unnumbered class for ingress' inner qdisc
+<stdin>:5: warning: suggest unnumbered class for ingress' inner qdisc
+<stdin>:6: ingress has only one inner qdisc
+# ingress does not auto-assign class numbers ----------------------------------
+tcc -c 2>&1
+ingress {
+    class;
+    class;
+}
+EOF
+ERROR
+<stdin>:2: ingress does not auto-assign class numbers
+# ingress accepts class selection paths ---------------------------------------
+tcc -c
+ingress {
+    class (<$a>) if raw[0] == 1;
+    class (<$b>) if raw[0] == 1;
+    prio {
+	$a = class (1);
+	$b = class (2);
+    }
+}
+EOF
+# tc ingress refuses class selection paths ------------------------------------
+tcc 2>&1
+ingress {
+    class (<$a>) if raw[0] == 1;
+    class (<$b>) if raw[0] == 2;
+    prio {
+	$a = class (1);
+	$b = class (2);
+    }
+}
+EOF
+ERROR
+<stdin>:4: tc ingress does not support inner qdisc
+# ext ingress accepts class selection paths -----------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+ingress {
+    class (<$a>) if raw[0] == 1;
+    class (<$b>) if raw[0] == 2;
+    prio {
+	$a = class (1);
+	$b = class (2);
+    }
+}
+EOF
+block eth0 ingress
+qdisc 1 = prio bands 3
+class 1 =
+class 2 =
+qdisc 65535 = ingress
+class 0 = qdisc 1
+class 1 =
+class 2 =
+action 0 = unspec
+action 2 = class 65535:2,1:2
+action 1 = class 65535:1,1:1
+match 0:0:8=0x01 action 1
+match 0:0:8=0x02 action 2
+match action 0
+# ext ingress accepts class selection paths (tcc-ext-echo) --------------------
+PATH=$PATH:tcc/ext tcc -xif:echo -Xx,all 2>&1
+ingress {
+    class (<$a>) if raw[0] == 1;
+    class (<$b>) if raw[0] == 2;
+    prio {
+	$a = class (1);
+	$b = class (2);
+    }
+}
+EOF
+block eth0 ingress
+qdisc 65535 = ingress
+class 0 = qdisc 1
+class 1 =
+class 2 =
+qdisc 1 = prio bands 3
+class 1 =
+class 2 =
+action 1 = class 65535:1,1:1
+action 2 = class 65535:2,1:2
+action 0 = unspec
+match 0:0:8=0x1 action 1
+match 0:0:8=0x2 action 2
+match action 0
+# ingress assigns default class number 0 --------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+ingress {
+    class if 1;
+}
+EOF
+block eth0 ingress
+qdisc 65535 = ingress
+class 0 =
+action 0 = class 65535:0
+match action 0

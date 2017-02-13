@@ -1,0 +1,254 @@
+# idiomatic: ip_is_fragment ---------------------------------------------------
+tcsim -n -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+    #include "ip.def"
+
+    dsmark {
+	class (0,value 0xff) if ip_is_fragment;
+	class (1) if 1;
+    }
+}
+
+/*
+ * Instead of marking, this script originally dropped selected packets.
+ * That's why the pattern "dead" is used to mark classified packets.
+ */
+
+send 0x45 0 0 0  0 0 0 0  1 ICMP 0 0  nl:0 x 4		  // no fragment
+send 0x45 0 0 0  0 0 0 2  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0 3  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0 4  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0 5  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0x40 0  1 ICMP 0 0  nl:0 x 4 	    // ip_DF set
+send 0x45 0 0 0  0 0 0x20 0  1 ICMP 0 0  nl:0 x 4 ns:0xdead // ip_MF set
+end
+EOF
+4500 ...
+45ff ...
+45ff ...
+45ff ...
+45ff ...
+4500 ...
+45ff ...
+# idiomatic: not_ip_is_fragment -----------------------------------------------
+tcsim -n -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+    #include "ip.def"
+
+    dsmark {
+	class (0,value 0xff) if not_ip_is_fragment;
+	class (1) if 1;
+    }
+}
+
+/*
+ * Instead of marking, this script originally dropped packets that weren't
+ * selected. That's why the pattern "dead" is used to mark unclassified
+ * packets. (Note that this is exactly the contrary to the previous test
+ * case.)
+ */
+
+send 0x45 0 0 0  0 0 0 0  1 ICMP 0 0  nl:0 x 4		  // no fragment
+send 0x45 0 0 0  0 0 0 2  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0 3  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0 4  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0 5  1 ICMP 0 0  nl:0 x 4 ns:0xdead  // non-zero offset
+send 0x45 0 0 0  0 0 0x40 0  1 ICMP 0 0  nl:0 x 4 	    // ip_DF set
+send 0x45 0 0 0  0 0 0x20 0  1 ICMP 0 0  nl:0 x 4 ns:0xdead // ip_MF set
+end
+EOF
+45ff ...
+4500 ...
+4500 ...
+4500 ...
+4500 ...
+45ff ...
+4500 ...
+# idiomatic: ip_has_options ---------------------------------------------------
+tcsim -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+
+    dsmark {
+	class (0,value 0xff) if ip_has_options;
+	class (1) if 1;
+    }
+}
+
+send 0x45 0 0 0  nl:0 x 10		// no options
+send 0x46 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x47 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x48 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x49 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4a 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4b 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4c 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4d 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4e 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4f 0 0 0  nl:0 x 10 ns:0xdead	// has options
+end
+EOF
+4500 ...
+46ff ...
+47ff ...
+48ff ...
+49ff ...
+4aff ...
+4bff ...
+4cff ...
+4dff ...
+4eff ...
+4fff ...
+# idiomatic: not_ip_has_options -----------------------------------------------
+tcsim -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+
+    dsmark {
+	class (0,value 0xff) if not_ip_has_options;
+	class (1) if 1;
+    }
+}
+
+send 0x45 0 0 0  nl:0 x 10		// no options
+send 0x46 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x47 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x48 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x49 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4a 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4b 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4c 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4d 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4e 0 0 0  nl:0 x 10 ns:0xdead	// has options
+send 0x4f 0 0 0  nl:0 x 10 ns:0xdead	// has options
+end
+EOF
+45ff ...
+4600 ...
+4700 ...
+4800 ...
+4900 ...
+4a00 ...
+4b00 ...
+4c00 ...
+4d00 ...
+4e00 ...
+4f00 ...
+# idiomatic: ip_is_tiny_fragment ----------------------------------------------
+tcsim -n -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+    #include "ip.def"
+
+    dsmark {
+	class (0,value 0xff) if ip_is_tiny_fragment;
+	class (1) if 1;
+    }
+}
+
+send 0x45 0 0 0  0 0 0 0  1 ICMP 0 0  nl:1 nl:2  ns:0 0 x 2	// normal ICMP
+send 0x45 0 0 0  0 0 0 0  1 ICMP 0 0  nl:1 nl:2  ns:0xdead 0	// tiny ICMP
+send 0x45 0 0 0  0 0 0 0  1 TCP  0 0  nl:1 nl:2  ns:0 0 x 18	// normal TCP
+send 0x45 0 0 0  0 0 0 0  1 TCP  0 0  nl:1 nl:2  ns:0xdead 0 x 17 // tiny TCP
+send 0x45 0 0 0  0 0 0 0  1 UDP  0 0  nl:1 nl:2  ns:0 0 x 6	// normal UDP
+send 0x45 0 0 0  0 0 0 0  1 UDP  0 0  nl:1 nl:2  ns:0xdead 0 x 5 // tiny UDP
+send 0x45 0 0 0  0 0 0 1  1 ICMP 0 0  nl:1 nl:2  ns:0xdead x 10 // ip_off == 1
+end
+EOF
+4500 ...
+45ff ...
+4500 ...
+45ff ...
+4500 ...
+45ff ...
+45ff ...
+# idiomatic: not_ip_is_tiny_fragment ------------------------------------------
+tcsim -n -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+    #include "ip.def"
+
+    dsmark {
+	class (0,value 0xff) if not_ip_is_tiny_fragment;
+	class (1) if 1;
+    }
+}
+
+send 0x45 0 0 0  0 0 0 0  1 ICMP 0 0  nl:1 nl:2  ns:0 0 x 2	// normal ICMP
+send 0x45 0 0 0  0 0 0 0  1 ICMP 0 0  nl:1 nl:2  ns:0xdead 0	// tiny ICMP
+send 0x45 0 0 0  0 0 0 0  1 TCP  0 0  nl:1 nl:2  ns:0 0 x 18	// normal TCP
+send 0x45 0 0 0  0 0 0 0  1 TCP  0 0  nl:1 nl:2  ns:0xdead 0 x 17 // tiny TCP
+send 0x45 0 0 0  0 0 0 0  1 UDP  0 0  nl:1 nl:2  ns:0 0 x 6	// normal UDP
+send 0x45 0 0 0  0 0 0 0  1 UDP  0 0  nl:1 nl:2  ns:0xdead 0 x 5 // tiny UDP
+send 0x45 0 0 0  0 0 0 1  1 ICMP 0 0  nl:1 nl:2  ns:0xdead x 10 // ip_off == 1
+end
+EOF
+45ff ...
+4500 ...
+45ff ...
+4500 ...
+45ff ...
+4500 ...
+4500 ...
+# idiomatic: tcp_incoming -----------------------------------------------------
+tcsim -n -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+    #include "ip.def"
+
+    dsmark {
+	class (0,value 0xff) if tcp_incoming;
+	class (1) if 1;
+    }
+}
+
+$src = 1.2.3.4
+$dst = 5.6.7.8
+$sport = PORT_USER
+$dport = PORT_HTTP
+
+#define NOTHING
+send TCP_PCK($flag = 0)					// no flags
+send TCP_PCK($flag = TCP_SYN)		ns:0xdead	// SYN
+send TCP_PCK($flag = TCP_SYN | TCP_ACK)			// SYN+ACK
+send TCP_PCK($flag = TCP_ACK)				// ACK
+send UDP_PCK(NOTHING)					// not TCP
+end
+EOF
+4500 ...
+45ff ...
+4500 ...
+4500 ...
+4500 ...
+# idiomatic: not_tcp_incoming -------------------------------------------------
+tcsim -n -s 2 | sed '/ D /s/.*: //p;d'
+dev "eth0" 10000 {
+    #include "fields.tc"
+    #include "ip.def"
+
+    dsmark {
+	class (0,value 0xff) if not_tcp_incoming;
+	class (1) if 1;
+    }
+}
+
+$src = 1.2.3.4
+$dst = 5.6.7.8
+$sport = PORT_USER
+$dport = PORT_HTTP
+
+#define NOTHING
+send TCP_PCK($flag = 0)					// no flags
+send TCP_PCK($flag = TCP_SYN)		ns:0xdead	// SYN
+send TCP_PCK($flag = TCP_SYN | TCP_ACK)			// SYN+ACK
+send TCP_PCK($flag = TCP_ACK)				// ACK
+send UDP_PCK(NOTHING)					// not TCP
+end
+EOF
+45ff ...
+4500 ...
+45ff ...
+45ff ...
+45ff ...

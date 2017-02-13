@@ -1,0 +1,10 @@
+# double inequality was too complicated for old optimization ------------------
+tcc -xif:err -B 2>&1 | grep match
+prio {
+    class if (raw[0] != 1) && (raw[1] != 1);
+    class if 1;
+}
+EOF
+match 0:0:8=0x1 action 1
+match 0:8:8=0x1 action 1
+match action 0

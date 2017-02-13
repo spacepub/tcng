@@ -1,0 +1,80 @@
+# srTCM: red, green, yellow (external) ----------------------------------------
+tcc -xif:err -B 2>&1 | grep ^action
+#include "meters.tc"
+
+set_srTCM($x,cir 1 kbps,cbs 1kB,ebs 500B);
+
+prio (bands 4) {
+    class (3) if srTCM_red($x);
+    class (1) if srTCM_green($x);
+    class (2) if srTCM_yellow($x);
+    class (4) if 1;
+}
+EOF
+action 0 = class 1:1
+action 1 = count 2 action 0
+action 2 = class 1:2
+action 3 = count 1 action 2
+action 4 = class 1:3
+action 5 = conform 1 action 3 action 4
+action 6 = conform 2 action 1 action 5
+# srTCM: green, red, yellow (external) ----------------------------------------
+tcc -xif:err -B 2>&1 | grep ^action
+#include "meters.tc"
+
+set_srTCM($x,cir 1 kbps,cbs 1kB,ebs 500B,mtu 1000B);
+
+prio (bands 4) {
+    class (1) if srTCM_green($x);
+    class (3) if srTCM_red($x);
+    class (2) if srTCM_yellow($x);
+    class (4) if 1;
+}
+EOF
+action 0 = class 1:1
+action 1 = count 2 action 0
+action 2 = class 1:2
+action 3 = count 1 action 2
+action 4 = class 1:3
+action 5 = conform 1 action 3 action 4
+action 6 = conform 2 action 1 action 5
+# srTCM: yelow, red, green (external) -----------------------------------------
+tcc -xif:err -B 2>&1 | grep ^action
+#include "meters.tc"
+
+set_srTCM($x,cbs 1kB,ebs 500B,cir 1kbps);
+
+prio (bands 4) {
+    class (2) if srTCM_yellow($x);
+    class (3) if srTCM_red($x);
+    class (1) if srTCM_green($x);
+    class (4) if 1;
+}
+EOF
+action 0 = class 1:1
+action 1 = count 2 action 0
+action 2 = class 1:2
+action 3 = count 1 action 2
+action 4 = class 1:3
+action 5 = conform 1 action 3 action 4
+action 6 = conform 2 action 1 action 5
+# srTCM: green, yelow, red (external) -----------------------------------------
+tcc -xif:err -B 2>&1 | grep ^action
+#include "meters.tc"
+
+set_srTCM($x,cir 1 kbps,cbs 1kB,ebs 500B);
+
+prio (bands 4) {
+    class (1) if srTCM_green($x);
+    class (2) if srTCM_yellow($x);
+    class (3) if srTCM_red($x);
+    class (4) if 1;
+}
+EOF
+action 0 = class 1:1
+action 1 = count 2 action 0
+action 2 = class 1:2
+action 3 = count 1 action 2
+action 4 = class 1:3
+action 5 = conform 1 action 3 action 4
+action 6 = conform 2 action 1 action 5

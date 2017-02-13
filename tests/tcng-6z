@@ -1,0 +1,56 @@
+# tcsim does not crash when started without arguments -------------------------
+tcsim_unadorned </dev/null
+EOF
+# tcc does not crash when started without arguments ---------------------------
+tcc_unadorned </dev/null
+EOF
+# semicolons allowed after { in device body -----------------------------------
+tcc -c
+eth0 { ;
+    fifo;
+}
+EOF
+# semicolons allowed after { in anonymous device  body ------------------------
+tcc -c
+{ ;
+    fifo;
+}
+EOF
+# semicolons allowed after { in qdisc expressions block -----------------------
+tcc -c
+{
+    { ;
+	fifo;
+    }
+}
+EOF
+# semicolons allowed after { in qdisc/class body ------------------------------
+tcc -c
+prio {
+    ;
+}
+EOF
+# semicolons allowed after { in qdisc/class body block ------------------------
+tcc -c
+prio {
+    { ;
+	class;
+    }
+}
+EOF
+# semicolons allowed after { in filter body -----------------------------------
+tcc -c
+prio {
+    fw { ;
+    }
+}
+EOF
+# semicolons allowed after { in filter body block -----------------------------
+tcc -c
+prio {
+    fw {
+	{ ;
+	}
+    }
+}
+EOF

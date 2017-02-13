@@ -1,0 +1,9 @@
+# tcc -S does not crash -------------------------------------------------------
+tcc -S -u stderr -Wnounused 2>&1
+$a.b.c = 10;
+$a.b.x.y = 20;
+$a.b.z = $a.b.x.y/$a.b.c;
+EOF
+$abc = 10
+$abxy = 20
+$abz = 2

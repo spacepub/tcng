@@ -1,0 +1,22 @@
+/*
+ * packet.def - Definitions for constructing TCP/IP packets, analogous to
+ *		fields.tc
+ *
+ * Written 2001,2002 by Werner Almesberger
+ * Copyright 2001,2002 Network Robots
+ * Copyright 2002 Bivio Networks
+ */
+
+#ifndef PACKET_DEF
+#define PACKET_DEF
+
+#define __INCLUDED_FROM_FIELDS_TC /* lie and cheat :-) */
+#include "values.tc"
+#undef __INCLUDED_FROM_FIELDS_TC
+
+#define __INCLUDED_FROM_PACKET_DEF
+#include "packet4.def"
+#include "packet6.def"
+#undef __INCLUDED_FROM_PACKET_DEF
+
+#endif /* PACKET_DEF */

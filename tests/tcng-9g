@@ -1,0 +1,6 @@
+# tcsim -c freed command variables on each access -----------------------------
+tcsim -c
+command $a = echo "hello"
+command $a
+command $a
+EOF

@@ -1,0 +1,26 @@
+/*
+ * prio+rsvp - Prio with RSVP classifier
+ *
+ * Prio with two pfifos inside (*). Uses the RSVP classifier to give traffic
+ * to 10.0.0.1 priority.
+ *
+ * (*) The pfifos aren't really necessary (prio would create them
+ *     automatically). I'm creating them mainly to exercise tcsim internals.
+ */
+
+#define HIGH	TCP_PCK($ip_src=10.0.0.2 $ip_dst=10.0.0.1)
+#define LOW	TCP_PCK($ip_src=10.0.0.1 $ip_dst=10.0.0.2)
+
+dev eth0 100000 /* 100 Mbps */
+
+tc qdisc add dev eth0 root handle 1:0 prio
+tc qdisc add dev eth0 parent 1:1 pfifo
+tc qdisc add dev eth0 parent 1:2 pfifo
+tc filter add dev eth0 parent 1:0 proto ip \
+  rsvp ipproto tcp session 10.0.0.1 classid 1:1
+
+send LOW
+send LOW
+send HIGH
+
+end

@@ -1,0 +1,20 @@
+/*
+ * Single policer, selects
+ */
+
+dev eth0 10000 { /* 10 Mbps */
+    $p = police(rate 500kbps,mtu 130B,burst 130B);
+    dsmark (indices 2) {
+        class (1,mask 0,value 1)
+	    if conform police $p && count police $p;
+        class (0)
+	    if 1;
+    }
+}
+
+every 0.001s send 0 x 125       /* 1 Mbps */
+time 0.1s
+
+/*
+ * Should enqueue 101 packets, and mark 50% of them as "1"
+ */

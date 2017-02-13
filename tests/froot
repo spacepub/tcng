@@ -1,0 +1,54 @@
+# Field roots: single field ---------------------------------------------------
+tcc -xif:err 2>&1 | grep 'match [0-9]'
+field foo = field_root(10);
+
+prio {
+    class if foo == 1;
+}
+EOF
+match 10:0:8=0x01 action 1
+# Field roots: local offset ---------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep :
+field foo = field_root(10);
+field bar = foo[foo];
+
+prio {
+    drop if bar == 1;
+}
+EOF
+offset 100 = 10+(10:0:8 << 3)
+match 100:0:8=0x01 action 1
+# Field roots: mixed offsets, index -------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep :
+field foo = field_root(10);
+field bar = foo[raw];
+
+prio {
+    drop if bar == 1;
+}
+EOF
+offset 100 = 10+(0:0:8 << 3)
+match 100:0:8=0x01 action 1
+# Field roots: mixed offsets, base --------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep :
+field foo = field_root(10);
+field bar = raw[foo];
+
+prio {
+    drop if bar == 1;
+}
+EOF
+offset 100 = 0+(10:0:8 << 3)
+match 100:0:8=0x01 action 1
+# Field roots: mixed offsets, base and index ----------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep :
+field foo = field_root(10);
+field bar = field_root(11);
+field baz = foo[bar];
+
+prio {
+    drop if baz == 1;
+}
+EOF
+offset 100 = 10+(11:0:8 << 3)
+match 100:0:8=0x01 action 1

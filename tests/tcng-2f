@@ -1,0 +1,51 @@
+# TCNG: "ah" supersedes own default -------------------------------------------
+tcc | sed 's/.*1:0 //'
+prio {
+    rsvp (ah 1,dst 1.2.3.4) {
+	class on (ah 2);
+    }
+}
+EOF
+root prio
+protocol ip prio 1 rsvp
+protocol ip prio 1 rsvp session 1.2.3.4 spi/ah 0x2 classid 1:1
+# TCNG: "esp" supersedes own default ------------------------------------------
+tcsim
+dev X {
+    prio {
+	rsvp (esp 1,dst 1.2.3.4) {
+	    class on (esp 1);
+	}
+    }
+}
+EOF
+# TCNG: "ah" supersedes "esp" default -----------------------------------------
+tcsim
+dev X {
+    prio {
+	rsvp (ah 1,dst 1.2.3.4) {
+	    class on (esp 1);
+	}
+    }
+}
+EOF
+# TCNG: "ah" with "esp" in default not allowed --------------------------------
+tcc 2>&1
+prio {
+    rsvp (ah 1,esp 1,dst 1.2.3.4) {
+	class on (esp 2);
+    }
+}
+EOF
+ERROR
+exactly one of "ah", "esp", or "ipproto" must be specified
+# TCNG: "ah" with "esp" in element not allowed --------------------------------
+tcc 2>&1
+prio {
+    rsvp (ah 1,dst 1.2.3.4) {
+	class on (ah 2,esp 1);
+    }
+}
+EOF
+ERROR
+exactly one of "ah", "esp", or "ipproto" must be specified

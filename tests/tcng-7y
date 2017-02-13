@@ -1,0 +1,49 @@
+# dsmark: index (class number) < indices is okay ------------------------------
+tcc -c 2>&1
+dsmark (indices 4) {
+    class (3,value 1);
+}
+EOF
+# dsmark: index (class number) == indices is incorrect ------------------------
+tcc -c 2>&1
+dsmark (indices 4) {
+    class (4,value 1);
+}
+EOF
+ERROR
+<stdin>:2: dsmark class number (4) must be < indices (4) if using parameters
+# dsmark: index (class number) > indices is incorrect -------------------------
+tcc -c 2>&1
+dsmark (indices 4) {
+    class (5,mask 42);
+}
+EOF
+ERROR
+<stdin>:2: dsmark class number (5) must be < indices (4) if using parameters
+# dsmark: no index checking unless using non-default parameters (1) -----------
+tcc -c 2>&1
+dsmark (indices 4) {
+    class (1000);
+}
+EOF
+# dsmark: no index checking unless using non-default parameters (2) -----------
+tcc -c 2>&1
+dsmark (indices 4) {
+    class (1000,value 0);
+}
+EOF
+# dsmark: no index checking unless using non-default parameters (3) -----------
+tcc -c 2>&1
+dsmark (indices 4) {
+    class (1000,mask 0xff);
+}
+EOF
+# ingress default classification is dr_class(0) -------------------------------
+tcc -xif:err -Xx,all -Xx,nounspec 2>&1 | grep -v '^#'
+ingress;
+EOF
+block eth0 ingress
+qdisc 65535 = ingress
+class 0 =
+action 0 = class 65535:0
+match action 0

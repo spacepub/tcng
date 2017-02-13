@@ -1,0 +1,100 @@
+# ext_all selects root class if classification fails --------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep action
+#include "tcngreg.def"
+
+dsmark (indices 16) {
+    class (0) if raw[0] == 0;
+    class (1) if raw[0] == 1;
+    cbq (CBQ_PARAMS) {
+	class (rate 2Mbps)
+	    on tcindex element (0);
+    }
+}
+EOF
+action 2 = unspec
+action 1 = class 1:1,2:0
+action 0 = class 1:0,2:1
+match 0:0:8=0x00 action 0
+match 0:0:8=0x01 action 1
+match action 2
+# ext_all follows filters at classes ------------------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep action
+#include "tcngreg.def"
+
+dsmark (indices 16) {
+    class (0) if raw[0] == 0;
+    class (1) if raw[0] == 1;
+    cbq (CBQ_PARAMS) {
+	class (rate 2Mbps)
+	    on tcindex(mask 2) element (0)
+	  {
+	    class (2,rate 1Mbps)
+		on tcindex element (0);
+	    class (3,rate 1Mbps)
+		on tcindex element (1);
+	}
+    }
+}
+EOF
+action 2 = unspec
+action 1 = class 1:1,2:3
+action 0 = class 1:0,2:2
+match 0:0:8=0x00 action 0
+match 0:0:8=0x01 action 1
+match action 2
+# ext_all stays at class if further filters fail ------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep action
+#include "tcngreg.def"
+
+dsmark (indices 16) {
+    class (0) if raw[0] == 0;
+    class (1) if raw[0] == 1;
+    cbq (CBQ_PARAMS) {
+	class (1,rate 2Mbps)
+	    on tcindex(mask 2) element (0)
+	  {
+	    class (2,rate 1Mbps)
+		on tcindex element (0);
+	    class (3,rate 1Mbps)
+		on tcindex element (3);
+	}
+    }
+}
+EOF
+action 2 = unspec
+action 1 = class 1:1,2:1
+action 0 = class 1:0,2:2
+match 0:0:8=0x00 action 0
+match 0:0:8=0x01 action 1
+match action 2
+# ext_all refuses priomap at qdisc --------------------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null
+#include "tcngreg.def"
+
+dsmark (indices 16) {
+    class (0) if 1;
+    cbq (CBQ_PARAMS,priomap $c) {
+	$c = class (1,rate 2Mbps)
+	    on tcindex(mask 2) element (0);
+    }
+}
+EOF
+ERROR
+<stdin>:5: dump_all does not support the "priomap" parameter
+# ext_all refuses priomap at class --------------------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null
+#include "tcngreg.def"
+
+dsmark (indices 16) {
+    class (0) if 1;
+    cbq (CBQ_PARAMS) {
+	class (1,rate 2Mbps,priomap $c)
+	    on tcindex(mask 2) element (0)
+	  {
+	    $c = class (2,rate 1Mbps);
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:6: dump_all does not support the "priomap" parameter

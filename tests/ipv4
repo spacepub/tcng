@@ -1,0 +1,195 @@
+# integer is (still) integer --------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1234;
+EOF
+$a = 1234
+# dotted quad is IPv4 address -------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4;
+EOF
+$a = 1.2.3.4
+# / divides integers ----------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 256/16;
+EOF
+$a = 16
+# / masks IPv4 addresses ------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4/24;
+EOF
+$a = 1.2.3.0
+# size qualifier "ipv4" works -------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    drop if raw[0].ipv4/15 == 0;
+}
+EOF
+match 0:0:15=0x0000 action 1
+match action 0
+# size qualifier "ipv4" in fields.tc works ------------------------------------
+tcc -xif:err 2>&1 | grep match
+#include "fields.tc"
+
+prio {
+    class (1) if ip_src/8 == 0;
+    class (2) if ip_dst/16 == 0;
+    class (3) if igmp_group/20 == 0;
+}
+EOF
+match 0:96:8=0x00 action 1
+match 0:128:16=0x0000 action 2
+match 0:72:8=0x02 100:32:20=0x00000 action 3
+match action 0
+# "host" returns IPv4 address -------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = host "1.2.3.4";
+EOF
+$a = 1.2.3.4
+# "host4" returns IPv4 address ------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = host4 "1.2.3.4";
+EOF
+$a = 1.2.3.4
+# IPv4 + integer --------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4+0x102;
+EOF
+$a = 1.2.4.6
+# integer + IPv4 --------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 258+1.0.0.0;
+EOF
+$a = 1.0.1.2
+# IPv4 + IPv4 -----------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4+5.6.7.8;
+EOF
+$a = 6.8.10.12
+# IPv4 - integer --------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4-3;
+EOF
+$a = 1.2.3.1
+# integer - IPv4 --------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 0x12345678-16.48.80.112;
+EOF
+$a = 2.4.6.8
+# IPv4 - IPv4 -----------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 12.34.56.78-2.4.6.8;
+EOF
+$a = 10.30.50.70
+# IPv4 << integer -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4 << 2;
+EOF
+$a = 4.8.12.16
+# IPv4 >> integer -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 10.20.30.40 >> 1;
+EOF
+$a = 5.10.15.20
+# IPv4 >> integer -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 10.20.30.40 >> 1;
+EOF
+$a = 5.10.15.20
+# IPv4 & integer --------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4 & 0xffffff00;
+EOF
+$a = 1.2.3.0
+# integer | IPv4 --------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 10 | 1.2.3.4;
+EOF
+$a = 1.2.3.14
+# IPv4 ^ IPv4 -----------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4 ^ 4.3.2.1;
+EOF
+$a = 5.1.1.5
+# IPv4 : : (mask) -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4 : 8 : 16;
+$b = 1.2.3.4 : 8;
+$c = 1.2.3.4 : : 8;
+EOF
+$a = 0.2.3.0
+$b = 1.0.0.0
+$c = 0.0.0.4
+# !IPv4 -----------------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = !1.2.3.4;
+$b = !0.0.0.0;
+EOF
+$a = 0
+$b = 1
+# ~IPv4 -----------------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = ~1.2.3.4;
+EOF
+$a = 254.253.252.251
+# -IPv4 (minus) ---------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = -0.0.0.2;
+EOF
+$a = 255.255.255.254
+# integer < IPv4 --------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 0x1000000 < 1.0.0.0;
+EOF
+$a = 0
+# IPv4 >= integer -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.0.0.0 >= 0x1000000;
+EOF
+$a = 1
+# IPv4 == IPv4 ----------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1.2.3.4 == 1.2.3.4;
+EOF
+$a = 1
+# IPv4 * integer fails --------------------------------------------------------
+tcc 2>&1
+$a = 1.2.3.4*3;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "*" (IPv4 address and integer) near ";"
+# integer * IPv4 fails --------------------------------------------------------
+tcc 2>&1
+$a = 2*1.2.3.4;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "*" (integer and IPv4 address) near ";"
+# integer / IPv4 fails --------------------------------------------------------
+tcc 2>&1
+$a = 5/0.0.0.1;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "/" (integer and IPv4 address) near ";"
+# integer << IPv4 fails -------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1 << 0.0.0.1;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "<<" (integer and IPv4 address) near ";"
+# integer >> IPv4 fails -------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 2 >> 0.0.0.1;
+EOF
+ERROR
+<stdin>:1: invalid types for operator ">>" (integer and IPv4 address) near ";"
+# integer : IPv4 fails --------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 0x1020304 : 0.0.0.8;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "mask (::)" (integer, IPv4 address, and none) near ";"
+# integer : : IPv4 fails ------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 0x1020304 : :  0.0.0.8;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "mask (::)" (integer, none, and IPv4 address) near ";"

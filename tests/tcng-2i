@@ -1,0 +1,25 @@
+# TCNG: also pull offset if only single expression ----------------------------
+tcsim -v | fgrep -c "filter add"
+dev eth0 {
+    #include "fields.tc"
+
+    prio (bands 5) {
+	class if (tcp_sport == 0x1234);
+    }
+}
+EOF
+3
+# TCNG: watch complexity of expressions ---------------------------------------
+tcsim -v examples-ng/u32 | fgrep -c "filter add"
+9
+# TCNG: another offset problem ------------------------------------------------
+tcsim -v 2>&1 | sed 's/.*, //;1q'
+dev eth0 {
+    #include "fields.tc"
+
+    prio (bands 5) {
+	class if (udp_sport == 0xb && udp_dport == 3 && ip_src == 2.2.2.2);
+    }
+}
+EOF
+unsupported offset sequence - please try to reorder matches)

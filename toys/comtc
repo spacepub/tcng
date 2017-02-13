@@ -1,0 +1,226 @@
+#!/usr/bin/perl
+#
+# comtc - Copy comments from the source file to tcc's tc output
+#
+# Written 2002-2004 by Werner Almesberger
+# Copyright 2002-2004 Werner Almesberger
+#
+
+
+$DEBUG = 0;
+$B = "\001"; # /* ...
+$E = "\002"; # ... */
+$S = "\003"; # //
+
+sub emit
+{
+    my $is_device = $_[2];  # devices are very special ...
+
+    # Find input line
+    return unless defined $_[0] && $in =~ /\n$_[0] /s;
+    my $follow = $';
+
+    # Remove file/line tags
+    ($t = "\n$`\n") =~ s/\n\S+:\d+ /\n/gs;
+
+    # Don't print comments if device is implicitly defined
+    return if $is_device && $follow !~ /^\s*dev\b/;
+
+    # Tokenize comment indicators to avoid comment in comment and comment in
+    # string ambiguities
+    $s = "";
+    while ($t =~ m#^(.*?)(//|/\*|"|')#s) {
+	if ($2 eq "/*") {
+	    if ($t !~ s#(.*?)/\*(.*?)\*/##s) {
+		die "unfinished C-style comment";
+	    }
+	    $s .= "$1$B$2$E";
+	}
+	elsif ($2 eq "//") {
+	    if ($t !~ s#(.*?)//([^\n]*\n)##s) {
+		die "unfinished C++-style comment";
+	    }
+	    $s .= "$1$S$2";
+	    $t = $';
+	}
+	elsif ($2 eq "\"") {
+	    $s .= "$1$2";
+	    if (($t = $') !~ /(?!\\)"/) {
+		die "unfinished string";
+	    }
+	    $s .= $`.$&;
+	    $t = $';
+	}
+	else {
+	    $s .= "$1$2";
+	    if (($t = $') !~ /^(\\''|[^']*')/) {
+		die "unfinished character";
+	    }
+	    $s .= $&;
+	    $t = $';
+	}
+    }
+    $s .= $t;
+
+    #
+    # Debugging aid: display recognized comments tokens in reverse video
+    #
+    if ($DEBUG) {
+	$s =~ s#$B#\e[7m/*\e[m#gs;
+	$s =~ s#$E#\e[7m*/\e[m#gs;
+	$s =~ s#$S#\e[7m//\e[m#gs;
+	print "TOKENIZED [$s]\n";
+	exit;
+    }
+
+    # /**/ is magic: it indicates that we _don't_ have a comment here
+    $s =~ s/.*$B$E//s;
+
+    # Look for C style comment sequence before current line
+    if ($s =~ /$B(([^$B$E]|$E[\n\t ]*$B)*)$E[\n\t ]*$/s) {
+	# Remove ... */ /* ...
+	($s = $1) =~ s/\s*$E[\n\t ]*$B\s*/\n/sg;
+	# Prefix new lines with "#"
+	$s =~ s/\s*\n\s*/\n# /sg;
+    }
+    # Look for C++ style comment sequence before current line
+    elsif ($s =~ /$S([^\n]*(\n[\n\t ]*$S[^\n]*)*)\n[\n\t ]*$/s) {
+	# Get rid of //s
+	($s = $1) =~ s/\n\s*$S\s*/\n# /sg;
+    }
+    else {
+	return;
+    }
+
+    # Something's seriously wrong if there are any tokens left
+    die if $s =~ /[$B$E$S]/;
+
+    # Remove leading blanks
+    $s =~ s|^\s*||;
+
+    if (defined $_[1]) {
+	print "# $_[1]\n" || die "stdout: $!";
+    }
+    print "# $s\n" || die "stdout: $!";
+    if ($is_device) {
+	print "#\n" || die "stdout: $!";
+    }
+}
+
+
+sub run_to_file
+{
+    my $file = shift(@_);
+    my $ret;
+
+    open(OLDOUT,">&STDOUT") || die "dup 1: $!";
+    open(STDOUT,">$file") || die "$file: $!";
+    $ret = system(@_);
+    close STDOUT || die "$file: $!";
+    open(STDOUT,">&OLDOUT") || die "dup 1: $!";
+    return $ret;
+}
+
+
+#
+# Run tcc in cpp-only mode (-E)
+#
+push(@dirt,"_comtc_$$.i");
+$exit = &run_to_file("_comtc_$$.i",
+  "tcc",
+    "-Xp,-C",
+    "-E",
+    @ARGV);
+exit $exit if $exit;
+
+#
+# Load the preprocessed output and add location data
+#
+open(FILE,"_comtc_$$.i") || die "_comtc_$$.i: $!";
+$file = undef;
+$line = 0;
+while (<FILE>) {
+    if (/^# (\d+) "(.*)"/) {
+	$file = $2 eq "" ? "<stdin>" : $2;
+	$line = $1-1;
+
+	# insert null comment to prevent comment lookup from crossing file
+	# boundaries
+	$in .= "/**/\n";
+	next;
+    }
+    $line++;
+    $in .= "$file:$line $_";
+}
+close FILE;
+
+#
+# Run tcc again, this time enabling full processing
+#
+push(@dirt,"_comtc_$$.out","_comtc_$$.loc");
+$exit = &run_to_file("_comtc_$$.out",
+  "tcc",
+    "-l","_comtc_$$.loc",
+    "-n",
+    "-Xp,-fpreprocessed",
+    "-f","_comtc_$$.i",
+    @ARGV);
+exit $exit if $exit;
+
+#
+# Load tcc's "tc" output
+#
+open(FILE,"_comtc_$$.out") || die "_comtc_$$.out: $!";
+@out = <FILE>;
+close FILE;
+
+#
+# Load the location map
+#
+open(FILE,"_comtc_$$.loc") || die "_comtc_$$.loc: $!";
+for (<FILE>) {
+    $d{$1} = "$2:$3" if /^device (\S+) \S+ (.*) (\d+)$/;
+    $q{$1} = "$2:$3" if /^qdisc (\S+) \S+ (.*) (\d+)$/;
+    $c{$1} = "$2:$3" if /^class (\S+) \S+ (.*) (\d+)$/;
+    if (/^filter (\S+) \S+ (.*) (\d+)$/) {
+	($file,$line) = ($2,$3);
+	($id = $1) =~ s/::/:0:/; # rooted at qdisc
+	$f{$id} = "$file:$line";
+    }
+    if (/^element (\S+) \S+ (.*) (\d+)$/) {
+	($file,$line) = ($2,$3);
+	($id = $1) =~ s/::/:0:/; # rooted at qdisc
+	$e{$id} = "$file:$line";
+    }
+    $p{$1} = "$2:$3" if /^police (\S+) \S+ (.*) (\d+)$/;
+}
+close FILE;
+
+#
+# Produce annotated "tc" output
+#
+for (@out) {
+    &emit($d{$1},"Device $1:",1) if /\bdev (\S+)/ && !$used{$1}++;
+    &emit($q{"$1:$2"}) if /^tc qdisc .* dev (\S+) handle (\d+):0/;
+    &emit($c{"$1:$2"}) if /^tc class .* dev (\S+) classid (\d+:\d+)/;
+    if (/^tc filter .* dev (\S+) parent (\d+:\d+) .* prio (\d+) (handle)?/) {
+	if (defined $4) {
+	    # try to guess element index
+	    &emit($e{"$1:$2:$3:".($en{"$1:$2:$3"}+0)});
+	    $en{"$1:$2:$3"}++;
+	}
+	else {
+	    &emit($f{"$1:$2:$3"});
+	}
+    }
+    &emit($p{$1},"Policer:") if /^tc filter .* police index (\d+)/;
+    print $_ || die "stdout: $!";
+}
+
+#
+# At normal or abnormal exit, remove temporary files
+#
+END
+{
+    unlink(@dirt);
+}

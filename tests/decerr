@@ -1,0 +1,18 @@
+# decision in bit-and is caught early -----------------------------------------
+tcc -c 2>&1
+$a = 1 & drop;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "&" (integer and decision) near ";"
+# decision in shift is caught early (1) ---------------------------------------
+tcc -c 2>&1
+$a = 1 << drop;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "<<" (integer and decision) near ";"
+# decision in shift is caught early (2) ---------------------------------------
+tcc -c 2>&1
+$a = drop << 1;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "<<" (decision and integer) near ";"

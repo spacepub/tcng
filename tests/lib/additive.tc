@@ -1,0 +1,13 @@
+/*
+ * Additive headers, for tests/additive
+ */
+
+field h1 = raw;
+field h1_len1 = h1[0];                  /* length 1, in longs */
+field h1_len2 = (h1[1] & 0xf0) >> 4;    /* length 2, in shorts */
+field h2 = h1[(h1_len1 << 2)+(h1_len2 << 1)];
+field h2_x = h2[0];
+
+prio {
+    class if h2_x == 7;
+}

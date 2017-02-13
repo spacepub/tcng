@@ -1,0 +1,143 @@
+Value range check:
+ - tcc currently lets problem constructs like
+   $b = trTCM(cir 10bps,cbs 0B,pir 10bps,pbs 0B);
+   pass (causes failure in tc)
+
+Protocol-aware if_u32:
+ - algorithm isn't fully tested:
+   - does protocol selection always yield correct selection ?
+   - does protocol selection always yield formally acceptable data ?
+ - need to enable protocol awareness permanently
+ - needs to fix compatibility with policing
+
+Small IPv6-related issues:
+ - tcsim should use typed values, so that "send ::" knows that "::" is an IPv6
+   address and doesn't need ipv6: qualifier (and likewise for IPv4 addresses)
+ - tcc issues "ipv4" classifiers for the "tc" target even if using IPv6
+ - "C" target does not support 128 bit access and operations
+
+Big IPv6-related issues:
+ - tcng can't loop, so it can't usefully parse extension headers
+ - neither does tcng have a useful way for expressing alternative branches, so
+   adding TCP after IPv6 would either override the IPv4 TCP header offset, or
+   a new "tcp6" would have to be defined
+
+Other:
+ - "egress" clobbers skb->tc_index by implicitly setting default_index, which
+   breaks configurations that set skb->tc_index at ingress and use it for
+   classification at egress
+
+More:
+ - should make kernel patch to enable "prio" to drop, like lots of tcng
+   regression tests show
+ - tcsim should use better timer resolution than "jiffies"
+ - add limited macro capabilities to eliminate tcc_var2fix and to allow
+   addition of compound queuing constructs
+ - provide "qdisc primitives", like metering primitives
+ - port tcsim to recent 2.5 kernels
+ - tcsim: also generate IPv6 packet length
+ - tcsim: generate IPv4, TCP, UDP checksums
+
+
+Stuff below the double line is *very* old ...
+===============================================================================
+
+* nicer message if aborting with signal ?
+
+Short-term issues
+-----------------
+
+param.c:
+
+- param_print gets confused if parameter exists at qdisc and class, but is not
+  defaulted (e.g. priomap and most other CBQ parameters)
+- check: are there parameters at CBQ classes that aren't defaulted among child
+  classes (again, priomap comes to mind, but we hide this from the external
+  interface anyway) ?
+
+external interface:
+
+- fix "dump_all found no matching choice for value 0x0 in tcindex" problem
+  (tests/misfeature)
+
+
+Long-term issues
+----------------
+
+classes, general:
+
+- check to what extent forward-declared variables can be abused to
+  construct invalid references
+
+documentation (tomorrow is always a good day for writing documentation):
+
+- add complete flow description to doc/external.tex
+- merge README.tccext into doc/external.tex
+
+ext_all:
+
+- FFS: consider either always suppressing or always generating optional
+  parameters with default values
+- document that we print flag parameters with numeric argument
+- dumping really has three modes: "only filter", "one device", "all devices".
+  Should also support "one device".
+
+iflib_bit:
+
+- support "if" via u32 using bit tree algorithms
+- add reordering constraints and reorder where useful (need to define this
+  first)
+- make bit tree functions generate more compact matches (i.e. find local
+  optimum for leaf balance)
+- optimize bit tree functions
+
+iflib_arith:
+
+-  make c:build_le generate more compact expressions by testing multiple bits
+   per comparison
+
+policing:
+
+- support "drop on" (like "drop if")
+
+qdisc.c:
+
+- for defaults, also take into account "reclassify" (or at least report it if
+  we can't support it)
+
+target support:
+
+- support more than one external target
+
+tccext:
+
+- include user-provided label in element lines
+
+tunnels:
+
+- integrate Milena's tunneling suggestions
+
+object identifiers:
+
+- check: qdisc:class:... may "class" be empty also for tunnel ?
+
+dsmark:
+
+- consider using fields instead of mask/value
+
+"C" target:
+
+- should implement u32 classifier using perfect hashes, see
+  http://burtleburtle.net/bob/hash/perfect.html
+  (link courtesy of Mario Luoni)
+
+Strings:
+
+- strings have a moderate memory leak problem
+- general: consider switching data handling to pointer passing, along with
+  reference counts
+
+Distribution:
+
+- add RPM requirements and make RPMs portable across distributions (e.g.
+  RH's cpp vs. SuSE's c_preprocessor)

@@ -1,0 +1,72 @@
+# dsmark did not adjust parent qdisc when resolving class 0 collision ---------
+tcc | sed 's/.*parent //p;d'
+dsmark (indices 1) {
+    class (0);
+    fifo;
+}
+EOF
+1:0 pfifo
+# inner qdisc of explicit CBQ root class was not dumped on tc -----------------
+tcc | grep fifo
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (0,rate 10Mbps) {
+	fifo;
+    }
+}
+EOF
+tc qdisc add dev eth0 handle 2:0 parent 1:0 pfifo
+# verify that inner qdisc is checked in above case ----------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (0,rate 10Mbps) {
+        prio (bands 3) { class (10); }
+    }
+}
+EOF
+ERROR
+<stdin>:5: prio class number must be in the range 1..3
+# verify that qdisc of root does not clobber defaults -------------------------
+tcsim
+#include "tcngreg.def"
+
+dev eth0 {
+    cbq (CBQ_PARAMS) {
+	class (0,rate 10Mbps) {
+	    class (rate 1Mbps,prio 1);
+	    fifo;
+	}
+    }
+}
+EOF
+# CBQ messed up order of filters on parent and root ---------------------------
+tcsim -v 2>&1 # | sed 's/.* tcindex .* (\\(.:.\\).*/\\1/p;d'
+#include "tcngreg.def" 
+
+dev eth0 {
+    cbq (CBQ_PARAMS) {
+	$f1 = tcindex;
+        class (0,rate 10Mbps) {
+	    class (1,rate 5Mbps,prio 1)
+		on tcindex element (0);
+	    class (2,rate 5Mbps,prio 1)
+		on $f1(0);
+	}
+    }
+}
+
+send tc_index=0 0
+EOF
+ERROR
+<stdin>:5: please specify filters either at CBQ qdisc or at root class
+# -B did not sort bits --------------------------------------------------------
+tcc -xif:err -B 2>&1 | grep match
+prio {
+    class if raw[2] == 0x22 && raw[0] == 0x11;
+}
+EOF
+match 0:0:8=0x11 0:16:8=0x22 action 1
+match action 0

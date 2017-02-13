@@ -1,0 +1,119 @@
+# use variable IP header length -----------------------------------------------
+tcc -xif:err 2>&1 | sed '/offset/p;/match/p;d'
+#include "fields.tc"
+
+prio {
+    class if udp_sport == 22;
+}
+EOF
+offset 100 = 0+(0:4:4 << 5)
+match 0:72:8=0x11 100:0:16=0x0016 action 1
+match action 0
+# use constant IP header length (trusting) ------------------------------------
+tcc -xif:err 2>&1 | sed '/offset/p;/match/p;d'
+#include "fields.tc"
+
+field ip_nexthdr = ip_hdr[20];
+
+prio {
+    class if udp_sport == 22;
+}
+EOF
+match 0:72:8=0x11 0:160:16=0x0016 action 1
+match action 0
+# use constant IP header length (with check) ----------------------------------
+tcc -xif:err 2>&1 | sed '/offset/p;/match/p;d'
+#include "fields.tc"
+
+field ip_nexthdr = ip_hdr[20] if ip_hl == 5;
+
+prio {
+    class if udp_sport == 22;
+}
+EOF
+match 0:4:4=0x5 0:72:8=0x11 0:160:16=0x0016 action 1
+match action 0
+# fields and negation: f == 1 -------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -v -Xc,-xif:test | \
+  sed '/.*(1:\\(.\\),.*/s//\\1/p;d'
+dev eth0 10000 {
+   field f = raw[1] if raw[0] == 1;
+
+    prio {
+	class if f == 1;
+	class if 1;
+    }
+}
+
+send 0 0
+send 0 1
+send 1 0
+send 1 1
+EOF
+2
+2
+2
+1
+# fields and negation: f != 1 -------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -v -Xc,-xif:test | \
+  sed '/.*(1:\\(.\\),.*/s//\\1/p;d'
+dev eth0 10000 {
+   field f = raw[1] if raw[0] == 1;
+
+    prio {
+	class if f != 1;
+	class if 1;
+    }
+}
+
+send 0 0
+send 0 1
+send 1 0
+send 1 1
+EOF
+2
+2
+1
+2
+# fields and negation: !(f == 1) ----------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -v -Xc,-xif:test | \
+  sed '/.*(1:\\(.\\),.*/s//\\1/p;d'
+dev eth0 10000 {
+   field f = raw[1] if raw[0] == 1;
+
+    prio {
+	class if !(f == 1);
+	class if 1;
+    }
+}
+
+send 0 0
+send 0 1
+send 1 0
+send 1 1
+EOF
+1
+1
+1
+2
+# fields and negation: !(f != 1) ----------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -v -Xc,-xif:test | \
+  sed '/.*(1:\\(.\\),.*/s//\\1/p;d'
+dev eth0 10000 {
+   field f = raw[1] if raw[0] == 1;
+
+    prio {
+	class if !(f != 1);
+	class if 1;
+    }
+}
+
+send 0 0
+send 0 1
+send 1 0
+send 1 1
+EOF
+1
+1
+2
+1

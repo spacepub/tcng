@@ -1,0 +1,27 @@
+# check that tcc's usage output lines are short enough ------------------------
+[ `cd bin; ./tcc -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that tcc-module's usage output lines are short enough -----------------
+[ `cd bin; ./tcc-module -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that tcsim's usage output lines are short enough ----------------------
+[ `cd bin; ./tcsim -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that tcsim_filter's usage output lines are short enough ---------------
+[ `cd bin; ./tcsim_filter -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that tcsim_plot's usage output lines are short enough -----------------
+[ `cd bin; ./tcsim_plot -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that runtests.sh's usage output lines are short enough ----------------
+[ `cd scripts; ./runtests.sh -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that topdir.sh's usage output lines are short enough ------------------
+[ `cd scripts; ./topdir.sh -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that trinity's usage output lines are short enough --------------------
+[ `cd scripts; ./trinity -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0
+# check that configure's usage output lines are short enough ------------------
+[ `./configure -h 2>&1 | wc -L` -lt 80 ]; echo $?
+0

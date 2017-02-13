@@ -1,0 +1,18 @@
+# TCNG: if is always generated last -------------------------------------------
+tcc | sed '/\\(:[0-9]\\).*/s//\\1/'
+#include "tcngreg.def"
+#include "fields.tc"
+
+cbq (CBQ_PARAMS,prio 1) {
+    class (rate 1Mbps) {
+	class (rate 1Mbps) if (ip_dst == 1.2.3.4);
+    }
+    class (rate 2Mbps) if (ip_dst == 1.2.3.5);
+}
+EOF
+tc qdisc add dev eth0 handle 1:0
+tc class add dev eth0 parent 1:0
+tc class add dev eth0 parent 1:1
+tc class add dev eth0 parent 1:0
+tc filter add dev eth0 parent 1:1
+tc filter add dev eth0 parent 1:1

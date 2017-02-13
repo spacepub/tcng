@@ -1,0 +1,28 @@
+# dsmark failed to merge class 0 with auto-generated class for qdisc ----------
+PATH=$PATH:tcc/ext tcc -xif:echo -Xx,all 2>&1 >/dev/null
+dsmark (indices 1) {
+    class (0);
+    fifo;
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 1
+class 0 = qdisc 2
+qdisc 2 = fifo
+action 0 = unspec
+match action 0
+# tccext did not find nested classes ------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 >/dev/null | sed 's/^ *//'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (0,rate 10Mbps) {
+	class (1,rate 1Mbps)
+	  if 1;
+    }
+}
+EOF
+eth0 egress
+  qdisc 1 cbq
+    class 0
+      class 1

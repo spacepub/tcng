@@ -1,0 +1,36 @@
+#
+# Makefile-clean - Build tcsim (cleanup targets)
+#
+# Written 2001-2004 by Werner Almesberger
+# Copyright 2001 EPFL-ICA, Network Robots
+# Copyright 2002 Bivio Networks, Werner Almesberger
+# Copyright 2003,2004 Werner Almesberger
+#
+
+include ../Common.make
+
+CLEAN=lex.yy.c y.tab.c y.tab.h y.output $(OBJS) .depend
+SPOTLESS=tcsim
+
+.PHONY:			clean spotless ephemeral immaculate
+
+ephemeral:
+			echo $(CLEAN) $(SPOTLESS)
+			$(MAKE) -C modules -s ephemeral | tr ' ' '\012' | \
+			  sed 's|^|modules/|'
+			[ ! -d klib ] || find klib -print
+			[ ! -d ulib ] || find ulib -print
+
+clean:
+			$(MAKE) -C modules clean
+			rm -f $(CLEAN)
+			[ ! -d klib ] || $(MAKE) -C klib clean
+			[ ! -d ulib ] || $(MAKE) -C ulib clean
+
+spotless:		clean
+			$(MAKE) -C modules spotless
+			rm -f $(SPOTLESS)
+			rm -rf klib ulib
+
+immaculate:		spotless
+			$(MAKE) -C modules immaculate

@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# tcc-ext-err - Echo configuration back on standard error
+#
+# Written 2001 by Werner Almesberger
+# Copyright 2001 Network Robots
+#
+
+if [ -z "$1" ]; then
+    echo "usage: $0 mode ..." 1>&2
+    exit 1
+fi
+
+mode=$1
+shift
+case "$mode" in
+    config)	for n in debug_target "$@"; do
+		    echo "$n"
+		done;;
+    check)	;;
+    build)	echo "# $1" 1>&2
+		cat 1>&2
+		echo "# END" 1>&2;;
+    *)		echo "$0: unrecognized mode $mode" 1>&2
+		exit 1;;
+esac
+exit 0

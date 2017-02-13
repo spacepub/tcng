@@ -1,0 +1,129 @@
+# fields can be redefined (1/3) -----------------------------------------------
+tcc -xif:err 2>&1 | grep '^match'
+field f = raw[0];
+field f = raw[1];
+
+prio {
+    class if f == 0;
+}
+EOF
+match 0:8:8=0x00 action 1
+match action 0
+# fields can be redefined (2/3) -----------------------------------------------
+tcc -xif:err 2>&1 | grep '^match'
+field f = raw[1] if raw[0] == 1;
+field f = raw[2];
+
+prio {
+    class if f == 0;
+}
+EOF
+match 0:16:8=0x00 action 1
+match action 0
+# fields can be redefined (3/3) -----------------------------------------------
+tcc -xif:err 2>&1 | grep '^match'
+field f = raw[1];
+field f = raw[2] if raw[0] == 2;
+
+prio {
+    class if f == 0;
+}
+EOF
+match 0:0:8=0x02 0:16:8=0x00 action 1
+match action 0
+# field redefinition is transitive --------------------------------------------
+tcc -xif:err 2>&1 | grep '^match'
+field first = raw[2];
+field second = first[2];
+field first = raw[4];
+
+prio {
+    class if second == 0;
+}
+EOF
+match 0:48:8=0x00 action 1
+match action 0
+# field redefinition is loop-free ---------------------------------------------
+tcc 2>&1
+field first = raw[2];
+field second = first[2];
+field first = second[0];
+EOF
+ERROR
+<stdin>:3: field "second" defined after redefined field near ";"
+# fields can be redefined in devices ------------------------------------------
+tcc -xif:err 2>&1 | grep 'action 1$'
+field f = raw[1];
+
+eth0 {
+    prio {
+	class if f == 0;
+    }
+}
+
+eth1 {
+    field f = raw[0];	// MUST be after the device name
+    prio {
+	class if f == 0;
+    }
+}
+EOF
+match 0:8:8=0x00 action 1
+match 0:0:8=0x00 action 1
+# fields can be redefined between classes -------------------------------------
+tcc -xif:err 2>&1 | grep 'action [12]$'
+field f = raw[0];
+
+prio {
+    class if f == 0;
+    field f = raw[1];
+    class if f == 0;
+}
+EOF
+match 0:0:8=0x00 action 1
+match 0:8:8=0x00 action 2
+# fields can't be redefined between if clauses (wrong syntax) -----------------
+tcc 2>&1
+field f = raw[0];
+
+prio {
+    class
+	if f == 0;
+	field f = raw[1];	// there are no assignments between if
+	if f == 0;		// selectors
+}
+EOF
+ERROR
+<stdin>:7: "if" anchor doesn't work yet and will be re-designed near "if"
+# "field ... if" has precedence over "if ..." ---------------------------------
+tcc -xif:err 2>&1 | grep 'action 1$'
+prio {
+    field f = raw[1] if raw[0] == 1;
+    class
+	if f == 0;
+}
+EOF
+match 0:0:16=0x0100 action 1
+# can use "field ... if 1" to change precedence -------------------------------
+tcc 2>&1
+field f = raw[0];
+
+prio {
+    class
+	if f == 0;
+    field f = raw[1] if 1;	// there are no assignments between if
+    if whatever;		// selectors, so adding the field definition
+}				// makes the next if an "if anchor"
+EOF
+ERROR
+<stdin>:7: "if" anchor doesn't work yet and will be re-designed near "if"
+# "field ... if 1" actually works ---------------------------------------------
+tcc -xif:err 2>&1 | grep '^match'
+field f = raw[0] if 1;
+
+prio {
+    class if f == 0;
+}
+EOF
+match 0:0:8=0x00 action 1
+match action 0

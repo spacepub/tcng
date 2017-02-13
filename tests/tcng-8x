@@ -1,0 +1,29 @@
+# tcsim_filter dev=xxx works --------------------------------------------------
+tcsim | tcsim_filter dev=foo tos
+#include "packet.def"
+
+dev foo
+dev bar
+
+send foo IP_PCK($ip_tos=23)
+send bar IP_PCK($ip_tos=42)
+EOF
+0.000000 E:17 20 0x00000000
+# tcsim_filter does not output packet ID --------------------------------------
+tcsim | tcsim_filter
+dev eth0
+send 0
+EOF
+0.000000 E 1 0x00000000
+# fw filter does not allow element number 0 -----------------------------------
+tcsim 2>&1
+dev eth0 {
+    prio {
+	fw {
+	    class on element(0);
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:4: fw element ID must be non-zero

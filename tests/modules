@@ -1,0 +1,35 @@
+# insmod sch_discard ----------------------------------------------------------
+tcsim
+dev eth0 10000
+insmod tcsim/modules/sch_discard.o
+preload tcsim/modules/q_discard.so
+tc qdisc add dev eth0 root handle 1:0 discard
+tc qdisc show dev eth0
+EOF
+qdisc discard 1:
+# insmod cls_unspec -----------------------------------------------------------
+tcsim
+dev eth0 10000
+insmod tcsim/modules/cls_unspec.o
+preload tcsim/modules/f_unspec.so
+tc qdisc add dev eth0 root handle 1:0 prio
+tc filter add dev eth0 parent 1:0 proto ip prio 1 unspec
+tc filter show dev eth0
+EOF
+filter parent 1: protocol ip pref 1 unspec 
+# automagic preload -----------------------------------------------------------
+LD_LIBRARY_PATH=tcsim/modules tcsim
+dev eth0 10000
+insmod tcsim/modules/sch_discard.o
+tc qdisc add dev eth0 root handle 1:0 discard
+tc qdisc show dev eth0
+EOF
+qdisc discard 1:
+# failed automagic preload ----------------------------------------------------
+LD_LIBRARY_PATH= tcsim 2>&1
+dev eth0 10000
+insmod tcsim/modules/sch_discard.o
+tc qdisc add dev eth0 root handle 1:0 discard
+EOF
+ERROR
+qdisc discard not found

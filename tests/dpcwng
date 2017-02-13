@@ -1,0 +1,39 @@
+# dsmark: warn if class of inner qdisc has number -----------------------------
+tcc -c 2>&1
+dsmark {
+    class (1) { fifo; }
+}
+EOF
+<stdin>:2: warning: suggest unnumbered and parameter-less class for inner qdisc of dsmark
+<stdin>:2: warning: class for shared qdisc should be implicit
+# dsmark: warn if class of inner qdisc uses class selection path --------------
+tcc -c 2>&1
+dsmark {
+    class (<>) { fifo; }
+}
+EOF
+<stdin>:2: warning: suggest unnumbered and parameter-less class for inner qdisc of dsmark
+<stdin>:2: warning: class for shared qdisc should be implicit
+# dsmark: warn if class of inner qdisc has "value" parameter ------------------
+tcc -c 2>&1
+dsmark {
+    class (value 123) { fifo; }
+}
+EOF
+<stdin>:2: warning: suggest unnumbered and parameter-less class for inner qdisc of dsmark
+<stdin>:2: warning: class for shared qdisc should be implicit
+# dsmark: warn if class of inner qdisc has "mask" parameter -------------------
+tcc -c 2>&1
+dsmark {
+    class (mask 123) { fifo; }
+}
+EOF
+<stdin>:2: warning: suggest unnumbered and parameter-less class for inner qdisc of dsmark
+<stdin>:2: warning: class for shared qdisc should be implicit
+# dsmark: don't warn if "mask" parameter is defaulted -------------------------
+tcc -c 2>&1
+dsmark (mask 42) {
+    class { fifo; }
+}
+EOF
+<stdin>:2: warning: class for shared qdisc should be implicit

@@ -1,0 +1,77 @@
+# do not select CBQ class 0 ---------------------------------------------------
+sh -c 'ulimit -t 10; exec tcsim/tcsim -q 2>/dev/null'
+#include "packet.def"
+
+dev eth0 
+{       
+    cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+	class (2, rate 10kbps, bounded)
+	    if ip_dst == 10.0.0.0 && ip_tos!=0x10;
+    }
+}
+
+send IP_PCK($ip_src=10.0.0.0 $ip_tos=0x10)
+EOF
+# CBQ class 0 is substituted with "if" ----------------------------------------
+tcc | sed '/.*classid /s///p;d'
+cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+    class (0, rate 100Mbps, bounded)
+	if 1;
+}
+EOF
+1:ffff
+# CBQ class 0 is substituted with "if" (collision) ----------------------------
+tcc | sed '/.*filter.*classid /s///p;d'
+cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+    class (0, rate 100Mbps, bounded)
+	if 1
+    {
+	class (0xffff,rate 10Mbps);
+    }
+}
+EOF
+1:fffe
+# CBQ class 0 cannot be used with "fw" ----------------------------------------
+tcc 2>&1 >/dev/null
+cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+    class (0, rate 100Mbps, bounded)
+	on fw element (1);
+}
+EOF
+ERROR
+<stdin>:2: cannot substitute class ID 0 with this filter
+# CBQ class 0 cannot be used with "route" -------------------------------------
+tcc 2>&1 >/dev/null
+cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+    class (0, rate 100Mbps, bounded)
+	on route element;
+}
+EOF
+ERROR
+<stdin>:2: cannot substitute class ID 0 with this filter
+# CBQ class 0 cannot be used with "rsvp" -------------------------------------
+tcc 2>&1 >/dev/null
+cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+    class (0, rate 100Mbps, bounded)
+	on rsvp element (src 1.2.3.4,dst 5.6.7.8,ipproto "tcp");
+}
+EOF
+ERROR
+<stdin>:2: cannot substitute class ID 0 with this filter
+# CBQ class 0 cannot be used with "tcindex" -----------------------------------
+tcc 2>&1 >/dev/null
+cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+    class (0, rate 100Mbps, bounded)
+	on tcindex element (0);
+}
+EOF
+ERROR
+<stdin>:2: cannot substitute class ID 0 with this filter
+# non-zero CBQ classes are not substituted ------------------------------------
+tcc | sed '/.*filter.*classid /s///p;d'
+cbq (bandwidth 100Mbps, maxburst 5p, avpkt 1000B, allot 1500B) {
+    class (1, rate 100Mbps, bounded)
+	on fw element (1);
+}
+EOF
+1:1

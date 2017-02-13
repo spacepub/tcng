@@ -1,0 +1,8 @@
+# tccext: impossible match does not "leak" to next rule -----------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0] == 0 && raw[0] == 12;
+    drop if 1;
+}
+EOF
+match action 0

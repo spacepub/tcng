@@ -1,0 +1,26 @@
+# TCNG: CBQ properly maintains "bandwidth" default ----------------------------
+tcc | sed '${/bps.*/s//bps/;p;};d'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS)
+{
+    class (rate 1Mbps) {
+	gred (bandwidth 4Mbps,avpkt 1kB,burst 5kB,limit 10kB,max 8kB,min 2kB) {
+	    class (probability 0.1);
+	    class (probability 0.2,default);
+	}
+    }
+    class (rate 2Mbps);
+}
+EOF
+tc class add dev eth0 parent 1:0 classid 1:2 cbq bandwidth 1250000bps
+# TCNG: keyword "isolated" is recognized --------------------------------------
+tcsim
+#include "tcngreg.def"
+
+dev eth0 {
+    cbq (CBQ_PARAMS) {
+	class (rate 1Mbps,prio 1,isolated);
+    }
+}
+EOF

@@ -1,0 +1,100 @@
+# ! is "expensive" ------------------------------------------------------------
+tcc -c -Wexpensive -Wexperror 2>&1
+prio {
+    class if !(raw[0] == 1);
+}
+EOF
+ERROR
+<stdin>:2: "!" is an "expensive" operation
+# != is "expensive" -----------------------------------------------------------
+tcc -c -Wexpensive -Wexperror 2>&1
+prio {
+    class if raw[0] != 1;
+}
+EOF
+ERROR
+<stdin>:2: "!=" is an "expensive" operation
+# > is "expensive" ------------------------------------------------------------
+tcc -c -Wexpensive -Wexperror 2>&1
+prio {
+    class if raw[0] > 1;
+}
+EOF
+ERROR
+<stdin>:2: ">" is an "expensive" operation
+# >= is "expensive" -----------------------------------------------------------
+tcc -c -Wexpensive -Wexperror 2>&1
+prio {
+    class if raw[0] >= 2;
+}
+EOF
+ERROR
+<stdin>:2: ">=" is an "expensive" operation
+# not self-contained action tree is "expensive" -------------------------------
+tcc -xif:err -Wexpensive -Wexperror -Xx,nounspec 2>&1 >/dev/null
+$p = police(rate 1Mbps,burst 2kB);
+
+prio {
+    class if conform $p;
+}
+EOF
+ERROR
+<stdin>:3: policing expressions not always leading to a decision are "expensive"
+# self-contained action tree is not "expensive" -------------------------------
+tcc -xif:err -Wexpensive -Wexperror >/dev/null 2>/dev/null
+$p = police(rate 1Mbps,burst 2kB);
+
+prio {
+    class if raw[0] == 1 && (conform $p || drop);
+}
+EOF
+# "light-weight" multi-color markers are not "expensive" (srTCM) --------------
+tcc -xif:err -Wexpensive -Wexperror >/dev/null 2>/dev/null
+#include "meters.tc"
+
+set_srTCM($x,cir 1 kbps,cbs 1kB,ebs 500B,mtu 1000B);
+
+#define C (raw[0] == 1 || raw[0] == 2)
+
+prio {
+    class (1) if C && __srTCM_green($x);
+    class (2) if C && __srTCM_yellow($x);
+    class (3) if C && __srTCM_red($x);
+}
+EOF
+# "light-weight" multi-color markers are not "expensive" (trTCM) --------------
+tcc -xif:err -Wexpensive -Wexperror >/dev/null 2>/dev/null
+#include "meters.tc"
+
+set_trTCM($x,cir 1 kbps,cbs 1kB,pir 2kbps,pbs 500B);
+
+#define C (raw[0] == 1 || raw[0] == 2)
+
+prio {
+    class (1) if C && __trTCM_green($x);
+    class (2) if C && __trTCM_yellow($x);
+    class (3) if C && __trTCM_red($x);
+}
+EOF
+# -Wexpensive: each operation is reported once --------------------------------
+tcc -c -Wexpensive 2>&1
+prio {
+    class if !(raw[0] == 1) || raw[1] != 2 || raw[2] > 3 || raw[3] >= 4;
+    class if !(raw[3] == 1) || raw[2] != 2 || raw[1] > 3 || raw[0] >= 4;
+}
+EOF
+<stdin>:2: warning: "!" is an "expensive" operation
+<stdin>:2: warning: "!=" is an "expensive" operation
+<stdin>:2: warning: ">" is an "expensive" operation
+<stdin>:2: warning: ">=" is an "expensive" operation
+# -Wexpensive: each expression is reported once -------------------------------
+tcc -xif:err -Wexpensive -Xx,nounspec 2>&1 | grep warning
+$p = police(rate 1Mbps,burst 2kB);
+$q = police(rate 1Mbps,burst 2kB);
+
+prio {
+    class if conform $p;
+    class if conform $q;
+}
+EOF
+<stdin>:4: warning: policing expressions not always leading to a decision are "expensive"

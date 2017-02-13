@@ -1,0 +1,96 @@
+# GRED errors: inner qdisc ----------------------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class () {
+	fifo;
+    }
+}
+EOF
+ERROR
+<stdin>:5: gred has no inner qdiscs
+# GRED errors: lack of default class ------------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class ();
+}
+EOF
+ERROR
+<stdin>:3: gred requires one class to be marked as "default"
+# GRED errors: manual and automatic class number assignment conflict ----------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class ();
+    class (0,default);
+}
+EOF
+ERROR
+<stdin>:5: can't auto-assign gred class IDs in this case
+# GRED errors: DP as default --------------------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class (0,default);
+}
+EOF
+ERROR
+<stdin>:4: can't use DP 0 as default
+# GRED errors: multiple default classes ---------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class (1,default);
+    class (2,default);
+}
+EOF
+ERROR
+<stdin>:5: more than one class marked as "default"
+# GRED errors: "grio" without "prio" ------------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS,grio) {
+    class (1,default);
+}
+EOF
+ERROR
+<stdin>:4: "prio" is required when using grio
+# GRED errors: "prio" without "grio" ------------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class (1,default,prio 1);
+}
+EOF
+ERROR
+<stdin>:4: "prio" is not allowed if not using grio
+# GRED errors: "prio" value just right ----------------------------------------
+tcsim
+/* Note: testing for overly large value needs some prior cross-checking */
+dev eth0 {
+    #include "tcngreg.def"
+
+    gred (RED_PARAMS,grio) {
+	class (1,prio 2);
+	class (2,default,prio 1);
+    }
+}
+EOF
+# GRED errors: no default class -----------------------------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class (1);
+}
+EOF
+ERROR
+<stdin>:3: gred requires one class to be marked as "default"

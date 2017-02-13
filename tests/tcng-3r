@@ -1,0 +1,11 @@
+# iflib_bit handles redundancy with multiple branches right (INEFFICIENTLY) ---
+tcc -xif:err -B 2>&1 | grep -c match
+#include "fields.tc"
+
+prio {
+    class if tcp_sport == 80 || tcp_dport == 80;
+    class if ip_dst == 10.0.0.0 && drop;
+    class if udp_dport != 53;
+}
+EOF
+10

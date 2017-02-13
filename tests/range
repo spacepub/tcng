@@ -1,0 +1,88 @@
+# integer multiplication exceeding 32 bits yields error -----------------------
+tcc -c 2>&1
+$a = 1000000000*5;
+EOF
+ERROR
+<stdin>:1: 1000000000*5 exceeds 32 bit range near ";"
+# << overflow in constant yields error (32 bit, small shift) ------------------
+tcc -c 2>&1
+$a = 1000000000 << 3;
+EOF
+ERROR
+<stdin>:1: left shift overflows 32 bit range near ";"
+# << overflow in constant yields error (32 bit, large shift) ------------------
+tcc -c 2>&1
+$a = 1 << 32;
+EOF
+ERROR
+<stdin>:1: left shift overflows 32 bit range near ";"
+# << non-overflow is okay (32 bit, small shift) -------------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$a = 1 << 31;
+EOF
+$a = 2147483648
+# << non-overflow is okay (32 bit, large shift) -------------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$a = 0 << 32;
+EOF
+$a = 0
+# << overflow in constant yields error (128 bit, small shift) -----------------
+tcc -c 2>&1
+$a = 8000:: << 2;
+EOF
+ERROR
+<stdin>:1: left shift overflows 128 bit range near ";"
+# << overflow in constant yields error (128 bit, large shift) -----------------
+tcc -c 2>&1
+$a = ::1 << 128;
+EOF
+ERROR
+<stdin>:1: left shift overflows 128 bit range near ";"
+# << non-overflow is okay (128 bit, small shift) ------------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$a = 1:: << 15;
+EOF
+$a = 8000:0:0:0:0:0:0:0
+# << non-overflow is okay (128 bit, large shift) ------------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$a = :: << 128;
+EOF
+$a = 0:0:0:0:0:0:0:0
+# >> by more than word length yields zero (32 bit) ----------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$a = 1000 >> 32;
+EOF
+$a = 0
+# >> by more than word length yields zero (128 bit) ---------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$a = 1:2:3:4:5:6:7:8 >> 130;
+EOF
+$a = 0:0:0:0:0:0:0:0
+# << overflow in access yields warning (32 bit, short shift) ------------------
+tcc 2>&1 >/dev/null
+prio {
+    class (1) if (raw[0].nl >> 1) == 0x80000000;
+}
+EOF
+warning: left-shift of value in access exceeds 32 bit range
+# << overflow in access yields warning (32 bit, large shift) ------------------
+tcc 2>&1 >/dev/null
+prio {
+    class (1) if (raw[0].nl >> 40) == 1;
+}
+EOF
+warning: left-shift of value in access exceeds 32 bit range
+# << overflow in access yields warning (128 bit, short shift) -----------------
+tcc 2>&1 >/dev/null
+prio {
+    class (1) if (raw[0].ipv6 >> 2) == 4000::;
+}
+EOF
+warning: left-shift of value in access exceeds 128 bit range
+# << overflow in access yields warning (128 bit, large shift) -----------------
+tcc 2>&1 >/dev/null
+prio {
+    class (1) if (raw[0].ipv6 >> 130) == 1;
+}
+EOF
+warning: left-shift of value in access exceeds 128 bit range

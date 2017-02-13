@@ -1,0 +1,141 @@
+# u32 DLB: class/unspec -------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 10 Mbps {
+    #include "meters.tc"
+
+    $p = DLB(cir 1kbps,cbs 5000B,pir 2kbps,pbs 2000B);
+    prio {
+	class if DLB_ok($p);
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+UNSPEC (-1)
+# u32 DLB: class/drop ---------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 10 Mbps {
+    #include "meters.tc"
+
+    $p = DLB(cir 1kbps,cbs 5000B,pir 2kbps,pbs 2000B);
+    prio {
+	class if DLB_ok($p);
+	drop if 1;
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+SHOT (2)
+# u32 DLB: class/class --------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 10 Mbps {
+    #include "meters.tc"
+
+    $p = DLB(cir 1kbps,cbs 5000B,pir 2kbps,pbs 2000B);
+    prio {
+	class if DLB_ok($p);
+	class if 1;
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+OK (0) (1:2, 0x2)
+# u32 DLB: drop/unspec --------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 10 Mbps {
+    #include "meters.tc"
+
+    $p = DLB(cir 1kbps,cbs 5000B,pir 2kbps,pbs 2000B);
+    prio {
+	drop if DLB_ok($p);
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+end
+EOF
+SHOT (2)
+SHOT (2)
+UNSPEC (-1)
+# u32 DLB: drop/class ---------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 10 Mbps {
+    #include "meters.tc"
+
+    $p = DLB(cir 1kbps,cbs 5000B,pir 2kbps,pbs 2000B);
+    prio {
+	drop if DLB_ok($p);
+	class if 1;
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+end
+EOF
+SHOT (2)
+SHOT (2)
+OK (0) (1:1, 0x1)
+# u32 DLB: else_drop ----------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 10 Mbps {
+    #include "meters.tc"
+
+    $p = DLB(cir 1kbps,cbs 5000B,pir 2kbps,pbs 2000B);
+    prio {
+	class if DLB_else_drop($p);
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+send TCP_PCK(NOTHING) 0 x 960	/* 1000 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+SHOT (2)

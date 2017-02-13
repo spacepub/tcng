@@ -1,0 +1,59 @@
+# printing usage of redefined structures does not crash tcc -------------------
+tcc -c -u stderr -w 2>&1
+prio {
+    $b = { $a = { $x.foo = 1; $x.bar = 2; $x; }; $a; };
+    $b = 123;
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+{
+{
+$x.foo = 1
+$x.bar = 2
+}
+$a.foo = 1
+$a.bar = 2
+}
+$b.foo = 1
+$b.bar = 2
+$b = 123
+}
+}
+# parent link is preserved when assigning structures --------------------------
+tcc -c -u stderr -w 2>&1
+prio {
+    $x.a.foo = 1;
+    $x.b.foo = 2;
+    $y.z = $x;
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+$x.a.foo = 1
+$x.b.foo = 2
+$y.z.a.foo = 1
+$y.z.b.foo = 2
+}
+}
+# scoping is (still) not confused by identical names --------------------------
+tcc -c -u stderr -w 2>&1
+prio {
+    $x = 1;
+    {
+        $x = 2;
+        $y = $x;
+    }
+    $z = $x;
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+$x = 1
+{
+$x = 2
+$y = 2
+}
+$z = 1
+}
+}

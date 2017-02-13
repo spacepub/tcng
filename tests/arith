@@ -1,0 +1,273 @@
+# Arithmetic: 0 * x -> 0 ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 0*raw[0] == 0;
+    }
+}
+EOF
+match u32 0x0 0x0 at 0
+# Arithmetic: X * 0 -> 0 ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0]*0 == 1;
+    }
+}
+EOF
+# Arithmetic: 1 * X -> X ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 1*raw[0] == 0x23;
+    }
+}
+EOF
+match u8 0x23 0xff at 0
+# Arithmetic: X * 1 -> X ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 1*(raw[0] & 0xf0) == 0x30;
+    }
+}
+EOF
+match u8 0x30 0xf0 at 0
+# Arithmetic: (2^n) * X -> X << n ---------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 32*raw[0] == 0x20;
+    }
+}
+EOF
+match u8 0x1 0xff at 0
+# Arithmetic: X * (2^n) -> X << n ---------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0]*8 == 0x10;
+    }
+}
+EOF
+match u8 0x2 0xff at 0
+# Arithmetic: X / 1 -> X ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0].ns/1 == 0x45;
+    }
+}
+EOF
+match u16 0x45 0xffff at 0
+# Arithmetic: 0 / X -> 0 ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 0/raw[0] == 0x2;
+    }
+}
+EOF
+# Arithmetic: X / X -> 1 ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0]/raw[0] == 1;
+    }
+}
+EOF
+match u32 0x0 0x0 at 0
+# Arithmetic: X / (2^n) -> X >> n ---------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0].ns/16 == 80;
+    }
+}
+EOF
+match u16 0x500 0xfff0 at 0
+# Arithmetic: X % 1 -> 0 ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0] % 1 == 0;
+    }
+}
+EOF
+match u32 0x0 0x0 at 0
+# Arithmetic: X % (2^n) -> X & (2^n)-1 ----------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0] % 16 == 7;
+    }
+}
+EOF
+match u8 0x7 0xf at 0
+# Arithmetic: X % X -> 0 ------------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0] % raw[0] == 0;
+    }
+}
+EOF
+match u32 0x0 0x0 at 0
+# Arithmetic: C1 < C2 -> 0  (if C1 < C2) --------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 7 < 6;
+    }
+}
+EOF
+# Arithmetic: C1 >= C2 -> 1  (if C1 >= C2) ------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 10 >= 6;
+    }
+}
+EOF
+match u32 0x0 0x0 at 0
+# Arithmetic: X+C1 rel C2 -> X rel C1-C2 --------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0].ns+5 == 8;
+    }
+}
+EOF
+match u16 0x3 0xffff at 0
+# Arithmetic: C2 rel X+C1 -> X inv rel C1-C2 (C rel X -> X rel C) -------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 9 > raw[0].ns+5;
+    }
+}
+EOF
+match u16 0x0 0xfffc at 0
+# Arithmetic: C1+X rel C2 -> X rel C1-C2 --------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 7+raw[0] == 8;
+    }
+}
+EOF
+match u8 0x1 0xff at 0
+# Arithmetic: X-C1 rel C2 -> X rel C1+C2 --------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0]-2 == 8;
+    }
+}
+EOF
+match u8 0xa 0xff at 0
+# Arithmetic: C1-X rel C2 -> X rel C1-C2 --------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if 10-raw[0] == 8;
+    }
+}
+EOF
+match u8 0x2 0xff at 0
+# Arithmetic: X < 2^n -> X & ~(2^n-1) == 0 ------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0].nl < 32;
+    }
+}
+EOF
+match u32 0x0 0xffffffe0 at 0
+# Arithmetic: X <= 2^n-1 -> X & ~(2^n-1) == 0 ---------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0].nl <= 31;
+    }
+}
+EOF
+match u32 0x0 0xffffffe0 at 0
+# Arithmetic: X == X -> 1 -----------------------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[1] == raw[1];
+    }
+}
+EOF
+match u32 0x0 0x0 at 0
+# Arithmetic: X ^ C1 == C2 -> X == C1 ^ C2 ------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if (raw[1] ^ 0x11) == 0x35;
+    }
+}
+EOF
+match u8 0x24 0xff at 1
+# Arithmetic: C1 ^ X == C2 -> X == C1 ^ C2 ------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if (0xfe ^ raw[0]) == 0x22;
+    }
+}
+EOF
+match u8 0xdc 0xff at 0
+# Arithmetic: X | C1 == C2 -> 0  (if (C1 & C2) != C1) -------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if (raw[0] | 0x11) == 0x23;
+    }
+}
+EOF
+# Arithmetic: X | C1 == C2 ->  X & ~C1 == (C2 & ~C1)  (else) ------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if (raw[0] | 0x11) == 0x33;
+    }
+}
+EOF
+match u8 0x22 0xee at 0
+# Arithmetic: X < 2^n -> X & ~(2^n-1) == 0 ------------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0] < 64;
+    }
+}
+EOF
+match u8 0x0 0xc0 at 0
+# Arithmetic: X <= 2^n-1 -> X & ~(2^n-1) == 0 ---------------------------------
+tcsim -v | sed '/.*u32 m/{s//m/;s/ classid.*//p;};d'
+dev lo {
+    prio {
+	class if raw[0] <= 31;
+    }
+}
+EOF
+match u8 0x0 0xe0 at 0
+# Arithmetic: X > 2^n-1 -> X & ~(2^n-1) != 0 ----------------------------------
+tcc -xif:err 2>&1 | grep '^match'
+prio {
+    class if raw[0] > 15;
+}
+EOF
+match 0:0:4=0x0 action 0
+match action 1
+# Arithmetic: X >= 2^n -> X & ~(2^n-1) != 0 -----------------------------------
+tcc -xif:err 2>&1 | grep '^match'
+prio {
+    class if raw[0] >= 8;
+}
+EOF
+match 0:0:5=0x00 action 0
+match action 1

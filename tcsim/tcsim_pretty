@@ -1,0 +1,98 @@
+#!/usr/bin/perl
+#
+# tcsim_pretty - Pretty printer for tcsim traces
+#
+# Written 2001,2002 by Werner Almesberger
+# Copyright 2001 EPFL-ICA
+# Copyright 2002 Bivio Networks
+#
+
+$WIDTH = 79;
+$INDENT = 13;
+
+$wrap = 1;
+$last_time = -1;
+
+
+sub id
+{
+    local ($time,$skb,$len) = @_;
+
+    if ($time != $last_time) {
+	$s = sprintf("%.6f",$time);
+	print (("-"x(13-length($s)))." $s ".("-"x($WIDTH-15))."\n");
+	$last_time = $time;
+    }
+    if ($skb eq "0x0") {
+	print sprintf("  %-10s ","n/a");
+    }
+    elsif ($skb eq $last_skb) {
+	print sprintf("  %-10s ","=");
+    }
+    else {
+	print sprintf("  %-10s ",$skb);
+	$last_skb = $skb;
+    }
+}
+
+
+sub print
+{
+    local ($s) = @_;
+
+    $pos = $INDENT;
+    for (split(" ",$s)) {
+	if ($wrap && $pos+1+length >= $WIDTH && $pos != 14) {
+	    $pos = $INDENT+2;
+	    print "\n".(" "x$INDENT)."+  ";
+	}
+	print " " unless $pos == $INDENT;
+	print;
+	$pos += 1+length;
+    }
+    print "\n";
+}
+
+
+while ($ARGV[0] =~ /^-/) {
+    $opt = shift;
+    if ($opt eq "-l") { $wrap = 0; }
+    elsif ($opt eq "-w" && $ARGV[0] =~ /^\d+$/) { $WIDTH = shift; }
+    else {
+	print STDERR "usage: $0 [-l] [-w width] [file ...]\n";
+	exit(1);
+    }
+}
+
+
+while (<>) {
+    chop;
+    if (/^(\d+\.\d+) ([IED]) : (0x[0-9a-f]+) (\d+) : /) {
+	undef $last_skb if $2 ne "D";
+	&id($1,$3,$4);
+	&print("$2 $4: $'");
+	next;
+    }
+    if (/^(\d+\.\d+) T : /) {
+	&id($1,"0x0",0);
+	&print("T $'");
+	next;
+    }
+    if (/^(\d+\.\d+) \* : (0x[0-9a-f]+) (\d+) : /) {
+	&id($1,$2,$3);
+	&print("* $'");
+	next;
+    }
+    if (/^(\d+\.\d+) \* : /) {
+	&id($1,"0x0",0);
+	&print("* $'");
+	next;
+    }
+    if (/^(\d+\.\d+) ([iedxrcp]) : (0x[0-9a-f]+) (\d+) : <(\d+)> /) {
+	&id($1,$3,$4);
+	&print("$2   ".("  "x$5).$');
+	next;
+    }
+    print "ERROR: unrecognizable input line\n$_\n";
+    exit(1);
+}

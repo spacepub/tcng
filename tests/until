@@ -1,0 +1,21 @@
+# tcsim: "every" without "until" ----------------------------------------------
+tcsim | wc -l | tr -d ' '
+every 0.5s echo "test"
+time 2.4s
+end
+EOF
+6
+# tcsim: "every" with "until" between intervals -------------------------------
+tcsim | wc -l | tr -d ' '
+every 0.5s until 2.2s echo "test"
+time 2.4s
+end
+EOF
+5
+# tcsim: "every" with "until" at interval -------------------------------------
+tcsim | wc -l | tr -d ' '
+every 0.5s until 1.5s echo "test"
+time 2.4s
+end
+EOF
+4

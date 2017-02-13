@@ -1,0 +1,38 @@
+/*
+ * xdev - Cross-device policing
+ *
+ * Traffic on different interfaces is limited by the same policer.
+ */
+
+#define LIMIT 200kbps
+#define BURST 10kB
+#define MTU 1500B
+
+#define PACKET	UDP_HDR($ip_src=10.0.0.1 $ip_dst=10.0.0.2) \
+		0 x 980	/* 1000-sizeof(iphdr) = 980 bytes */
+
+dev eth0 1000 /* 1 Mbps */
+dev eth1 1000 /* 1 Mbps */ {
+    $p = police (rate LIMIT,burst BURST,mtu MTU) drop;
+    eth0 {
+	dsmark (indices 1) {
+	    class (0) on tcindex (mask 0) element (0)
+	      police $p;
+	}
+    }
+    eth1 {
+	dsmark (indices 1) {
+	    class (0) on tcindex (mask 0) element (0)
+	      police $p;
+	}
+    }
+}
+
+/* Use slightly odd numbers or get weird phase effects in simulation. */
+
+every 0.011s send eth0 PACKET	/* 800 kbps */
+time 1.006s
+every 0.011s send eth1 PACKET	/* 800 kbps */
+
+time 5s
+end

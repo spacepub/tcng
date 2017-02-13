@@ -1,0 +1,17 @@
+/*
+ * default.tc - tcng default includes
+ *
+ * Written 2002 by Werner Almesberger
+ * Copyright 2002 Bivio Networks, Werner Almesberger
+ */
+
+
+#ifndef DEFAULT_TC
+#define DEFAULT_TC
+
+#include "fields.tc"
+#include "meters.tc"
+#include "ports.tc"
+
+#endif /* DEFAULT_TC */
+#line 1 /* work around funny cpp that embeds -included files */

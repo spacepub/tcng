@@ -1,0 +1,173 @@
+# simple structures work ------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x.foo = 5;
+$x.bar = 17;
+$y = $x.foo+$x.bar;
+EOF
+$x.foo = 5
+$x.bar = 17
+$y = 22
+# multi-level structures work too (1) -----------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x.y.z = 10;
+$a.b.c.d.e = 20;
+$a.a.a = $x.y.z*$a.b.c.d.e;
+EOF
+$x.y.z = 10
+$a.b.c.d.e = 20
+$a.a.a = 200
+# multi-level structures work too (2) -----------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a.b.c = 10;
+$a.b.x.y = 20;
+$a.b.z = $a.b.x.y/$a.b.c;
+EOF
+$a.b.c = 10
+$a.b.x.y = 20
+$a.b.z = 2
+# structure assignment works --------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x.a = 1;
+$x.b = 2;
+$y = $x;
+EOF
+$x.a = 1
+$x.b = 2
+$y.a = 1
+$y.b = 2
+# structure assignment works with compound expressions ------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$y = { $x.a = 1; $x.b = 2; $x; };
+EOF
+{
+$x.a = 1
+$x.b = 2
+}
+$y.a = 1
+$y.b = 2
+# cannot access entries in undefined variable ---------------------------------
+tcc -c 2>&1
+$foo = $bar.xyzzy;
+EOF
+ERROR
+<stdin>:1: variable bar is uninitialized near ";"
+# cannot access entries in non-structure --------------------------------------
+tcc -c 2>&1
+$bar = 5;
+$foo = $bar.xyzzy;
+EOF
+ERROR
+<stdin>:2: expected structure, not type integer near ";"
+# cannot access unknown entry -------------------------------------------------
+tcc -c 2>&1
+$bar.foo = 5;
+$foo = $bar.xyzzy;
+EOF
+ERROR
+<stdin>:2: no entry "xyzzy" in structure near ";"
+# cannot forward-reference structure entry ------------------------------------
+tcc -c 2>&1
+dsmark {
+    class (<$foo.bar>) if 1;
+}
+EOF
+ERROR
+<stdin>:2: cannot forward-declare structure entries near ">"
+# cannot assign to entry in forward-declared variable -------------------------
+tcc -c 2>&1
+dsmark {
+    class (<$foo>) if 1;
+    prio {
+	$foo.fail = class;
+    }
+}
+EOF
+ERROR
+<stdin>:5: cannot access structure entries in forward-declared variable near "}"
+# structure entries cross scope boundaries (1) --------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$foo.x = 5;
+prio {
+    $foo.y = $foo.x;
+}
+$bar = $foo.x+$foo.y;
+EOF
+$foo.x = 5
+{ device eth0
+{ qdisc eth0:1
+$foo.y = 5
+}
+$bar = 10
+}
+# structure entries cross scope boundaries (2) --------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$foo.x = 5;
+$foo.y = 7;
+prio {
+    $foo.y = 10;
+}
+$bar = $foo.x+$foo.y;
+EOF
+$foo.x = 5
+$foo.y = 7
+{ device eth0
+{ qdisc eth0:1
+$foo.y = 10
+}
+$bar = 15
+}
+# unaccessed structure is unused ----------------------------------------------
+tcc -c 2>&1
+$foo.xy = 10;
+EOF
+<stdin>:1: warning: unused variable foo
+# conversion to structure redefines -------------------------------------------
+tcc -c -Wredefine 2>&1
+$foo = 5;
+$foo.foo = 0;
+EOF
+<stdin>:1: warning: unused variable foo
+<stdin>:2: warning: variable foo redefined
+<stdin>:2: warning: unused variable foo
+# accessing any entry makes structure "used" ----------------------------------
+tcc -c 2>&1
+$foo.x = 1;
+$foo.y = 2;
+$bar = $foo.x;
+EOF
+<stdin>:3: warning: unused variable bar
+# creating new entry does not make structure unused ---------------------------
+tcc -c 2>&1
+$foo.x = 1;
+$foo.y = $foo.x;
+EOF
+# changing existing entry does not make structure unused ----------------------
+tcc -c 2>&1
+$foo.x = 1;
+$foo.x = $foo.x;
+EOF
+# expansion of structure assignments ------------------------------------------
+tcc -c -u stderr 2>&1
+warn "nounused";
+$x = { $x.a = "xa"; $x.foo = "xfoo"; $x; };
+$y = { $y.bar = "ybar"; $y.b = "yb"; $y; };
+$y.b = $x;
+$z = $y;
+EOF
+{
+$x.a = "xa"
+$x.foo = "xfoo"
+}
+$x.a = "xa"
+$x.foo = "xfoo"
+{
+$y.bar = "ybar"
+$y.b = "yb"
+}
+$y.bar = "ybar"
+$y.b = "yb"
+$y.b.a = "xa"
+$y.b.foo = "xfoo"
+$z.bar = "ybar"
+$z.b.a = "xa"
+$z.b.foo = "xfoo"

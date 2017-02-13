@@ -1,0 +1,118 @@
+# class variables: multiple class selections ----------------------------------
+tcc -Wnoexplicit -xif:err -Xx,all 2>&1 >/dev/null | grep -v ^#
+#include "fields.tc"
+
+field ip_nexthdr = ip_hdr[20] if ip_hl == 5;
+
+dsmark (default_index 0) {
+    $be = class { /* DEPRECATED !!! use <> now */
+        fifo;
+    }
+    drop if tcp_sport == 80;
+    class $be if tcp_sport == 53;
+    drop if tcp_sport == 13;
+    class $be if udp_sport != 0;
+    drop if 1;
+}
+EOF
+block eth0 egress
+qdisc 2 = fifo
+qdisc 1 = dsmark default_index 0 indices 1
+class 0 = qdisc 2
+action 0 = class 1:0
+action 1 = drop
+match 0:4:4=0x5 0:72:8=0x06 0:160:16=0x0050 action 1
+match 0:4:4=0x5 0:72:8=0x06 0:160:16=0x0035 action 0
+match 0:4:4=0x5 0:72:8=0x06 0:160:16=0x000D action 1
+match 0:4:4=0x5 0:72:8=0x11 0:160:16=0x0000 action 1
+match 0:4:4=0x5 0:72:8=0x11 action 0
+match action 1
+# class variables: selections on assignment too -------------------------------
+tcc -Wnoexplicit -xif:err -Xx,all 2>&1 >/dev/null | grep -v ^#
+#include "fields.tc"
+
+field ip_nexthdr = ip_hdr[20] if ip_hl == 5;
+
+dsmark (default_index 0) {
+    $be = class
+	if tcp_sport == 6667
+    {
+        fifo;
+    }
+    drop if tcp_sport == 80;
+    class $be if tcp_sport == 53;
+    drop if tcp_sport == 13;
+    class $be if udp_sport != 0;
+    drop if 1;
+}
+EOF
+block eth0 egress
+qdisc 2 = fifo
+qdisc 1 = dsmark default_index 0 indices 1
+class 0 = qdisc 2
+action 1 = drop
+action 0 = class 1:0
+match 0:4:4=0x5 0:72:8=0x06 0:160:16=0x1A0B action 0
+match 0:4:4=0x5 0:72:8=0x06 0:160:16=0x0050 action 1
+match 0:4:4=0x5 0:72:8=0x06 0:160:16=0x0035 action 0
+match 0:4:4=0x5 0:72:8=0x06 0:160:16=0x000D action 1
+match 0:4:4=0x5 0:72:8=0x11 0:160:16=0x0000 action 1
+match 0:4:4=0x5 0:72:8=0x11 action 0
+match action 1
+# class variables: reuse class selection path (1) -----------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v ^#
+dsmark {
+    $c = class (<$a>) if raw[0] == 1;
+    class (<$b>) if raw[0] == 2;
+    class $c if raw[0] == 3;
+
+    prio {
+	$a = class {}
+	$b = class {}
+    }
+}
+EOF
+block eth0 egress
+qdisc 2 = prio bands 3
+class 1 =
+class 2 =
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+class 1 =
+class 2 =
+action 0 = unspec
+action 2 = class 1:2,2:2
+action 1 = class 1:1,2:1
+match 0:0:8=0x01 action 1
+match 0:0:8=0x02 action 2
+match 0:0:8=0x03 action 1
+match action 0
+# class variables: reuse class selection path (2) -----------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v ^#
+dsmark {
+    $c = class (<$a>);
+    $d = class (<$b>);
+
+    prio {
+	$a = class {}
+	$b = class {}
+    }
+
+    class $c if raw[0] == 1;
+    class $d if raw[0] == 2;
+}
+EOF
+block eth0 egress
+qdisc 2 = prio bands 3
+class 1 =
+class 2 =
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+class 1 =
+class 2 =
+action 0 = unspec
+action 2 = class 1:2,2:2
+action 1 = class 1:1,2:1
+match 0:0:8=0x01 action 1
+match 0:0:8=0x02 action 2
+match action 0

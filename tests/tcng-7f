@@ -1,0 +1,7 @@
+# mask operator :32 leaves field intact ---------------------------------------
+tcc -xif:err 2>&1 | grep 'match 0'
+prio {
+    class if raw[0].nl:32 == 0x12345678;
+}
+EOF
+match 0:0:32=0x12345678 action 1

@@ -1,0 +1,276 @@
+# protocol combination: baseline  ---------------------------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>) if meta_protocol == 1;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=2)
+end
+EOF
+D:05 1
+# protocol combination: && ----------------------------------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>) if meta_protocol == 1 && meta_protocol == 2;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=2)
+end
+EOF
+# protocol combination: || ----------------------------------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>) if meta_protocol == 1 || meta_protocol == 2;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=2)
+end
+EOF
+D:02 1
+D:05 1
+# protocol combination: field after protocol ----------------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>) if meta_protocol == 1 && raw[1] == 5;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=1 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=2)
+send protocol=2 IP_PCK($ip_tos=5)
+end
+EOF
+D:05 1
+# protocol combination: && with field after protocol --------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (meta_protocol == 1 && raw[1] == 5) &&
+	      (meta_protocol == 2 && raw[1] == 3);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=1 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=5)
+end
+EOF
+# protocol combination: || with field after protocol --------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (meta_protocol == 1 && raw[1] == 5) ||
+	      (meta_protocol == 2 && raw[1] == 3);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=1 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=5)
+end
+EOF
+D:03 1
+D:05 1
+# protocol combination: protocol after field ----------------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>) if raw[1] == 5 && meta_protocol == 1;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=1 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=2)
+send protocol=2 IP_PCK($ip_tos=5)
+end
+EOF
+D:05 1
+# protocol combination: && with protocol after field --------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (raw[1] == 5 && meta_protocol == 1) &&
+	      (raw[1] == 3 && meta_protocol == 2);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=1 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=5)
+end
+EOF
+# protocol combination: || with protocol after field --------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (raw[1] == 5 && meta_protocol == 1) ||
+	      (raw[1] == 3 && meta_protocol == 2);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=1 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=2 IP_PCK($ip_tos=5)
+end
+EOF
+D:03 1
+D:05 1
+# protocol combination: && followed by single field ---------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (meta_protocol == 1 && meta_protocol == 2) && raw[0] == 0x45;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+end
+EOF
+# protocol combination: || followed by single field ---------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (meta_protocol == 1 || meta_protocol == 2) && raw[0] == 0x45;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+end
+EOF
+D:03 1
+D:05 1
+# protocol combination: && after single field ---------------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if raw[0] == 0x45 && (meta_protocol == 1 && meta_protocol == 2);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+end
+EOF
+# protocol combination: || after single field ---------------------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if raw[0] == 0x45 && (meta_protocol == 1 || meta_protocol == 2);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+end
+EOF
+D:03 1
+D:05 1
+# protocol combination: && followed by single field alternative ---------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (meta_protocol == 1 && meta_protocol == 2) || raw[1] == 5;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=3 IP_PCK($ip_tos=4)
+send protocol=4 IP_PCK($ip_tos=5)
+end
+EOF
+D:05 2
+# protocol combination: || followed by single field alternative ---------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if (meta_protocol == 1 || meta_protocol == 2) || raw[1] == 5;
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=3 IP_PCK($ip_tos=4)
+send protocol=4 IP_PCK($ip_tos=5)
+end
+EOF
+D:03 1
+D:05 2
+# protocol combination: && after single field alternative ---------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if raw[1] == 5 || (meta_protocol == 1 && meta_protocol == 2);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=3 IP_PCK($ip_tos=4)
+send protocol=4 IP_PCK($ip_tos=5)
+end
+EOF
+D:05 2
+# protocol combination: || after single field alternative ---------------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 100Mbps {
+    egress {
+	class (<>)
+	    if raw[1] == 5 || (meta_protocol == 1 || meta_protocol == 2);
+	drop if 1;
+    }
+}
+
+send protocol=1 IP_PCK($ip_tos=5)
+send protocol=2 IP_PCK($ip_tos=3)
+send protocol=3 IP_PCK($ip_tos=4)
+send protocol=4 IP_PCK($ip_tos=5)
+end
+EOF
+D:03 1
+D:05 2

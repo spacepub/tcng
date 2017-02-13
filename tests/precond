@@ -1,0 +1,99 @@
+# precond: non-field means "true" ---------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep match
+prio {
+    class if precond 666;
+}
+EOF
+match action 1
+# precond: no precondition means "true" ---------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep match
+field foo = raw[1];
+
+prio {
+    class if precond foo;
+}
+EOF
+match action 1
+# precond: single precondition on access --------------------------------------
+tcc -xif:err 2>&1 >/dev/null |  sed 's/match \\(.*\\) action.*/\\1/p;d'
+field foo = raw[1] if raw == 1;
+
+prio {
+    class if precond foo;
+}
+EOF
+0:0:8=0x01
+# precond: two preconditions on accesses separated by || ----------------------
+tcc -xif:err 2>&1 >/dev/null |  sed 's/match \\(.*\\) action.*/\\1/p;d'
+field one = raw[1] if raw[0] == 1;
+field two = raw[1] if raw[2] == 2;
+
+prio {
+    class if precond(one || two);
+}
+EOF
+0:0:8=0x01 0:16:8=0x02
+# precond: two preconditions on accesses separated by || (check order) --------
+tcc -xif:err 2>&1 >/dev/null |  sed 's/match \\(.*\\) action.*/\\1/p;d'
+field one = raw[raw[10]] if raw[raw[20]] == 1;
+field two = raw[raw[10]] if raw[raw[30]] == 2;
+
+prio {
+    class if precond(one || two);
+}
+EOF
+100:0:8=0x01 101:0:8=0x02
+# precond: nested preconditions on access -------------------------------------
+tcc -xif:err 2>&1 >/dev/null |  sed 's/match \\(.*\\) action.*/\\1/p;d'
+field one = raw[1] if raw[0] == 1;
+field two = one if raw[2] == 2;
+
+prio {
+    class if precond(two == 67);
+}
+EOF
+0:0:8=0x01 0:16:8=0x02
+# precond: precondition on access in precondition -----------------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field one = raw[1] if raw[0] == 1;
+field two = raw[2] if one == 2;
+
+prio {
+    class if precond(two == 67);
+}
+EOF
+0:0:16=0x0102
+# precond: precondition on precondition in precondition -----------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field one = raw[1] if raw[0] == 1;
+field two = raw[2] if one == 2;
+field three = raw[3] if two == 3;
+prio {
+    class if precond(three == 34);
+}
+EOF
+0:0:24=0x010203
+# precond: precondition on one access (of two, in ||) in precondition ---------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field one = raw[1] if raw[0] == 1;
+field two = raw[2] if raw[0] == 0 || one == 2;
+
+prio {
+    class if precond(two == 67);
+}
+EOF
+0:0:8=0x00
+0:0:16=0x0102
+# precond: precondition on one access (of two, in &&) in precondition ---------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+field one = raw[1] if raw[0] == 1;
+field two = raw[2] if raw[0] == 0 && one == 2;
+
+prio {
+    class if precond(two == 67);
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = class 1:1
+match action 0

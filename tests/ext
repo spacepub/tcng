@@ -1,0 +1,67 @@
+# "if" test using "external" target -------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -v -Xc,-xif:test | sed '/.* c .*returns /s///p;d'
+dev eth0 {
+    prio {
+	class if raw[0] == 42;
+    }
+}
+
+send 00 01 02 03
+send 0x2a 01 02 03
+EOF
+UNSPEC (-1)
+OK (0) (1:1, 0x0)
+# idem, with offsets ----------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -n -v -Xc,-xif:test | sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 {
+    #include "fields.tc"
+
+    prio {
+	class if udp_dport == PORT_DOMAIN;
+    }
+}
+
+send UDP_PCK($src=10.0.0.1 $dst=10.0.0.2 $sport=PORT_USER $dport=PORT_USER)
+send UDP_PCK($src=10.0.0.1 $dst=10.0.0.2 $sport=PORT_USER $dport=PORT_DOMAIN)
+send TCP_PCK($src=10.0.0.1 $dst=10.0.0.2 $sport=PORT_USER $dport=PORT_DOMAIN)
+EOF
+UNSPEC (-1)
+OK (0) (1:1, 0x0)
+UNSPEC (-1)
+# idem, comparing all three classifiers ---------------------------------------
+trinity -v
+#define PORT_USER 0x1234
+
+dev eth0 {
+    prio {
+        class if udp_dport == PORT_DOMAIN;
+    }
+}
+
+send UDP_PCK($udp_sport=PORT_USER $udp_dport=PORT_USER)
+send UDP_PCK($udp_sport=PORT_USER $udp_dport=PORT_DOMAIN)
+send TCP_PCK($udp_sport=PORT_USER $udp_dport=PORT_DOMAIN)
+EOF
+UNSPEC (-1)
+OK (0) (1:1)
+UNSPEC (-1)
+# "external" eliminates redundant bits ----------------------------------------
+tcc -xif:err 2>&1 | sed '/^match/s/ action.*//p;d'
+prio {
+    class if raw[0] == 5 && raw[0].ns == 0x501;
+}
+EOF
+match 0:0:16=0x0501
+match
+# "external" sorts bits -------------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match/s/ action.*//p;d'
+prio {
+    class if raw[2] == 1 && raw[0] == 2;
+}
+EOF
+match 0:0:8=0x02 0:16:8=0x01
+match

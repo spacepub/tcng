@@ -1,0 +1,16 @@
+--- iproute2/tc/f_u32.c.orig	Wed Jul 11 10:01:13 2001
++++ iproute2/tc/f_u32.c	Wed Jul 11 10:02:00 2001
+@@ -368,11 +368,11 @@
+ 	plen = addr.bitlen;
+ 	for (i=0; i<plen; i+=32) {
+ 		if (((i+31)&~0x1F)<=plen) {
+-			if ((res = pack_key(sel, addr.data[i/32], 0xFFFFFFFF, off+(i/32), offmask)) < 0)
++			if ((res = pack_key(sel, addr.data[i/32], 0xFFFFFFFF, off+(i/8), offmask)) < 0)
+ 				return -1;
+ 		} else if (i<plen) {
+ 			__u32 mask = htonl(0xFFFFFFFF<<(32-(plen-i)));
+-			if ((res = pack_key(sel, addr.data[i/32], mask, off+(i/32), offmask)) < 0)
++			if ((res = pack_key(sel, addr.data[i/32], mask, off+(i/8), offmask)) < 0)
+ 				return -1;
+ 		}
+ 	}

@@ -1,0 +1,146 @@
+# SLB accepts mpu parameter ---------------------------------------------------
+tcc -c -Wnounused
+$p = SLB(cir 1kbps,cbs 10kB,mpu 100B);
+EOF
+# DLB accepts mpu parameter ---------------------------------------------------
+tcc -c -Wnounused
+$p = DLB(cir 1kbps,cbs 10kB,pir 10kbps,pbs 2kB,mpu 100B);
+EOF
+# srTCM accepts mpu parameter -------------------------------------------------
+tcc -c -Wnounused
+$p = srTCM(cir 1kbps,cbs 10kB,ebs 2kB,mpu 100B);
+EOF
+# trTCM accepts mpu parameter -------------------------------------------------
+tcc -c -Wnounused
+$p = trTCM(cir 1kbps,cbs 10kB,pir 10kbps,pbs 2kB,mpu 100B);
+EOF
+# SLB without MPU (ext)  ------------------------------------------------------
+PATH=$PATH:tcc/ext LD_LIBRARY_PATH=. tcsim -Xc,-xif:test | tcsim_filter -c
+dev eth0 1Gbps {
+    egress {
+	$p = SLB(cir 50kbps,cbs 300B);
+
+	class (<>) if SLB_else_drop($p);
+    }
+}
+
+every 0.01s send 0 x 125	/* 1 Mbps */
+time 1s
+end
+EOF
+D 52
+E 102
+# SLB with MPU (ext) ----------------------------------------------------------
+PATH=$PATH:tcc/ext LD_LIBRARY_PATH=. tcsim -Xc,-xif:test | tcsim_filter -c
+dev eth0 1Gbps {
+    egress { /* Note: cbs must be >= mpu */
+	$p = SLB(cir 50kbps,cbs 300B,mpu 250B);
+
+	class (<>) if SLB_else_drop($p);
+    }
+}
+
+every 0.01s send 0 x 125	/* 1 Mbps */
+time 1s
+end
+EOF
+D 26
+E 102
+# SLB without MPU (tc)  -------------------------------------------------------
+tcsim  | tcsim_filter -c | sed 's/55/52/'
+dev eth0 1Gbps {
+    egress {
+	$p = SLB(cir 50kbps,cbs 300B);
+
+	class (<>) if SLB_else_drop($p);
+    }
+}
+
+every 0.01s send 0 x 125	/* 1 Mbps */
+time 1s
+end
+EOF
+D 52
+E 102
+# SLB with MPU (tc) -----------------------------------------------------------
+tcsim | tcsim_filter -c
+dev eth0 1Gbps {
+    egress {
+	$p = SLB(cir 50kbps,cbs 300B,mpu 250B);
+
+	class (<>) if SLB_else_drop($p);
+    }
+}
+
+every 0.01s send 0 x 125	/* 1 Mbps */
+time 1s
+end
+EOF
+D 26
+E 102
+# tcc accepts correctly constructed DLB with MPU for tc -----------------------
+tcsim
+dev eth0 {
+    egress {
+	$b1 = bucket(rate 1kbps,burst 50kB,mpu 200B);
+	$b2 = bucket(rate 20kbps,burst 3kB,mpu 200B);
+
+	class (<>)
+	    if (conform($b1) && conform($b2) && count($b1) && count($b2)) ||
+	      drop;
+    }
+}
+EOF
+# tcc refuses DLB with mismatched MPU for tc (1) ------------------------------
+tcc 2>&1 >/dev/null
+egress {
+    $b1 = bucket(rate 1kbps,burst 50kB,mpu 100B);
+    $b2 = bucket(rate 20kbps,burst 3kB,mpu 200B);
+
+    class (<>)
+	if (conform($b1) && conform($b2) && count($b1) && count($b2)) || drop;
+}
+EOF
+ERROR
+<stdin>:2: buckets have incompatible MPU parameters
+# tcc refuses DLB with mismatched MPU for tc (2) ------------------------------
+tcc 2>&1 >/dev/null
+egress {
+    $b1 = bucket(rate 1kbps,burst 50kB);
+    $b2 = bucket(rate 20kbps,burst 3kB,mpu 200B);
+
+    class (<>)
+	if (conform($b1) && conform($b2) && count($b1) && count($b2)) || drop;
+}
+EOF
+ERROR
+<stdin>:2: buckets have incompatible MPU parameters
+# tcc refuses DLB with mismatched MPU for tc (3) ------------------------------
+tcc 2>&1 >/dev/null
+egress {
+    $b1 = bucket(rate 1kbps,burst 50kB,mpu 200B);
+    $b2 = bucket(rate 20kbps,burst 3kB);
+
+    class (<>)
+	if (conform($b1) && conform($b2) && count($b1) && count($b2)) || drop;
+}
+EOF
+ERROR
+<stdin>:2: buckets have incompatible MPU parameters
+# tcc doesn't warn if MPU < 256 -----------------------------------------------
+tcc 2>&1 >/dev/null
+egress {
+    $b = bucket(rate 1kbps,burst 50kB,mpu 255B);
+
+    class (<>) if conform($b) && count($b);
+}
+EOF
+# tcc warns if MPU >= 256 -----------------------------------------------------
+tcc 2>&1 >/dev/null
+egress {
+    $b = bucket(rate 1kbps,burst 50kB,mpu 256B);
+
+    class (<>) if conform($b) && count($b);
+}
+EOF
+<stdin>:2: warning: some versions of "tc" only support "mpu" < 256

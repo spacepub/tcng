@@ -1,0 +1,44 @@
+BEGIN CONDITIONAL
+tcsim
+dev eth0
+tc qdisc add dev eth0 root handle 1:0 tbf limit 20kB rate 1Mbit burst 3kB
+tc qdisc add dev eth0 parent 1:0 pfifo
+EOF
+# TBF without inner qdisc -----------------------------------------------------
+tcc -c
+tbf (mtu 1.5kB,limit 20kB,rate 1Mbps,burst 3kB);
+EOF
+# TBF with inner qdisc --------------------------------------------------------
+tcc -c
+tbf (mtu 1.5kB,limit 20kB,rate 1Mbps,burst 3kB) {
+    fifo;
+}
+EOF
+# TBF does not support classes ------------------------------------------------
+tcc -c 2>&1
+tbf (mtu 1.5kB,limit 20kB,rate 1Mbps,burst 3kB) {
+    class (1) {
+        fifo;
+    }
+}
+EOF
+ERROR
+<stdin>:2: qdisc "tbf" has no classes near "("
+# TBF does not support two inner qdiscs ---------------------------------------
+tcc -c 2>&1
+tbf (mtu 1.5kB,limit 20kB,rate 1Mbps,burst 3kB) {
+    fifo;
+    fifo;
+}
+EOF
+ERROR
+<stdin>:3: TBF can have only one inner qdisc
+# TBF checks inner qdisc ------------------------------------------------------
+tcc -c 2>&1
+tbf (mtu 1.5kB,limit 20kB,rate 1Mbps,burst 3kB) {
+    fifo(limit 10p,limit 10kB);
+}
+EOF
+ERROR
+<stdin>:2: duplicate parameter "limit"
+END CONDITIONAL

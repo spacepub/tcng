@@ -1,0 +1,112 @@
+# can re-define global variables ----------------------------------------------
+tcc -c -u stderr 2>&1
+$a = 1;
+$a = 2;
+EOF
+<stdin>:1: warning: unused variable a
+<stdin>:2: warning: unused variable a
+$a = 1
+$a = 2
+# can re-define used global variables -----------------------------------------
+tcc -c -u stderr 2>&1
+$a = 1;
+$b = $a+1;
+$a = 2;
+EOF
+<stdin>:3: warning: unused variable a
+<stdin>:2: warning: unused variable b
+$a = 1
+$b = 2
+$a = 2
+# can re-define local variables -----------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+prio {
+    $a = 1;
+    $a = 2;
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+$a = 1
+$a = 2
+}
+}
+# local variable does not re-define global ------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 1;
+eth5 {
+    $a = 2;
+    fifo;
+}
+EOF
+$a = 1
+{ device eth5
+$a = 2
+}
+# re-defined local variable does not re-define global -------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = 1;
+eth1 {
+   $x = 2;
+   $x = 3;
+   fifo;
+}
+EOF
+$x = 1
+{ device eth1
+$x = 2
+$x = 3
+}
+# -Wredefine reports global re-definition -------------------------------------
+tcc -c -u stderr 2>&1
+warn "unused","redefine";
+
+$y = 1;
+$y = 2;
+EOF
+<stdin>:3: warning: unused variable y
+<stdin>:4: warning: variable y redefined
+<stdin>:4: warning: unused variable y
+$y = 1
+$y = 2
+# -Wredefine reports local re-definition --------------------------------------
+tcc -c -u stderr -Wnounused -Wredefine 2>&1
+dsmark {
+    $z = 1;
+    $z = 2;
+    fifo;
+}
+EOF
+<stdin>:3: warning: variable z redefined
+{ device eth0
+{ qdisc eth0:1
+$z = 1
+$z = 2
+{ class eth0:1:0
+}
+}
+}
+# -Wredefine does not report local vs. global ---------------------------------
+tcc -c -u stderr -Wnounused -Wredefine 2>&1
+$c = 0;
+eth1 {
+    $c = 1;
+    fifo;
+}
+EOF
+$c = 0
+{ device eth1
+$c = 1
+}
+# variables and devices: variable right after device is okay ------------------
+tcc -c -u stderr -Wnounused 2>&1
+$foo = 1;
+eth0 {
+    $foo = 2;
+    fifo;
+}
+EOF
+$foo = 1
+{ device eth0
+$foo = 2
+}

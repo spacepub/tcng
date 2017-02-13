@@ -1,0 +1,268 @@
+/*
+ * packet4.def - Definitions for constructing TCPv4/IPv4 packets, analogous to
+ *		fields.tc
+ *
+ * Written 2001,2002 by Werner Almesberger
+ * Copyright 2001,2002 Network Robots
+ * Copyright 2002 Bivio Networks, Werner Almesberger
+ */
+
+#ifndef __INCLUDED_FROM_PACKET_DEF
+#warning packet4.def should only be included from packet.def
+#endif
+
+#ifndef PACKET4_DEF
+#define PACKET4_DEF
+
+/* ----- Global convenience defaults --------------------------------------- */
+
+
+/*
+ * WARNING: Since tcsim variables are global, these defaults change as soon
+ * as the variables are assigned some other value anywhere in the tcsim
+ * script. Therefore, they can only be relied upon if the scripts does not
+ * set them at all.
+ */
+
+$ip_proto = 0			// IP protocol: reserved (RFC1700)
+$ip_src = 10.0.0.1		// IP source address: private (RFC1918)
+$ip_dst = 10.0.0.2		// IP destination address: private (RFC1918)
+
+$tcp_sport = 0			// TCP source port: reserved (RFC1700)
+$tcp_dport = 0			// TCP destination port: reserved (RFC1700)
+
+$udp_sport = 0			// UDP source port: reserved (RFC1700)
+$udp_dport = 0			// UDP destination port: reserved (RFC1700)
+
+$icmp_type = ICMP_ECHO		// ICMP type of message: echo request (RFC1700)
+$icmp_code = 0			// ICMP type sub code: no code (RFC1700)
+
+$igmp_type = IGMP_MEMBERSHIP_QUERY // IGMP type: membership query (RFC2236)
+
+
+/* ----- IPv4 header (RFC791) ---------------------------------------------- */
+
+
+#define IP_HDR(params) \
+  $ip_v = 4		/* version					*/ \
+  $ip_hl = 5		/* header length (5 for "no options")		*/ \
+  $ip_tos = 0		/* type of service				*/ \
+  			/* total length, set by tcsim 			*/ \
+  $ip_id = 0		/* identification, RFC791 allows any value	*/ \
+  $ip_RF = 0		/* reserved fragment flag			*/ \
+  $ip_DF = 0		/* don't fragment flag				*/ \
+  $ip_MF = 0		/* more fragments flag				*/ \
+  $ip_off = 0		/* fragment offset field			*/ \
+  $ip_ttl = 64		/* time to live, RFC1700 recommends 64		*/ \
+			/* protocol, REQUIRED				*/ \
+  $ip_sum = 0		/* checksum					*/ \
+			/* source address, REQUIRED			*/ \
+			/* destination address, REQUIRED		*/ \
+									\
+  params								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |Version|  IHL  |Type of Service|          Total Length         |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ($ip_v << 4) | $ip_hl							\
+  $ip_tos								\
+  ns: 0			/* ip_len set by tcsim */			\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |         Identification        |Flags|      Fragment Offset    |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ns: $ip_id								\
+  ns: ($ip_RF << 15) | ($ip_DF << 14) | ($ip_MF << 13) | $ip_off	\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |  Time to Live |    Protocol   |         Header Checksum       |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  $ip_ttl								\
+  $ip_proto								\
+  ns: $ip_sum								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                       Source Address                          |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ipv4: $ip_src								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                    Destination Address                        |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ipv4: $ip_dst								\
+									\
+  /* ----- End of header ----- */
+
+
+/* ----- TCP header (RFC793) ----------------------------------------------- */
+
+
+#define TCP_HDR(params) \
+			/* source port, REQUIRED			*/ \
+			/* destination port, REQUIRED			*/ \
+  $tcp_seq = 0		/* sequence number				*/ \
+  $tcp_ack = 0		/* acknowledgement number			*/ \
+  $tcp_off = 5		/* data offset (5 for "no options")		*/ \
+  $tcp_flags = 0	/* tcp flags					*/ \
+  $tcp_URG = 0		/*   URG					*/ \
+  $tcp_ACK = 0		/*   ACK					*/ \
+  $tcp_PSH = 0		/*   PSH					*/ \
+  $tcp_RST = 0		/*   RST					*/ \
+  $tcp_SYN = 0		/*   SYN					*/ \
+  $tcp_FIN = 0		/*   FIN					*/ \
+  $tcp_win = 0		/* window					*/ \
+  $tcp_sum = 0		/* checksum					*/ \
+  $tcp_urp = 0		/* urgent pointer				*/ \
+									\
+  params								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |          Source Port          |       Destination Port        |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ns: $tcp_sport							\
+  ns: $tcp_dport							\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                        Sequence Number                        |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  nl: $tcp_seq								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                    Acknowledgment Number                      |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  nl: $tcp_ack								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |  Data |           |U|A|P|R|S|F|                               |	*/ \
+  /* | Offset| Reserved  |R|C|S|S|Y|I|            Window             |	*/ \
+  /* |       |           |G|K|H|T|N|N|                               |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  $tcp_off << 4								\
+  ($tcp_URG << 5) | ($tcp_ACK << 4) | ($tcp_PSH << 3) |			\
+    ($tcp_RST << 2) | ($tcp_SYN << 1) | $tcp_FIN | $tcp_flags		\
+  ns: $tcp_win								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |           Checksum            |         Urgent Pointer        |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ns: $tcp_sum								\
+  ns: $tcp_urp								\
+									\
+  /* ----- End of header ----- */
+
+
+/* ----- UDP header (RFC768) ----------------------------------------------- */
+
+
+#define UDP_HDR(params) \
+			/* source port, REQUIRED			*/ \
+			/* destination port, REQUIRED			*/ \
+  $udp_ulen = 0		/* udp length					*/ \
+  $udp_sum = 0		/* udp checksum					*/ \
+									\
+  params								\
+									\
+  /* +--------+--------+--------+--------+				*/ \
+  /* |     Source      |   Destination   |				*/ \
+  /* |      Port       |      Port       |				*/ \
+  /* +--------+--------+--------+--------+				*/ \
+									\
+  ns: $udp_sport							\
+  ns: $udp_dport							\
+									\
+  /* +--------+--------+--------+--------+				*/ \
+  /* |                 |                 |				*/ \
+  /* |     Length      |    Checksum     |				*/ \
+  /* +--------+--------+--------+--------+				*/ \
+									\
+  ns: $udp_ulen								\
+  ns: $udp_sum								\
+									\
+  /* ----- End of header ----- */
+
+
+/* ----- ICMP header (RFC792) ---------------------------------------------- */
+
+
+#define ICMP_HDR(params) \
+			/* type of message, REQUIRED			*/ \
+			/* type sub code, REQUIRED			*/ \
+  $icmp_sum = 0		/* checksum					*/ \
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |     Type      |     Code      |          Checksum             |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  $icmp_type								\
+  $icmp_code								\
+  ns: $icmp_sum								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                              ...                              |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  /* User must provide at least four more bytes. Format depends on	*/ \
+  /* message type.							*/ \
+									\
+  /* ----- End of header ----- */
+
+
+/* ----- IGMP header (RFC2236) --------------------------------------------- */
+
+#define IGMP_HDR(params) \
+			/* IGMP type, REQUIRED				*/ \
+  $igmp_code = 0	/* routing code aka Max Response Time 		*/ \
+			/*   (IGMPv1 compatibility makes this 10s)	*/ \
+  $igmp_sum = 0		/* checksum					*/ \
+  $igmp_group = 0	/* group address				*/ \
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |      Type     | Max Resp Time |           Checksum            |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  $igmp_type								\
+  $igmp_code								\
+  ns: $igmp_sum								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                         Group Address                         |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ipv4: $igmp_group							\
+									\
+  /* ----- End of header ----- */
+
+
+/* ----- Packed construction ----------------------------------------------- */
+
+
+#define IP_PCK(params) \
+  default protocol=ETH_P_IP IP_HDR(params)
+
+#define TCP_PCK(params) \
+  IP_HDR(params $ip_proto = IPPROTO_TCP) \
+  TCP_HDR(params)
+
+#define UDP_PCK(params) \
+  IP_HDR(params $ip_proto = IPPROTO_UDP) \
+  UDP_HDR(params)
+
+#define ICMP_PCK(params) \
+  IP_HDR(params $ip_proto = IPPROTO_ICMP) \
+  ICMP_HDR(params)
+
+#define IGMP_PCK(params) \
+  IP_HDR(params $ip_proto = IPPROTO_IGMP) \
+  IGMP_HDR(params)
+
+#endif /* PACKET4_DEF */

@@ -1,0 +1,8 @@
+# "tag" parameter accepts expressions -----------------------------------------
+tcc -c
+fifo(tag "te"+"st");
+EOF
+# "pragma" parameter accepts expressions --------------------------------------
+tcc -c
+fifo(pragma ("te"+"st")); /* somewhat ugly */
+EOF

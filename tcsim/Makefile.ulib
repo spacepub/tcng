@@ -1,0 +1,31 @@
+#
+# Makefile.ulib - Build the user-space library (iproute2)
+#
+# Written 2001 by Werner Almesberger
+# Copyright 2001 EPFL-ICA
+#
+
+all:		ulib.a
+
+include ../../Common.make
+
+#LIB_OBJS=iproute2/lib/utils.o iproute2/lib/dnet_ntop.o iproute2/lib/dnet_pton.o
+NL_LIB=iproute2/lib/libnetlink.a
+UTIL_LIB=iproute2/lib/libutil.a
+TC_LIB=iproute2/tc/libtc.a
+OBJS=$(NL_LIB) $(UTIL_LIB) $(TC_LIB)
+
+.PHONY:		clean
+
+ulib.a:		$(OBJS)
+		$(LD) -r -o ulib.o --whole-archive $(NL_LIB) \
+		  --whole-archive $(UTIL_LIB) --whole-archive $(TC_LIB)
+
+$(NL_LIB) $(UTIL_LIB):
+		$(MAKE) -e -C iproute2/lib all
+
+$(TC_LIB):
+		$(MAKE) -e -C iproute2/tc libtc.a
+
+clean:
+		rm -f ulib.o $(OBJS) iproute2/lib/*.o iproute2/tc/*.o

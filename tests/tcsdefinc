@@ -1,0 +1,32 @@
+# tcsim: no #include needed to get packet definitions -------------------------
+tcsim >/dev/null
+#define NOTHING
+
+dev eth0
+send IP_PCK(NOTHING)
+EOF
+# tcsim -n disables packet.def inclusion --------------------------------------
+tcsim -n 2>&1
+dev eth0
+send IP_PCK(NOTHING)
+EOF
+ERROR
+<stdin>:2: unknown device "IP_PCK" near "IP_PCK"
+# of course, we can #include packet.def explicitly (-n) -----------------------
+tcsim -n >/dev/null
+#include "packet.def"
+
+#define NOTHING
+
+dev eth0
+send IP_PCK(NOTHING)
+EOF
+# of course, we can #include packet.def explicitly (no -n) --------------------
+tcsim >/dev/null
+#include "packet.def"
+
+#define NOTHING
+
+dev eth0
+send IP_PCK(NOTHING)
+EOF

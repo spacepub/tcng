@@ -1,0 +1,8 @@
+From tests/tcng-2u
+# Double headers at external interface (nested)
+PATH=$PATH:tcc/ext tcc -xif:err tests/lib/nested.tc 2>&1 | \
+  sed '/^offset/,/^match/p;d'
+offset 1 = 0+(0:0:8 << 5)
+offset 2 = 1+(1:16:8 << 6)
+action 0 = class 1:1
+match 2:24:8=0x05 action 0

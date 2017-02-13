@@ -1,0 +1,124 @@
+# tcc does not alter DSMARK classes in ascending order ------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+dsmark (indices 4,mask 0) {
+    class (0);
+    class (1);
+    class (2);
+    class (3);
+}
+EOF
+0
+1
+2
+3
+# tcc sorts DSMARK classes (1/6) ----------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+dsmark (indices 4,mask 0) {
+    class (3);
+    class (2);
+    class (1);
+    class (0);
+}
+EOF
+0
+1
+2
+3
+# tcc sorts DSMARK classes (2/6) ----------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+dsmark (indices 4,mask 0) {
+    class (0);
+    class (2);
+    class (1);
+    class (3);
+}
+EOF
+0
+1
+2
+3
+# tcc sorts DSMARK classes (3/6) ----------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+dsmark (indices 4,mask 0) {
+    class (2);
+    class (3);
+    class (0);
+    class (1);
+}
+EOF
+0
+1
+2
+3
+# tcc sorts DSMARK classes (4/6) ----------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+dsmark (indices 4,mask 0) {
+    class (0);
+    class (2);
+    class (1);
+    class (3);
+}
+EOF
+0
+1
+2
+3
+# tcc sorts DSMARK classes (5/6) ----------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+dsmark (indices 4,mask 0) {
+    class (1);
+    class (0);
+    class (2);
+    class (3);
+}
+EOF
+0
+1
+2
+3
+# tcc sorts DSMARK classes (6/6) ----------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+dsmark (indices 2,mask 0) {
+    class (1);
+    class (0);
+}
+EOF
+0
+1
+# tcc sorts CBQ classes (1/2) -------------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (1,rate 1Mbps) {
+	class (3,rate 3Mbps);
+	class (2,rate 2Mbps);
+    }
+    class (4,rate 4Mbps);
+}
+EOF
+1
+2
+3
+4
+# tcc sorts CBQ classes (2/2) -------------------------------------------------
+tcc | sed '/.*classid 1:\\(.\\).*/s//\\1/p;d'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (4,rate 4kBps) {
+	class (3,rate 3kBps);
+	class (2,rate 2kBps);
+    }
+    class (1,rate 1kBps) {
+	class (5,rate 5kBps);
+	class (6,rate 6kBps);
+    }
+}
+EOF
+1
+5
+6
+4
+2
+3

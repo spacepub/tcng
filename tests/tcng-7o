@@ -1,0 +1,18 @@
+# u32 adds default classification on negation ---------------------------------
+tcsim -v | sed 's/.*1 u32 //p;d'
+dev eth0 {
+    prio {
+	class if raw[0];
+	class if 1;
+    }
+}
+EOF
+match u8 0x0 0xff at 0 classid 1:2
+match u32 0x0 0x0 at 0 classid 1:1
+# u32 does not add default classification if not needed -----------------------
+tcc | sed 's/.*1 u32 //p;d'
+prio {
+    class if raw[0] == 0;
+}
+EOF
+match u8 0x0 0xff at 0 classid 1:1

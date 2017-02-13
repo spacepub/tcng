@@ -1,0 +1,41 @@
+# lexer does not read token after block with inner scope (1) ------------------
+tcc -c 2>&1
+eth0 {
+    field foo = raw;
+    fifo;
+    /* end of scope discards "foo", so it becomes a valid device name again */
+}
+
+foo {
+    fifo;
+}
+EOF
+# lexer does not read token after block with inner scope (2) ------------------
+tcc -c 2>&1
+prio {
+    field foo = raw;
+} /* end of scope discards "foo", so it becomes a valid device name again */
+
+foo {
+    fifo;
+}
+EOF
+# __DP_CHECK prints source code location --------------------------------------
+tcc -c 2>&1
+prio {
+    class on rsvp element;
+}
+EOF
+ERROR
+<stdin>:2: required parameter "dst" is missing
+# tcc decodes signals from subprocess -----------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:abort 2>&1
+EOF
+ERROR
+external program "abort" received signal 6 on configuration query
+# tcc decodes status from subprocess ------------------------------------------
+tcc -xif:blabla 2>&1
+EOF
+ERROR
+tcc-ext-blabla: No such file or directory
+external program "blabla" exited with status 1 on configuration query

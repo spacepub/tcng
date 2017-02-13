@@ -1,0 +1,32 @@
+# filter by ip_dst then tcp_sport ---------------------------------------------
+tcsim | tcsim_filter -d tos | awk '{ print $2 }'
+dev eth0 10Mbps {
+    egress {
+	drop if ip_dst == 10.0.0.0 && tcp_sport == 80;
+    }
+}
+
+send TCP_PCK($ip_tos=0 $ip_dst=10.0.0.0 $tcp_sport=80)
+send TCP_PCK($ip_tos=1 $ip_dst=10.0.0.1 $tcp_sport=80)
+send TCP_PCK($ip_tos=2 $ip_dst=10.0.0.0 $tcp_sport=81)
+send TCP_PCK($ip_tos=3 $ip_dst=10.0.0.1 $tcp_sport=81)
+end
+EOF
+D:01
+D:02
+D:03
+# filter by tcp_sport then ip_dst ---------------------------------------------
+tcsim 2>&1 | sed 's/.*, //;1q'
+dev eth0 10Mbps {
+    egress {
+	drop if tcp_sport == 80 && ip_dst == 10.0.0.0;
+    }
+}
+
+send TCP_PCK($ip_tos=0 $ip_dst=10.0.0.0 $tcp_sport=80)
+send TCP_PCK($ip_tos=1 $ip_dst=10.0.0.1 $tcp_sport=80)
+send TCP_PCK($ip_tos=2 $ip_dst=10.0.0.0 $tcp_sport=81)
+send TCP_PCK($ip_tos=3 $ip_dst=10.0.0.1 $tcp_sport=81)
+end
+EOF
+unsupported offset sequence - please try to reorder matches)

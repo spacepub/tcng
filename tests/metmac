@@ -1,0 +1,142 @@
+# SLB_ok evaluates argument once ----------------------------------------------
+tcc | grep -c police
+#include "meters.tc"
+
+dsmark {
+    class if SLB_ok(SLB(cir 1kbps,cbs 1kB));
+}
+EOF
+1
+# SLB_else_drop evaluates argument once ---------------------------------------
+tcc | grep -c police
+#include "meters.tc"
+
+dsmark {
+    class if SLB_else_drop(SLB(cir 1kbps,cbs 1kB));
+}
+EOF
+1
+# DLB_ok evaluates argument once ----------------------------------------------
+tcc | grep -c police
+#include "meters.tc"
+
+dsmark {
+    class if DLB_ok(DLB(cir 1kbps,cbs 2kB,pir 5kbps,pbs 1kB));
+}
+EOF
+1
+# DLB_else_drop evaluates argument once ---------------------------------------
+tcc | grep -c police
+#include "meters.tc"
+
+dsmark {
+    class if DLB_else_drop(DLB(cir 1kbps,cbs 2kB,pir 5kbps,pbs 1kB));
+}
+EOF
+1
+# srTCM_green evaluates argument once -----------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if srTCM_green(srTCM(cir 1kbps,cbs 2kB,ebs 1kB));
+}
+EOF
+2
+# srTCM_yellow evaluates argument once ----------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if srTCM_yellow(srTCM(cir 1kbps,cbs 2kB,ebs 1kB));
+}
+EOF
+2
+# srTCM_red evaluates argument once -------------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if srTCM_red(srTCM(cir 1kbps,cbs 2kB,ebs 1kB));
+}
+EOF
+2
+# __srTCM_green evaluates argument once ---------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if __srTCM_green(srTCM(cir 1kbps,cbs 2kB,ebs 1kB));
+}
+EOF
+2
+# __srTCM_yellow evaluates argument once --------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if __srTCM_yellow(srTCM(cir 1kbps,cbs 2kB,ebs 1kB));
+}
+EOF
+1
+# __srTCM_red evaluates argument once -----------------------------------------
+tcc -xif:err 2>&1 | sed '/bucket/p;d'
+#include "meters.tc"
+
+dsmark {
+    class if __srTCM_red(srTCM(cir 1kbps,cbs 2kB,ebs 1kB));
+}
+EOF
+# trTCM_green evaluates argument once -----------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if trTCM_green(trTCM(cir 1kbps,cbs 2kB,pir 2kbps,pbs 1kB));
+}
+EOF
+2
+# trTCM_yellow evaluates argument once ----------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if trTCM_yellow(trTCM(cir 1kbps,cbs 2kB,pir 2kbps,pbs 1kB));
+}
+EOF
+2
+# trTCM_red evaluates argument once -------------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if trTCM_red(trTCM(cir 1kbps,cbs 2kB,pir 2kbps,pbs 1kB));
+}
+EOF
+1
+# __trTCM_green evaluates argument once ---------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if __trTCM_green(trTCM(cir 1kbps,cbs 2kB,pir 2kbps,pbs 1kB));
+}
+EOF
+2
+# __trTCM_yellow evaluates argument once --------------------------------------
+tcc -xif:err 2>&1 | grep -c bucket
+#include "meters.tc"
+
+dsmark {
+    class if __trTCM_yellow(trTCM(cir 1kbps,cbs 2kB,pir 2kbps,pbs 1kB));
+}
+EOF
+1
+# __trTCM_red evaluates argument once -----------------------------------------
+tcc -xif:err 2>&1 | sed '/bucket/p;d'
+#include "meters.tc"
+
+dsmark {
+    class if __trTCM_red(trTCM(cir 1kbps,cbs 2kB,pir 2kbps,pbs 1kB));
+}
+EOF

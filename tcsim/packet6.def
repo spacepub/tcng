@@ -1,0 +1,92 @@
+/*
+ * packet6.def - Definitions for constructing IPv6 packets, analogous to
+ *		 fields.tc
+ *
+ * Written 2002 by Werner Almesberger
+ * Copyright 2002 Bivio Networks, Werner Almesberger
+ */
+
+#ifndef __INCLUDED_FROM_PACKET_DEF
+#warning packet6.def should only be included from packet.def
+#endif
+
+#ifndef PACKET6_DEF
+#define PACKET6_DEF
+
+
+/* ----- Global convenience defaults --------------------------------------- */
+
+/*
+ * WARNING: Since tcsim variables are global, these defaults change as soon
+ * as the variables are assigned some other value anywhere in the tcsim
+ * script. Therefore, they can only be relied upon if the scripts does not
+ * set them at all.
+ */
+
+$ip6_nxt = 0			// next header: reserved (RFC1700)
+$ip6_src = ::			// source address: unspecified (RFC2373)
+$ip6_dst = ::			// destination address: unspecified (RFC2373)
+
+
+/* ----- IPv6 header (RFC2460) --------------------------------------------- */
+
+
+#define IP6_HDR(params) \
+  $ip6_v = 6		/* version					*/ \
+  $ip6_tc = 0		/* traffic class (0 for default)		*/ \
+  $ip6_flow = 0		/* flow label (0 for "not supported")		*/ \
+  $ip6_plen = 0		/* payload length (FIXME: should calculate)	*/ \
+			/* next header, REQUIRED			*/ \
+  $ip6_hlim = 64	/* hop limit, use 64 from RFC1700 (?)		*/ \
+			/* source address, REQUIRED			*/ \
+			/* destination address, REQUIRED		*/ \
+									\
+  params								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |Version| Traffic Class |           Flow Label                  |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  nl: ($ip6_v << 28) | ($ip6_tc << 20) | $ip6_flow			\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |         Payload Length        |  Next Header  |   Hop Limit   |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ns: $ip6_plen								\
+  $ip6_nxt								\
+  $ip6_hlim								\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                                                               |	*/ \
+  /* +                                                               +	*/ \
+  /* |                                                               |	*/ \
+  /* +                         Source Address                        +	*/ \
+  /* |                                                               |	*/ \
+  /* +                                                               +	*/ \
+  /* |                                                               |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ipv6: $ip6_src							\
+									\
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+  /* |                                                               |	*/ \
+  /* +                                                               +	*/ \
+  /* |                                                               |	*/ \
+  /* +                      Destination Address                      +	*/ \
+  /* |                                                               |	*/ \
+  /* +                                                               +	*/ \
+  /* |                                                               |	*/ \
+  /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	*/ \
+									\
+  ipv6: $ip6_dst							\
+									\
+  /* ----- End of header ----- */
+
+
+/* ----- Packed construction ----------------------------------------------- */
+
+#define IP6_PCK(params) \
+  default protocol=ETH_P_IPV6 IP6_HDR(params)
+
+#endif /* PACKET6_DEF */

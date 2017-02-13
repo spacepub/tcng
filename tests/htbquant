@@ -1,0 +1,209 @@
+BEGIN CONDITIONAL
+tcsim
+dev eth0
+tc qdisc add dev eth0 root htb
+EOF
+# HTB using r2q default (10) --------------------------------------------------
+tcsim -k 3 | tcsim_filter -d tos | \
+  awk '{ if ($2 == last) c++; else { print c+0; last = $2; c = 1; } }' | \
+  sort -rn | sed 1q
+dev eth0 1Mbps {
+    htb { /* quantum 12'500 bytes */
+	class (rate 1Mbps) if ip_tos == 0;
+	class (rate 1Mbps) if ip_tos == 1;
+	class (rate 1Mbps) if ip_tos == 2;
+    }
+}
+
+every 1ms send IP_PCK($ip_tos=0) 0 x 80	/* 800 kbps */
+every 1ms send IP_PCK($ip_tos=1) 0 x 80
+every 1ms send IP_PCK($ip_tos=2) 0 x 80
+time 0.5s
+end
+EOF
+125
+# HTB with r2q set to 5 -------------------------------------------------------
+tcsim -k 3 | tcsim_filter -d tos | \
+  awk '{ if ($2 == last) c++; else { print c+0; last = $2; c = 1; } }' | \
+  sort -rn | sed 1q
+dev eth0 1Mbps {
+    htb (r2q 5) { /* quantum 25'000 bytes */
+	class (rate 1Mbps) if ip_tos == 0;
+	class (rate 1Mbps) if ip_tos == 1;
+	class (rate 1Mbps) if ip_tos == 2;
+    }
+}
+
+every 1ms send IP_PCK($ip_tos=0) 0 x 80	/* 800 kbps */
+every 1ms send IP_PCK($ip_tos=1) 0 x 80
+every 1ms send IP_PCK($ip_tos=2) 0 x 80
+time 1s
+end
+EOF
+250
+# HTB with quantum in bytes ---------------------------------------------------
+tcsim -k 3 | tcsim_filter -d tos | \
+  awk '{ if ($2 == last) c++; else { print c+0; last = $2; c = 1; } }' | \
+  sort -rn | sed 1q
+dev eth0 1Mbps {
+    htb (quantum 2000B) {
+	class (rate 1Mbps) if ip_tos == 0;
+	class (rate 1Mbps) if ip_tos == 1;
+	class (rate 1Mbps) if ip_tos == 2;
+    }
+}
+
+every 1ms send IP_PCK($ip_tos=0) 0 x 80	/* 800 kbps */
+every 1ms send IP_PCK($ip_tos=1) 0 x 80
+every 1ms send IP_PCK($ip_tos=2) 0 x 80
+time 0.1s
+end
+EOF
+20
+# HTB with quantum in seconds -------------------------------------------------
+tcsim -k 3 | tcsim_filter -d tos | \
+  awk '{ if ($2 == last) c++; else { print c+0; last = $2; c = 1; } }' | \
+  sort -rn | sed 1q
+dev eth0 1Mbps {
+    htb (quantum 20ms) { /* 2'500 bytes */
+	class (rate 1Mbps) if ip_tos == 0;
+	class (rate 1Mbps) if ip_tos == 1;
+	class (rate 1Mbps) if ip_tos == 2;
+    }
+}
+
+every 1ms send IP_PCK($ip_tos=0) 0 x 80	/* 800 kbps */
+every 1ms send IP_PCK($ip_tos=1) 0 x 80
+every 1ms send IP_PCK($ip_tos=2) 0 x 80
+time 0.1s
+end
+EOF
+25
+# HTB propagates quantum in bytes (qdisc to class) ----------------------------
+tcc | sed '/1:1/{s/^.* quantum //p;};d'
+htb (quantum 10000B) {
+    class (1,rate 1Mbps);
+}
+EOF
+10000
+# HTB propagates quantum in bytes (class to class) ----------------------------
+tcc | sed '/1:2/{s/^.* quantum //p;};d'
+htb {
+    class (1,rate 1Mbps,quantum 1234B) {
+	class (2);
+    }
+}
+EOF
+1234
+# HTB class can override quantum in bytes default -----------------------------
+tcc | sed '/1:2/{s/^.* quantum //p;};d'
+htb {
+    class (1,rate 1Mbps,quantum 1234B) {
+	class (2,quantum 2345B);
+    }
+}
+EOF
+2345
+# HTB propagates quantum in seconds (qdisc to class) --------------------------
+tcc | sed '/1:1/{s/^.* quantum //p;};d'
+htb (quantum 10ms) {
+    class (1,rate 1Mbps);
+}
+EOF
+1250
+# HTB propagates quantum in seconds (class to class) --------------------------
+tcc | sed '/1:2/{s/^.* quantum //p;};d'
+htb {
+    class (1,rate 1Mbps,quantum 4ms) {
+	class (2);
+    }
+}
+EOF
+500
+# HTB class can override quantum in seconds default ---------------------------
+tcc | sed '/1:2/{s/^.* quantum //p;};d'
+htb {
+    class (1,rate 1Mbps,quantum 4ms) {
+	class (2,quantum 20ms);
+    }
+}
+EOF
+2500
+# HTB quantum: qdisc bytes, class seconds -------------------------------------
+tcc | sed '/1:1/{s/^.* quantum //p;};d'
+htb (quantum 10000B) {
+    class (1,rate 1Mbps,quantum 10ms);
+}
+EOF
+1250
+# HTB quantum: qdisc seconds, class bytes -------------------------------------
+tcc | sed '/1:1/{s/^.* quantum //p;};d'
+htb (quantum 10ms) {
+    class (1,rate 1Mbps,quantum 1000B);
+}
+EOF
+1000
+# HTB quantum: parent class seconds, child class bytes ------------------------
+tcc | sed '/quantum/{s/^.* quantum //p;};d'
+htb {
+    class (1,rate 1Mbps,quantum 4ms) {
+	class (2,quantum 1234B);
+	class (3);
+    }
+}
+EOF
+500
+1234
+500
+# HTB quantum: parent class bytes, child class seconds ------------------------
+tcc | sed '/quantum/{s/^.* quantum //p;};d'
+htb {
+    class (1,rate 1Mbps,quantum 1234B) {
+	class (2,quantum 4ms);
+	class (3);
+    }
+}
+EOF
+1234
+500
+1234
+# HTB quantum: refuse quantum in bytes and seconds at qdisc -------------------
+tcc 2>&1
+htb (quantum 100B,quantum 1s);
+EOF
+ERROR
+<stdin>:1: duplicate parameter "quantum"
+# HTB quantum: refuse quantum in bytes and seconds at class -------------------
+tcc 2>&1
+htb {
+    class (rate 100kbps,quantum 100B,quantum 1s);
+}
+EOF
+ERROR
+<stdin>:2: duplicate parameter "quantum"
+# HTB quantum: refuse 0 bytes -------------------------------------------------
+tcc 2>&1
+htb {
+    class (rate 1Mbps,quantum 0B);
+}
+EOF
+ERROR
+<stdin>:2: parameter "quantum" must be non-zero near ")"
+# HTB quantum: refuse quantum truncated to zero -------------------------------
+tcc 2>&1
+htb {
+    class (rate 1Bps,quantum 0.9s);
+}
+EOF
+ERROR
+<stdin>:2: quantum is less than one byte
+# HTB quantum: refuse >= 4 GB --------------------------------------------------
+tcc 2>&1
+htb {
+    class (rate (1 << 16) Bps,quantum (1 << 16)s-1 s);
+    class (rate (1 << 16) Bps,quantum (1 << 16) s);
+}
+EOF
+ERROR
+<stdin>:3: quantum exceeds 4GB
+END CONDITIONAL

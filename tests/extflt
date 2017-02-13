@@ -1,0 +1,91 @@
+# ext_all does not allow policing on tcindex ----------------------------------
+tcc -xif:err -Xx,all 2>&1
+dsmark (indices 1) {
+    class (1) if 1;
+    prio {
+	class
+	  on tcindex element (1)
+	    police (rate 1Mbps,burst 2kB);
+    }
+}
+EOF
+ERROR
+<stdin>:5: dump_all does not support policing at tcindex
+# ext_all fails if there is no match and pass_on is set -----------------------
+tcc -xif:err -Xx,all  2>&1
+dsmark (indices 1) {
+    class (1) if 1;
+    prio {
+	class
+	  on tcindex(pass_on) element (2);
+    }
+}
+EOF
+ERROR
+<stdin>:5: dump_all found no matching choice for value 0x1 in tcindex
+# ext_all can convert fall_through to an existing class -----------------------
+tcc -xif:err -Xx,all 2>&1 | grep '^action'
+dsmark (indices 1) {
+    class (1) if 1;
+    prio {
+	class (1)
+	  on tcindex(fall_through) element (2);
+    }
+}
+EOF
+action 1 = class 1:1,2:1
+# ext_all finds and follows class in above case -------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep '^action'
+dsmark (indices 1) {
+    class (1) if 1;
+    prio {
+	class (3)
+	  on tcindex(fall_through) element (2);
+	class (1)
+	  on tcindex(fall_through) element (42)
+	{
+	    prio {
+		class (1) on tcindex (shift 1) element (0);
+	    }
+	}
+    }
+}
+EOF
+action 1 = class 1:1,2:1,3:1
+# ext_all can convert fall_through to a non-existing class --------------------
+tcc -xif:err -Xx,all 2>&1 | grep '^action'
+dsmark (indices 1) {
+    class (1) if 1;
+    prio {
+	class (2)
+	  on tcindex(fall_through) element (2);
+    }
+}
+EOF
+action 1 = class 1:1,2:1
+# tccext generates dummy class for non-existing class -------------------------
+PATH=$PATH:tcc/ext tcc -xif:echo -Xx,all 2>&1 | sed '/^qdisc 2/,/action/p;d'
+dsmark (indices 1) {
+    class (1) if 1;
+    prio {
+	class (1)
+	  on tcindex(fall_through) element (2);
+    }
+}
+EOF
+qdisc 2 = prio bands 3
+class 1 =
+action 1 = class 1:1,2:1
+# ext_all picks tcindex filters in priority order -----------------------------
+tcc -xif:err -Xx,all 2>&1 | grep '^action'
+dsmark (indices 1) {
+    class (1) if 1;
+    prio {
+	class (1)
+	  on tcindex(pass_on) element (1);
+	class (2)
+	  on tcindex(pass_on) element (1);
+    }
+}
+EOF
+action 1 = class 1:1,2:1

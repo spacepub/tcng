@@ -1,0 +1,104 @@
+# meter definitions do not include tag by default -----------------------------
+tcc -c -l stderr 2>&1 | grep police | awk '{print $3}'
+#include "meters.tc"
+
+set_SLB($slb,cir 8kbps,cbs 2000B);
+set_DLB($dlb,cir 8kbps,cbs 2000B,pir 16kbps,pbs 500B);
+set_srTCM($sr,cir 8kbps,cbs 2000B,ebs 500B);
+set_trTCM($tr,cir 8kbps,cbs 2000B,pir 16kbps,pbs 500B);
+
+prio {
+    class
+	if SLB_ok($slb) && DLB_ok($dlb) && srTCM_yellow($sr) &&
+	  trTCM_green($tr); 	/* use all buckets */
+}
+EOF
+-
+-
+-
+-
+-
+-
+-
+# meter definitions do not include pragma by default --------------------------
+tcc -xif:err 2>&1 | grep bucket | awk '{print ":" $9}'
+#include "meters.tc"
+
+set_SLB($slb,cir 8kbps,cbs 2000B);
+set_DLB($dlb,cir 8kbps,cbs 2000B,pir 16kbps,pbs 500B);
+set_srTCM($sr,cir 8kbps,cbs 2000B,ebs 500B);
+set_trTCM($tr,cir 8kbps,cbs 2000B,pir 16kbps,pbs 500B);
+
+prio {
+    class
+	if SLB_ok($slb) && DLB_ok($dlb) && srTCM_yellow($sr) &&
+	  trTCM_green($tr); 	/* use all buckets */
+}
+EOF
+:
+:
+:
+:
+:
+:
+:
+# set tag in meter definitions ------------------------------------------------
+tcc -c -l stderr 2>&1 | grep police | awk '{print $3}'
+#include "meters.tc"
+
+set_SLB($slb,cir 8kbps,cbs 2000B,tag "Slb");
+set_DLB($dlb,cir 8kbps,cbs 2000B,pir 16kbps,tag "dlB",pbs 500B);
+set_srTCM($sr,cir 8kbps,tag "srtcm",cbs 2000B,ebs 500B);
+set_trTCM($tr,tag "trtcm",cir 8kbps,cbs 2000B,pir 16kbps,pbs 500B);
+
+prio {
+    class
+	if SLB_ok($slb) && DLB_ok($dlb) && srTCM_yellow($sr) &&
+	  trTCM_green($tr); 	/* use all buckets */
+}
+EOF
+Slb
+dlB
+dlB
+srtcm
+srtcm
+trtcm
+trtcm
+# set pragma in meter definitions ---------------------------------------------
+tcc -xif:err 2>&1 | grep bucket | awk '{print ":" $9}'
+#include "meters.tc"
+
+set_SLB($slb,pragma "slB",cir 8kbps,cbs 2000B);
+set_DLB($dlb,cir 8kbps,pragma "Dlb",cbs 2000B,pir 16kbps,pbs 500B);
+set_srTCM($sr,cir 8kbps,pragma "SRtcm",cbs 2000B,ebs 500B);
+set_trTCM($tr,cir 8kbps,cbs 2000B,pir 16kbps,pbs 500B,pragma "TRtcm");
+
+prio {
+    class
+	if SLB_ok($slb) && DLB_ok($dlb) && srTCM_yellow($sr) &&
+	  trTCM_green($tr); 	/* use all buckets */
+}
+EOF
+:slB
+:Dlb
+:Dlb
+:SRtcm
+:SRtcm
+:TRtcm
+:TRtcm
+# set tag and pragma in meter definitions -------------------------------------
+tcc -c
+#include "meters.tc"
+
+set_SLB($slb,pragma "slB",cir 8kbps,cbs 2000B,tag "Slb");
+set_DLB($dlb,cir 8kbps,pragma "Dlb",cbs 2000B,pir 16kbps,tag "dlB",pbs 500B);
+set_srTCM($sr,cir 8kbps,tag "srtcm",pragma "SRtcm",cbs 2000B,ebs 500B);
+set_trTCM($tr,tag "trtcm",cir 8kbps,cbs 2000B,pir 16kbps,pbs 500B,
+  pragma "TRtcm");
+
+prio {
+    class
+	if SLB_ok($slb) && DLB_ok($dlb) && srTCM_yellow($sr) &&
+	  trTCM_green($tr); 	/* use all buckets */
+}
+EOF

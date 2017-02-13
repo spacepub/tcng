@@ -1,0 +1,244 @@
+#!/bin/sh -e
+#
+# setup.ulib - Copy and condition iproute2 source for tcsim
+#
+# Written 2001-2004 by Werner Almesberger
+# Copyright 2001 EPFL-ICA
+# Copyright 2002 Bivio Networks, Werner Almesberger
+# Copyright 2003,2004 Werner Almesberger
+#
+
+if [ ! -f ../config ]; then
+    echo "please run ./configure" 2>&1
+    exit 1
+fi
+
+. ../config
+
+DIR=ulib
+
+rm -rf $DIR
+mkdir $DIR
+cd $DIR
+
+cat <<EOF >README.FIRST
+!!! ALL FILES IN THIS DIRECTORY AND BELOW ARE MACHINE-GENERATED !!!
+EOF
+
+if [ "${IVERSION#04}" = "$IVERSION" ]; then
+    CONST2004=
+else
+    CONST2004=const
+fi
+
+#
+# Top-level items
+#
+cp ../Makefile.ulib Makefile
+mkdir iproute2
+if [ -r $ISRC/Config ]; then
+    sed '/^\(TC_CONFIG_DIFFSERV=\).*/s//\1y/' <$ISRC/Config >iproute2/Config
+else
+    # iproute2-2.6.8-ss040730 needs this
+    echo TC_CONFIG_HTB:=y >iproute2/Config
+fi
+sed 's|^\(KERNEL_INCLUDE=\).*|\1'$TOPDIR/tcsim/klib/include'|' <$ISRC/Makefile |
+  sed '/^\(all\|clean\):/,/^ *$/d' >.make_tmp
+
+#
+# iproute2/lib
+#
+mkdir iproute2/lib
+#cp $ISRC/lib/{utils.c,dnet_ntop.c,dnet_pton.c} iproute2/lib
+cp $ISRC/lib/{Makefile,*.[ch]} iproute2/lib
+cat .make_tmp $ISRC/lib/Makefile >iproute2/lib/Makefile
+
+>iproute2/lib/ll_map.c  # grmbl
+
+#
+# iproute2/tc
+#
+mkdir iproute2/tc
+cp $ISRC/tc/*.[ch] iproute2/tc
+cat .make_tmp $ISRC/tc/Makefile | sed '/^all:.*/s//TCLIB += $(TCOBJ)/' \
+  >iproute2/tc/Makefile
+cp -a $ISRC/include iproute2
+[ ! -d $ISRC/include-glibc ] || \
+  cp -a $ISRC/include-glibc iproute2
+
+cat <<EOF >>iproute2/tc/Makefile
+list_modules:
+	@echo \$(TCMODULES)
+EOF
+
+qdiscs=`make -s -C iproute2/tc list_modules | sed '/^make/d' | \
+  xargs -n 1 echo | \
+  sed '/^q_\(.*\)\.o/s//X\1Y/p;d' | sed 's/XfifoY/XbfifoY XpfifoY/'`
+filters=`make -s -C iproute2/tc list_modules | sed '/^make/d' | \
+  xargs -n 1 echo | \
+  sed '/^f_\(.*\)\.o/s//X\1Y/p;d' | sed 's/XfifoY/XbfifoY XpfifoY'/`
+
+# tcsim doesn't support route
+filters=`echo $filters | sed 's/XrouteY//;'`
+
+#
+# Apply patches
+#
+
+if [ "$IVERSION" = 991023 -o "$IVERSION" = 001007 ]; then
+    patch -p0 -s <$TOPDIR/patches/tc-rsvp-gpi
+    patch -p0 -s <$TOPDIR/patches/tc-netlink-buf
+    patch -p0 -s <$TOPDIR/patches/tc-dsmark-dflt
+fi
+
+#
+# More libnetlink fixes
+#
+
+mv iproute2/lib/libnetlink.c libnetlink.in
+sed '/^#include/p;d' <$ISRC/lib/libnetlink.c >iproute2/lib/libnetlink.c
+cat <<EOF >>iproute2/lib/libnetlink.c
+
+extern int librtnl_sendto(int s,const void *msg,int len,unsigned  int flags,
+  const struct sockaddr *to,int tolen);
+extern int librtnl_sendmsg(int s,const struct msghdr *msg,unsigned int flags);
+extern int librtnl_recvmsg(int s,struct msghdr *msg,unsigned  int flags);
+
+EOF
+sed '/^#include/d;/^int rtnl_open/,/^}/d' <libnetlink.in |
+  sed '/^void rtnl_close/,/^}/d' |
+  sed 's/\(sendmsg\|sendto\|recvmsg\)/librtnl_\1/g' |
+  sed '/^int rtnl_dump_filter/,/^} \
+    /s/.*recvmsg.*/iov.iov_len = sizeof(buf); &/' >>iproute2/lib/libnetlink.c
+rm -f libnetlink.in
+
+#
+# Modern gccs don't like default: in lib/utils.c
+#
+
+rm -f iproute2/lib/utils.c
+sed 's/default:/default:;/' <$ISRC/lib/utils.c >iproute2/lib/utils.c
+
+#
+# Fix lib/ll_proto.c
+#
+
+rm -f iproute2/lib/ll_proto.c
+sed '/__PF(ECHO,echo)/d' <$ISRC/lib/ll_proto.c >iproute2/lib/ll_proto.c
+
+#
+# tc.c
+#
+
+cat <<EOF >iproute2/tc/tc.c
+/* from original iproute2/tc/tc.c */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <netinet/in.h>
+
+#include "SNAPSHOT.h"
+#include "utils.h"
+#include "tc_util.h"
+#include "tc_common.h"
+
+extern void *tc_module(char prefix,const char *name);
+
+int show_raw;
+int show_details;
+int show_stats;
+int resolve_hosts; /* always zero */
+int use_iec = 0; /* 2004 version */
+
+`echo $qdiscs | sed 's/X/extern struct qdisc_util /g;s/Y/_util;/g'`
+
+static struct qdisc_util *qdisc_list[] = {
+    `echo $qdiscs | sed 's/X/\&/g;s/Y/_util,/g'`
+    NULL
+};
+
+struct qdisc_util *get_qdisc_kind($CONST2004 char *str)
+{
+    struct qdisc_util **q,*qu;
+
+    for (q = qdisc_list; *q; q++)
+	if (!strcmp((*q)->id,str)) return *q;
+    qu = tc_module('q',str);
+    if (qu) return qu;
+    fprintf(stderr,"qdisc %s not found\n",str);
+    exit(1);
+}
+
+`echo $filters | sed 's/X/extern struct filter_util /g;s/Y/_util;/g'`
+
+static struct filter_util *filter_list[] = {
+    `echo $filters | sed 's/X/\&/g;s/Y/_util,/g'`
+    NULL
+};
+
+struct filter_util *get_filter_kind($CONST2004 char *str)
+{
+    struct filter_util **f,*fu;
+
+    for (f = filter_list; *f; f++)
+	if (!strcmp((*f)->id,str)) return *f;
+    fu = tc_module('f',str);
+    if (fu) return fu;
+    fprintf(stderr,"filter %s not found\n",str);
+    exit(1);
+}
+
+
+void reset_tc(void)
+{
+    show_raw = 0;
+    show_details = 0;
+    show_stats = 0;
+}
+EOF
+
+
+sed 's/ main(/ tc_main(/;/usage/,$p;d' <$ISRC/tc/tc.c |
+  sed 's/, \(strlen\|BMAXARG\)/, (int) \1/' >>iproute2/tc/tc.c
+
+#
+# tc_core.c (let tcsim define timer resolution)
+#
+
+perl -pi -e 's/if \(fp == NULL\)/if (fp) fclose(fp);/;' iproute2/tc/tc_core.c
+perl -pi -e 's/static (double tick_in_usec)/$1/;' iproute2/tc/tc_core.c
+
+#
+# tc_core.h (declare struct tcf_t because we mess up include order for recent
+# iproute2)
+#
+
+echo 'struct tcf_t;' >>iproute2/tc/tc_core.h
+
+#
+# q_cbq.c (avoid size_t vs. %u conflict)
+#
+# (Well, how's this for a maximally intrusive way of fixing a noisy
+# fprintf ? :-)
+#
+
+perl -pi -e 's/\b(RTA_PAYLOAD|sizeof)\b/(unsigned) $1/g;' iproute2/tc/q_cbq.c
+
+#
+# m_police.c (gact broke action/action syntax :-(( )
+#
+
+perl -pi -e 's#conform-exceed".*0#$& || !strcmp(*argv,"action")#' \
+  iproute2/tc/m_police.c
+
+#perl -pi -e 's#(conform-exceed"\) == 0)\) {#$1 || strchr(*argv,'"'/'"')) {\
+#  if (!strchr(*argv,'"'/'"')) #' \
+#  iproute2/tc/m_police.c
+
+for n in tc_qdisc.c tc_class.c tc_filter.c; do
+    perl -pi -e 's/exit\(0\);/return 0;/;' iproute2/tc/$n
+done
+
+touch .ready

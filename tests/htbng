@@ -1,0 +1,78 @@
+BEGIN CONDITIONAL
+tcsim
+dev eth0
+tc qdisc add dev eth0 root htb
+EOF
+# HTB in tcng -----------------------------------------------------------------
+tcc
+dev "eth0" {
+    egress { 
+	$base = 100 * 1kBps;
+
+	class (<$cl1_2>)  if (raw[6] & 0xfe) == 0;
+	class (<$cl1_12>) if raw[6] == 2;
+	class (<$cl1_10>) if raw[6] == 0;
+	class (<$cl1_11>) if raw[6] == 1;
+
+	htb (r2q 100, ceil 18 * $base) {
+	    class(rate 10 * $base) {
+		$cl1_2 = class (rate 4 * $base, ceil 8 * $base,) {
+		    $cl1_10 = class (rate 3 * $base, ceil 10 * $base, prio 1) {
+			fifo(limit 8p);
+		    }
+		    $cl1_11 = class (rate 1 * $base, ceil 10 * $base, prio 0) {
+			fifo(limit 8p);
+		    }
+		}
+	    }
+	    $cl1_12 = class (rate 6 * $base, ceil 10 * $base, prio 1, default) {
+		fifo(limit 8p);
+	    }
+	}
+    }
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root dsmark indices 8 default_index 0
+tc qdisc add dev eth0 handle 2:0 parent 1:0 htb default 5 r2q 100
+tc class add dev eth0 parent 2:0 classid 2:1 htb rate 1000000bps ceil 1800000bps
+tc class add dev eth0 parent 2:1 classid 2:2 htb rate 400000bps ceil 800000bps
+tc class add dev eth0 parent 2:2 classid 2:3 htb rate 300000bps ceil 1000000bps prio 1
+tc qdisc add dev eth0 handle 3:0 parent 2:3 pfifo limit 8
+tc class add dev eth0 parent 2:2 classid 2:4 htb rate 100000bps ceil 1000000bps prio 0
+tc qdisc add dev eth0 handle 4:0 parent 2:4 pfifo limit 8
+tc class add dev eth0 parent 2:0 classid 2:5 htb rate 600000bps ceil 1000000bps prio 1
+tc qdisc add dev eth0 handle 5:0 parent 2:5 pfifo limit 8
+tc filter add dev eth0 parent 2:0 protocol all prio 1 tcindex mask 0x7 shift 0
+tc filter add dev eth0 parent 2:0 protocol all prio 1 handle 4 tcindex classid 2:4
+tc filter add dev eth0 parent 2:0 protocol all prio 1 handle 3 tcindex classid 2:3
+tc filter add dev eth0 parent 2:0 protocol all prio 1 handle 2 tcindex classid 2:5
+tc filter add dev eth0 parent 2:0 protocol all prio 1 handle 1 tcindex classid 2:2
+tc filter add dev eth0 parent 1:0 protocol all prio 1 u32 match u8 0x0 0xfe at 6 classid 1:1
+tc filter add dev eth0 parent 1:0 protocol all prio 1 u32 match u8 0x2 0xff at 6 classid 1:2
+tc filter add dev eth0 parent 1:0 protocol all prio 1 u32 match u8 0x0 0xff at 6 classid 1:3
+tc filter add dev eth0 parent 1:0 protocol all prio 1 u32 match u8 0x1 0xff at 6 classid 1:4
+# HTB example 1, in tcng ------------------------------------------------------
+tcsim -k 3
+dev eth0 {
+    egress {
+	class (<$a_web>) if ip_src == 1.2.3.4 && tcp_dport == PORT_HTTP;
+	class (<$a_nonweb>) if ip_src == 1.2.3.4;
+	class (<$other>) if 1;
+
+	htb (ceil 100kBps) {
+	    class (rate 100kBps) {
+		$a_web = class (rate 30kBps) {
+		    fifo(limit 5p);
+		}
+		$a_nonweb = class (rate 10kBps) {
+		    fifo(limit 5p);
+		}
+		$other = class (rate 60kBps) {
+		    sfq(perturb 10s);
+		}
+	    }
+	}
+    }
+}
+EOF
+END CONDITIONAL

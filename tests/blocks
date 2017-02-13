@@ -1,0 +1,181 @@
+# blocks allowed in unnamed device body ---------------------------------------
+tcc | sed 's/.* root //'
+{
+    {
+	fifo;
+    }
+}
+EOF
+pfifo
+# blocks allowed in named device body -----------------------------------------
+tcc
+dev "eth1" {
+    {
+	fifo;
+    }
+}
+EOF
+tc qdisc add dev eth1 handle 1:0 root pfifo
+# blocks allowed in qdisc body ------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+prio {
+    {
+	class (1);
+	class (2);
+    }
+    class (3);
+}
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3
+class 1 =
+class 2 =
+class 3 =
+action 0 = unspec
+match action 0
+# blocks allowed in class body ------------------------------------------------
+tcc -c
+prio {
+    class {
+	$foo = 1;
+	{
+	    fifo(limit $foo kp);
+	}
+    }
+}
+EOF
+# blocks allowed in filter body -----------------------------------------------
+tcc | sed '/fw classid/s/.*handle //p;d'
+prio {
+    fw {
+	{
+	    class (1) on (1);
+	}
+	{
+	    $n = 2;
+	    class (2) on ($n);
+	    class (3) on (1+$n);
+	}
+    }
+}
+EOF
+1 fw classid 1:1
+2 fw classid 1:2
+3 fw classid 1:3
+# qdisc propagates through blocks ---------------------------------------------
+tcc
+prio {
+    class (1) {
+	{
+	    fifo;
+	}
+    }
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root prio
+tc qdisc add dev eth0 handle 2:0 parent 1:1 pfifo
+# qdisc collision from distinct blocks is detected (1) ------------------------
+tcc 2>&1
+prio {
+    class {
+	{
+	    fifo;
+	}
+	{
+	    fifo;
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:7: only one qdisc allowed in class body
+# qdisc collision from distinct blocks is detected (2) ------------------------
+tcc 2>&1
+prio {
+    class {
+	{
+	    fifo;
+	}
+	$foo = 1;
+	{
+	    fifo;
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:8: only one qdisc allowed in class body
+# "inner" blocks are shown correctly in variable use output -------------------
+tcc -c -u stderr -Wnounused 2>&1
+$a = 0;
+dev "xyz" {
+    $a = 1;
+    {
+	$a = 2;
+	prio {
+	    $a = 3;
+	    {
+		$a = 4;
+		fw {
+		    $a = 5;
+		    {
+			$a = 6;
+			class
+			  on (1)
+			{
+			    $a = 7;
+			    {
+				$a = 8;
+				fifo;
+				$a = 9;
+			    }
+			    $a = 10;
+			}
+			$a = 11;
+		    }
+		    $a = 12;
+		}
+		$a = 13;
+	    }
+	    $a = 14;
+	}
+	$a = 15;
+    }
+    $a = 16;
+}
+$a = 17;
+EOF
+$a = 0
+{ device xyz
+$a = 1
+{
+$a = 2
+{ qdisc xyz:1
+$a = 3
+{
+$a = 4
+{ filter xyz:1::1
+$a = 5
+{
+$a = 6
+{ class xyz:1:1
+$a = 7
+{
+$a = 8
+$a = 9
+}
+$a = 10
+}
+$a = 11
+}
+$a = 12
+}
+$a = 13
+}
+$a = 14
+}
+$a = 15
+}
+$a = 16
+}
+$a = 17

@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# tcc-ext-file - Write configuration to a file
+#
+# Written 2001 by Werner Almesberger
+# Copyright 2001 Network Robots
+#
+
+if [ -z "$1" ]; then
+    echo "usage: $0 mode ... [file=file]" 1>&2
+    exit 1
+fi
+
+mode=$1
+shift
+case "$mode" in
+    config)	for n in debug_target "$@"; do
+		    echo "$n" | grep '^file=' >/dev/null || echo "$n"
+		done;;
+    check)	;;
+    build)	file=/dev/null
+		for n in "$@"; do
+		    if echo "$n" | grep '^file=' >/dev/null; then
+			file=`echo "$n" | sed 's/^file=//'`
+			break
+		    fi
+		done
+		echo "# $1" >"$file"
+		cat >>"$file"
+		echo "# END" >>"$file";;
+    *)		echo "$0: unrecognized mode $mode" 1>&2
+		exit 1;;
+esac
+exit 0

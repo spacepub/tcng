@@ -1,0 +1,35 @@
+# TCNG: catch conflicting keys detected by f_u32.c (same) ---------------------
+tcsim
+dev eth0 {
+    #include "fields.tc"
+
+    prio {
+	class if udp_sport == 10 && tcp_dport == 14;
+    }
+}
+EOF
+# TCNG: catch conflicting keys detected by f_u32.c (overlap 0) ----------------
+tcsim
+dev eth0 {
+    prio {
+	class if raw[0].b == 1 && raw[0].ns == 0x201;
+    }
+}
+EOF
+# TCNG: catch conflicting keys detected by f_u32.c (pass) ---------------------
+tcsim -v | sed '/.*u32 /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+	class if raw[0].b == 1 && raw[0].ns == 0x102;
+    }
+}
+EOF
+match u8 0x1 0xff at 0 match u16 0x102 0xffff at 0
+# TCNG: catch conflicting keys detected by f_u32.c (overlap 1) ----------------
+tcsim
+dev eth0 {
+    prio {
+	class if raw[1].b == 1 && raw[0].ns == 0x102;
+    }
+}
+EOF

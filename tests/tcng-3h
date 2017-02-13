@@ -1,0 +1,12 @@
+# "drop" is properly stored in to hash table ----------------------------------
+tcc -xif:err 2>&1 >/dev/null | sed '/^#/d'
+prio {
+    class if raw[0] == 1 && drop;
+    class if 1;
+}
+EOF
+block eth0 egress
+action 2 = class 1:2
+action 0 = drop
+match 0:0:8=0x01 action 0
+match action 2

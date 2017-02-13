@@ -1,0 +1,122 @@
+# ingress also works with "all" -----------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+ingress {
+    class (1) if 1;
+}
+EOF
+block eth0 ingress
+qdisc 65535 = ingress
+class 1 =
+action 1 = class 65535:1
+match action 1
+# multiple egress and ingress on multiple interfaces work ---------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+dev "itfI" {
+    ingress {
+	class (1) if raw[0] == 1;
+    }
+}
+
+dev "itfE" {
+    prio {
+	class (2) if 1;
+    }
+}
+
+dev "itfIE" {
+    ingress {
+	class (3) if raw[0] == 42;
+	class (4) if 1;
+    }
+    prio {
+	class (5) if 1;
+    }
+}
+EOF
+block itfI ingress
+qdisc 65535 = ingress
+class 1 =
+action 0 = unspec
+action 1 = class 65535:1
+match 0:0:8=0x01 action 1
+match action 0
+block itfE egress
+qdisc 1 = prio bands 3
+class 2 =
+action 2 = class 1:2
+match action 2
+block itfIE ingress
+qdisc 65535 = ingress
+class 3 =
+class 4 =
+action 4 = class 65535:4
+action 3 = class 65535:3
+match 0:0:8=0x2A action 3
+match action 4
+block itfIE egress
+qdisc 1 = prio bands 5
+class 5 =
+action 5 = class 1:5
+match action 5
+# idem, via tcc-ext-echo ------------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echo -Xx,all 2>&1
+dev "itfI" {
+    ingress {
+	class (1) if raw[0] == 1;
+    }
+}
+
+dev "itfE" {
+    prio {
+	class (2) if 1;
+    }
+}
+
+dev "itfIE" {
+    ingress {
+	class (3) if raw[0] == 42;
+	class (4) if 1;
+    }
+    prio {
+	class (5) if 1;
+    }
+}
+EOF
+block itfIE egress
+qdisc 1 = prio bands 5
+class 5 =
+action 5 = class 1:5
+match action 5
+block itfIE ingress
+qdisc 65535 = ingress
+class 3 =
+class 4 =
+action 3 = class 65535:3
+action 4 = class 65535:4
+match 0:0:8=0x2a action 3
+match action 4
+block itfE egress
+qdisc 1 = prio bands 3
+class 2 =
+action 2 = class 1:2
+match action 2
+block itfI ingress
+qdisc 65535 = ingress
+class 1 =
+action 1 = class 65535:1
+action 0 = unspec
+match 0:0:8=0x1 action 1
+match action 0
+# there can be only one ingress qdisc per interface ---------------------------
+tcc -c 2>&1
+dev "foo" {
+    ingress {
+	class (10) if 1;
+    }
+    ingress {
+	class (20) if 2;
+    }
+}
+EOF
+ERROR
+<stdin>:8: ingress qdisc is already set near "}"

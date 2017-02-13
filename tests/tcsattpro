@@ -1,0 +1,48 @@
+# IP_PCK sets protocol to ETH_P_IP --------------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute default protocol=0
+
+dev eth0 100Mbps {
+    dsmark (mask 0,default_index 0) {
+	tcindex (protocol "ip") {
+	    class (1,value 1) on (0);
+	}
+    }
+}
+
+#define NOTHING
+
+send 0 x 40
+send IP_PCK(NOTHING)
+send IP6_PCK(NOTHING)
+end
+EOF
+0.000000 D:00 40 0x0000000c
+0.000003 D:01 20 0x0000000d
+0.000005 D:00 40 0x0000000e
+# IP_PCK sets protocol to ETH_P_IPV6 ------------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute default protocol=ETH_P_IP
+
+dev eth0 100Mbps {
+    dsmark (mask 0,default_index 0) {
+	tcindex (protocol "ip") {
+	    class (1,value 1) on (0);
+	}
+    }
+}
+
+#define NOTHING
+
+send 0 x 40
+send IP_PCK(NOTHING)
+send IP6_PCK(NOTHING)
+end
+EOF
+0.000000 D:01 40 0x0000000c
+0.000003 D:01 20 0x0000000d
+0.000005 D:00 40 0x0000000e

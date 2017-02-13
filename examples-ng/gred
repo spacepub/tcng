@@ -1,0 +1,27 @@
+/*
+ * gred - Simple usage of GRED (abusing DSMARK to set skb->tc_index)
+ *
+ * Three flows sending at the same rate are handled with different drop
+ * priorities by GRED.
+ */
+
+#define DP(n)		UDP_HDR($ip_tos=n)
+#define PAYLOAD		0 x 980	/* 1000-sizeof(iphdr) = 980 bytes */
+
+dev eth0 4000 /* 4 Mbps */ {
+    dsmark (indices 4,set_tc_index) {
+	gred (bandwidth 4Mbps,limit 60kB,min 15kB,max 45kB,burst 20000B,
+	  avpkt 1000B) {
+	    class (probability 0.1);
+	    class (probability 0.2,default);
+	    class (probability 0.3);
+	}
+    }
+}
+
+every 0.005s send DP(0) PAYLOAD		/* 1.6 Mbps */
+every 0.005s send DP(1) PAYLOAD		/* 1.6 Mbps */
+every 0.005s send DP(2) PAYLOAD		/* 1.6 Mbps */
+
+time 10s
+end 

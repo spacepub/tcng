@@ -1,0 +1,22 @@
+# tcc accepts semicolon as first character in file ----------------------------
+tcc -c
+;
+EOF
+# tcsim does not treat newline-semicolon in tcc input as comment --------------
+tcsim 2>&1
+dev eth0 {
+; fail
+    fifo;
+}
+EOF
+ERROR
+<stdin>:3: syntax error near "fifo"
+# tcsim does not treat space-semicolon in tcc input as comment ----------------
+tcsim 2>&1
+dev eth0 {
+prio ; fail
+    { }
+}
+EOF
+ERROR
+<stdin>:3: syntax error near "}"

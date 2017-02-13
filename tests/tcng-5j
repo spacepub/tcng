@@ -1,0 +1,84 @@
+# ext_all works with multiple devices (old algorithm) -------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+alpha {
+    dsmark {
+        class (<$x>) if raw[0] == 1;
+        class (<$y>) if 1;
+        prio {
+            $x = class {}
+            $y = class {}
+        }
+    }
+}
+
+omega {
+    dsmark {
+        class (<$x>) if 1;
+        prio {
+            $x = class {}
+        }
+    }
+}
+EOF
+block alpha egress
+qdisc 2 = prio bands 3
+class 1 =
+class 2 =
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+class 1 =
+class 2 =
+action 2 = class 1:2,2:2
+action 1 = class 1:1,2:1
+match 0:0:8=0x01 action 1
+match action 2
+block omega egress
+qdisc 2 = prio bands 3
+class 1 =
+qdisc 1 = dsmark indices 2
+class 0 = qdisc 2
+class 1 =
+action 1 = class 1:1,2:1
+match action 1
+# ext_all works with multiple devices (new algorithm) -------------------------
+tcc -B -xif:err -Xx,all 2>&1 | grep -v '^#'
+alpha {
+    dsmark {
+        class (<$x>) if raw[0] == 1;
+        class (<$y>) if 1;
+        prio {
+            $x = class {}
+            $y = class {}
+        }
+    }
+}
+
+omega {
+    dsmark {
+        class (<$x>) if 1;
+        prio {
+            $x = class {}
+        }
+    }
+}
+EOF
+block alpha egress
+qdisc 2 = prio bands 3
+class 1 =
+class 2 =
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+class 1 =
+class 2 =
+action 0 = class 1:2,2:2
+action 1 = class 1:1,2:1
+match 0:0:8=0x1 action 1
+match action 0
+block omega egress
+qdisc 2 = prio bands 3
+class 1 =
+qdisc 1 = dsmark indices 2
+class 0 = qdisc 2
+class 1 =
+action 0 = class 1:1,2:1
+match action 0

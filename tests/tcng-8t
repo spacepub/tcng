@@ -1,0 +1,12 @@
+# tcsim: seconds may not begin with square bracket ----------------------------
+tcsim  2>&1
+time [0s
+EOF
+ERROR
+<stdin>:1: syntax error near "["
+# tcsim: jiffies may not begin with square bracket ----------------------------
+tcsim 2>&1
+time [0j
+EOF
+ERROR
+<stdin>:1: syntax error near "["

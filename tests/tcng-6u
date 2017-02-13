@@ -1,0 +1,10 @@
+# tcc propagates exit status of cpp -------------------------------------------
+tcc nosuchfile 2>&1 | sed 's/No/no/;s/Warning/warning/'
+cpp: nosuchfile: no such file or directory
+cpp: warning: `-x c' after last input file has no effect
+cpp: no input files
+# tcsim propagates exit status of cpp -----------------------------------------
+tcsim nosuchfile 2>&1 | sed 's/No/no/;s/Warning/warning/'
+cpp: nosuchfile: no such file or directory
+cpp: warning: `-x c' after last input file has no effect
+cpp: no input files

@@ -1,0 +1,32 @@
+--- iproute2/lib/libnetlink.c.orig	Sun Apr 29 01:59:28 2001
++++ iproute2/lib/libnetlink.c	Sun Apr 29 02:00:30 2001
+@@ -138,6 +138,7 @@
+ 			0
+ 		};
+ 
++		iov.iov_len = sizeof(buf);
+ 		status = recvmsg(rth->fd, &msg, 0);
+ 
+ 		if (status < 0) {
+@@ -234,9 +235,9 @@
+ 	}
+ 
+ 	iov.iov_base = buf;
+-	iov.iov_len = sizeof(buf);
+ 
+ 	while (1) {
++		iov.iov_len = sizeof(buf);
+ 		status = recvmsg(rtnl->fd, &msg, 0);
+ 
+ 		if (status < 0) {
+@@ -336,9 +337,9 @@
+ 
+ 
+ 	iov.iov_base = buf;
+-	iov.iov_len = sizeof(buf);
+ 
+ 	while (1) {
++		iov.iov_len = sizeof(buf);
+ 		status = recvmsg(rtnl->fd, &msg, 0);
+ 
+ 		if (status < 0) {

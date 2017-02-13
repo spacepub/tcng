@@ -1,0 +1,42 @@
+# -xif:err only dumps if ------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class (1) if 1;
+}
+EOF
+block eth0 egress
+action 1 = class 1:1
+match action 1
+# -xif:err with -Xx,all dumps everything --------------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class (1) if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3
+class 1 =
+action 1 = class 1:1
+match action 1
+# -xall:err dumps everything --------------------------------------------------
+tcc -xall:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class (1) if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3
+class 1 =
+action 1 = class 1:1
+match action 1
+# with -xall:err, -Xx,all has no effect ---------------------------------------
+tcc -xall:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class (1) if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3
+class 1 =
+action 1 = class 1:1
+match action 1

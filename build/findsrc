@@ -1,0 +1,84 @@
+#!/bin/sh
+#
+# findsrc - Find kernel or iproute2 source
+#
+# Written 2002 by Werner Almesberger
+# Copyright 2002 Werner Almesberger
+#
+
+usage()
+{
+    echo "usage: $0 (-k|-i) [-v] [-x] dir ..." 1>&2
+    echo "  -k  find kernel source" 1>&2
+    echo "  -i  find iproute2 source" 1>&2
+    echo "  -v  verbose output" 1>&2
+    echo "  -x  print command for extraction" 1>&2
+    exit 1
+}
+
+
+kernel=false
+iproute2=false
+extract=false
+verbose=false
+
+while [ ! -z "$1" ] && echo "$1" | grep '^-' >/dev/null; do
+    case "$1" in
+	-k) kernel=true;;
+	-i) iproute2=true;;
+	-v) verbose=true;;
+	-x) extract=true;;
+	*)  usage;;
+    esac
+    shift
+done
+
+$kernel && $iproute2 && usage
+$kernel || $iproute2 || usage
+
+if $kernel; then
+    opt=--kversions
+    pfx=linux-
+else
+    opt=--iversions
+    pfx='iproute2-*'
+fi
+
+file=
+for n in "$@"; do
+    versions=
+    for m in `configure $opt`; do
+	versions="$m $versions"
+    done
+    for m in $versions; do
+	$verbose && echo "Looking for $n/$pfx$m.tar" 1>&2
+	if [ -r $n/$pfx$m.tar ]; then
+	    file=$n/$pfx$m.tar
+	    cmd="tar xf $n/$pfx$m.tar"
+	    break 2
+	fi
+	$verbose && echo "Looking for $n/$pfx$m.tar.gz" 1>&2
+	if [ -r $n/$pfx$m.tar.gz ]; then
+	    file=$n/$pfx$m.tar.gz
+	    cmd="tar xfz $n/$pfx$m.tar.gz"
+	    break 2
+	fi
+	$verbose && echo "Looking for $n/$pfx$m.tar.bz2" 1>&2
+	if [ -r $n/$pfx$m.tar.bz2 ]; then
+	    file=$n/$pfx$m.tar.bz2
+	    cmd="bzcat $n/$pfx$m.tar.bz2 | tar xf -"
+	    break 2
+	fi
+    done
+done
+
+if [ -z "$file" ]; then
+    echo "no suitable source archive found" 1>&2
+    exit 1
+fi
+
+if $extract; then
+    echo $cmd
+else
+    echo $file
+fi

@@ -1,0 +1,13 @@
+/*
+ * Nested headers, for tcng-2u
+ */
+
+dev eth0 {
+    #include "nested.tc"
+}
+
+;    |-h1--|  |-----h2------|  |-----h3------|
+;      *            *                  *
+send 1 0 0 0  0 0 1 0 0 0 0 0  0 0 0 5 0 0 0 0  ; match
+send 1 0 0 0  0 0 1 0 0 0 0 0  0 0 0 4 0 0 0 0  ; no match
+send 1 5 5 5  5 5 1 5 5 5 5 5  5 5 5 4 5 5 5 5  ; no match

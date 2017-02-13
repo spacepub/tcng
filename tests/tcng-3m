@@ -1,0 +1,23 @@
+# overly pessimistic warning by dsmark due to default parameters --------------
+tcc 2>&1 >/dev/null
+dsmark (indices 16,mask 0xf0) {
+    prio;
+}
+EOF
+# tcsim checks range of byte values -------------------------------------------
+echo 'dev eth0 send 999 x 0' | tcsim 2>&1
+ERROR
+<stdin>:2: value 0x3e7 is too big for a byte near ""
+# tcsim checks range of word values -------------------------------------------
+echo 'dev eth0 send 99999' | tcsim 2>&1
+ERROR
+<stdin>:2: value 0x1869f is too big for a byte near ""
+# require_class does not only look for class zero -----------------------------
+tcc -xif:err -Xx,nounspec 2>&1 | grep '^action'
+dsmark (indices 64,mask 0xff,default_index 0x21) {
+    class (1) if 0;
+
+    fifo;
+}
+EOF
+action 33 = class 1:33

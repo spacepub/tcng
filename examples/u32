@@ -1,0 +1,47 @@
+/*
+ * u32 - Classify using u32
+ *
+ * We distinguish UDP, TCP in general, two TCP port pairs in particular,
+ * and a specific destination host last
+ */
+
+#define PORT_USER 0x1234
+
+#define MY_UDP		UDP_PCK($ip_src=10.0.0.1 $ip_dst=10.0.0.2 \
+		          $udp_sport=PORT_USER $udp_dport=PORT_DOMAIN)
+#define MY_TCP(PARAMS)	TCP_PCK($ip_src=10.0.0.1 $ip_dst=10.0.0.2 \
+		          $tcp_sport=PORT_USER $tcp_dport=PORT_HTTP PARAMS)
+#define MY_ICMP(PARAMS)	ICMP_PCK($ip_src=10.0.0.2 $ip_dst=10.0.0.1 PARAMS)
+
+#define U32 tc filter add dev eth0 parent 1:0 proto ip pref 1
+
+dev eth0 100000 /* 100 Mbps */
+
+tc qdisc add dev eth0 root handle 1:0 prio bands 5
+U32 u32 match u8 IPPROTO_UDP 0xff at 9 classid 1:1
+U32 handle 1: u32 divisor 1
+U32 u32 match u8 IPPROTO_TCP ff at 9 \
+  offset at 0 mask 0f00 shift 6 eat link 1:
+U32 handle 1:0:1 u32 ht 1:0:0 \
+  match u16 PORT_USER 0xffff at 0 \
+  match u16 PORT_TELNET 0xffff at 2 \
+  classid 1:2					/* TCP USER -> TELNET */
+U32 handle 1:0:2 u32 ht 1:0:0 \
+  match u16 PORT_USER 0xffff at 0 \
+  match u16 PORT_SMTP 0xffff at 2 \
+  classid 1:3					/* TCP USER -> SMTP */
+U32 handle 1:0:3 u32 ht 1:0:0 \
+  match u8 0 0 classid 1:4			/* other TCP */
+U32 u32 match u32 0x0a000002 0xffffffff at 16 classid 1:5
+						/* -> 10.0.0.2 */
+
+// tc filter show dev eth0
+
+send MY_UDP
+send MY_TCP($tcp_dport=PORT_TELNET)
+send MY_TCP($tcp_dport=PORT_SMTP)
+send MY_TCP($tcp_dport=PORT_HTTP $ip_dst=10.0.0.2)
+send MY_ICMP($ip_dst=10.0.0.2)
+send MY_ICMP($ip_dst=10.0.0.1)
+
+end

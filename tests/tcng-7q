@@ -1,0 +1,65 @@
+# tc policers don't require "mtu" if "peakrate" is absent ---------------------
+tcsim 2>&1
+dev eth0 {
+    dsmark {
+	class
+	    on fw element (1)
+		police (rate 1kbps,burst 1kB);
+    }
+}
+EOF
+# tc policers do require "mtu" if "peakrate" is present -----------------------
+tcsim 2>&1
+dev eth0 {
+    dsmark {
+	class
+	    on fw element (1)
+		police (rate 1kbps,burst 2kB,peakrate 1Mbps);
+    }
+}
+EOF
+ERROR
+<stdin>:5: "tc" target requires parameter "mtu"
+# tc policers are happy if "mtu" and "peakrate" are present -------------------
+tcsim 2>&1
+dev eth0 {
+    dsmark {
+	class
+	    on fw element (1)
+		police (rate 1kbps,burst 2kB,peakrate 1Mbps,mtu 1kB);
+    }
+}
+EOF
+# meter test macros did not enclose argument in parentheses -------------------
+tcc -c
+#include "meters.tc"
+
+$p = SLB(cir 1kbps,cbs 1kB);
+dsmark {
+    class if SLB_ok(({ $p; }));
+}
+EOF
+# grammar still allows simple variable ----------------------------------------
+tcc -c
+#include "meters.tc"
+
+$p = SLB(cir 1kbps,cbs 1kB);
+dsmark {
+    class if SLB_ok($p);
+}
+EOF
+# grammar still allows simple variable with "bucket" --------------------------
+tcc -c
+#include "meters.tc"
+
+$p = SLB(cir 1kbps,cbs 1kB);
+dsmark {
+    class if SLB_ok(bucket $p);
+}
+EOF
+# can put policer definition in parentheses -----------------------------------
+tcc -c -Wnounused
+#include "meters.tc"
+
+$p = (police(rate 1kbps,burst 1kB));
+EOF

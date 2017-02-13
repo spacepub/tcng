@@ -1,0 +1,46 @@
+# tccext detects duplicate offset groups --------------------------------------
+tcc/ext/tcc-ext-echo build 1234 2>&1
+offset 1 = 0+(0:4:4 << 5)
+offset 1 = 0+(0:4:4 << 5)
+EOF
+ERROR
+duplicate offset group 1
+# tccext detects duplicate buckets --------------------------------------------
+tcc/ext/tcc-ext-echo build 1234 2>&1
+bucket 1 = 1 2 3 4 0
+bucket 1 = 1 2 3 4 0
+EOF
+ERROR
+duplicate bucket index 1
+# tccext detects duplicate blocks ---------------------------------------------
+tcc/ext/tcc-ext-echo build 1234 2>&1
+block eth0 egress
+block eth0 egress
+EOF
+ERROR
+duplicate block "eth0" egress
+# tccext detects duplicate qdiscs ---------------------------------------------
+tcc/ext/tcc-ext-echo build 1234 2>&1
+block eth0 egress
+qdisc 2 = fifo plimit 5
+qdisc 2 = fifo plimit 5
+EOF
+ERROR
+duplicate qdisc index 2
+# tccext detects duplicate classes --------------------------------------------
+tcc/ext/tcc-ext-echo build 1234 2>&1
+block eth0 egress
+qdisc 1 = prio bands 3
+class 2 =
+class 2 =
+EOF
+ERROR
+duplicate class 2 on qdisc 1
+# tccext detects duplicate actions --------------------------------------------
+tcc/ext/tcc-ext-echo build 1234 2>&1
+block eth0 egress
+action 3 = class 1:1
+action 3 = class 1:1
+EOF
+ERROR
+duplicate action index 3

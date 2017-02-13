@@ -1,0 +1,17 @@
+/*
+ * tcc code example
+ *
+ * Implements two delay priorities. The high priority is selected for all
+ * traffic that doesn't go to the default Gnutella port.
+ */
+
+#include "fields.tc"
+
+#define GNUTELLA_PORT 6699
+
+prio {
+    class
+	if tcp_dport != GNUTELLA_PORT;
+    class
+	if 1;
+}

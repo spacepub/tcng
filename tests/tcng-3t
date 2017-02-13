@@ -1,0 +1,6 @@
+# ip.def: UDP_HDR did not evaluate parameters ---------------------------------
+tcsim -q
+dev eth1 10000
+send UDP_HDR($udp_sport=1000 $udp_dport=2000)
+end
+EOF

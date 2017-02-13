@@ -1,0 +1,9 @@
+# "if" test using "c" target --------------------------------------------------
+LD_LIBRARY_PATH=. \
+  tcsim -v -Xc,-tc examples-ng/u32 | sed '/.*_c.* returns /s///p;d'
+OK (0) (1:1, 0x1)
+OK (0) (1:2, 0x2)
+OK (0) (1:3, 0x3)
+OK (0) (1:4, 0x4)
+OK (0) (1:5, 0x5)
+UNSPEC (-1)

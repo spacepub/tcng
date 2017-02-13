@@ -1,0 +1,25 @@
+# "C" target didn't support < or >= ------------------------------
+tcc -tc >/dev/null
+prio {
+    drop if raw[0] < 3 || raw[1] >= 5;
+    class if 1;
+}
+EOF
+# byte & 1024 always equals zero ----------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class if (raw[0] & 1024) == 0;
+}
+EOF
+block eth0 egress
+action 1 = class 1:1
+match action 1
+# byte & 1024 never equals 1024 -----------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class if (raw[0] & 1024) == 1024;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+match action 0

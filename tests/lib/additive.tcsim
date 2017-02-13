@@ -1,0 +1,14 @@
+/*
+ * Additive headers, for tests/additive
+ */
+
+dev eth0 {
+    #include "additive.tc"
+}
+
+;    |-----------h1------------|  |-h2--|
+;    |--len1--|  |----len2-----|
+send 1 0x40 0 0  0 0 0 0 0 0 0 0  7 0 0 0       ; OK
+send 1 0x40 0 0  0 0 0 0 0 0 0 0  6 0 0 0       ; UNSPEC
+send 1 0x40 7 7  7 7 7 7 7 7 7 7  6 7 7 7       ; UNSPEC
+send 1 0x48 0 0  0 0 0 0 0 0 0 0  7 0 0 0       ; OK

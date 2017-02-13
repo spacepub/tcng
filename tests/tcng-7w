@@ -1,0 +1,36 @@
+# dsmark accepts class zero generated via class selection paths ---------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+#include "tcngreg.def"
+
+dsmark {
+    class (<$x>) if 1;
+
+    gred (RED_PARAMS) {
+        $x = class (0);
+        class (1,default);
+    }
+}
+EOF
+block eth0 egress
+action 0 = class 1:0
+match action 0
+# dsmark supports class selection paths ---------------------------------------
+tcc -c
+dsmark {
+    class (<>);
+}
+EOF
+# ingress supports class selection paths --------------------------------------
+tcc -c
+ingress {
+    class (<>);
+}
+EOF
+# prio refuses class selection paths ------------------------------------------
+tcc -c 2>&1
+prio {
+    class (<>);
+}
+EOF
+ERROR
+<stdin>:2: prio does not support class selection paths near ">"

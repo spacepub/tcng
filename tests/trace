@@ -1,0 +1,47 @@
+# tracing of built-in qdisc ---------------------------------------------------
+tcsim -v -s 4
+dev eth0 10000
+#define NOTHING
+send UDP_PCK(NOTHING)
+EOF
+0.000000 E : 0x00000000 28 : eth0: 4500001c ...
+0.000000 e : 0x00000000 28 : <0> pfifo_fast (0:0) returns SUCCESS (0)
+0.000000 d : 0x00000000 28 : <0> pfifo_fast (0:0)
+0.000000 D : 0x00000000 28 : eth0: 4500001c ...
+# tracing of user-provided qdisc ----------------------------------------------
+tcsim -v -s 4
+dev eth0 10000
+insmod tcsim/modules/sch_discard.o
+preload tcsim/modules/q_discard.so
+tc qdisc add dev eth0 root handle 1:0 discard
+#define NOTHING
+send UDP_PCK(NOTHING)
+EOF
+0.000000 T : qdisc add dev eth0 root handle 1:0 discard
+0.000000 E : 0x00000003 28 : eth0: 4500001c ...
+0.000000 e : 0x00000003 28 : <0> discard (1:0) returns DROP (1)
+0.000000 * : 0x00000003 28 : eth0: enqueue returns DROP (1)
+# tracing of built-in filter --------------------------------------------------
+tcsim -v -s 4 | sed '/ [TEedD] /d'
+dev eth0 10000
+tc qdisc add dev eth0 root handle 1:0 prio
+tc filter add dev eth0 parent 1:0 proto ip fw
+#define NOTHING
+send UDP_PCK(NOTHING)
+EOF
+0.000000 c : 0x00000006 28 : <1> fw at 1:0 returns UNSPEC (-1)
+# tracing of user-provided filter ---------------------------------------------
+tcsim -v -s 4 | sed '/ [TEedD] /d'
+dev eth0 10000
+insmod tcsim/modules/cls_unspec.o
+preload tcsim/modules/f_unspec.so
+tc qdisc add dev eth0 root handle 1:0 prio
+tc filter add dev eth0 parent 1:0 proto ip unspec
+#define NOTHING
+send UDP_PCK(NOTHING)
+EOF
+0.000000 c : 0x00000006 28 : <1> unspec at 1:0 returns UNSPEC (-1)
+# tracing of ingress qdisc ----------------------------------------------------
+tcsim -v -s 4 examples/ingress | sed '/ [TEedD] /d'
+0.000080 I : 0x00000003 100 : b_eth0: 45000064 ...
+0.000080 i : 0x00000003 100 : <0> ingress (ffff:0) returns NF_ACCEPT (1)

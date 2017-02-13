@@ -1,0 +1,46 @@
+# "drop on" isn't supported (filter-element) ----------------------------------
+tcc 2>&1
+prio {
+    drop on tcindex element(1);
+}
+EOF
+ERROR
+<stdin>:2: we currently don't support "drop on" near "tcindex"
+# "drop on" isn't supported (element) -----------------------------------------
+tcc 2>&1
+egress {
+    tcindex {
+        drop on element(0);
+    }
+}
+EOF
+ERROR
+<stdin>:3: we currently don't support "drop on" near "element"
+# "drop on" isn't supported (parameters) --------------------------------------
+tcc 2>&1
+egress {
+    tcindex {
+        drop on (0);
+    }
+}
+EOF
+ERROR
+<stdin>:3: we currently don't support "drop on" near "("
+# "drop on" isn't supported (variable-parameters) -----------------------------
+tcc 2>&1
+egress {
+    $f = tcindex; 
+    drop on $f(0);
+}
+EOF
+ERROR
+<stdin>:3: we currently don't support "drop on" near "("
+# "drop on" isn't supported (variable-element) --------------------------------
+tcc 2>&1
+egress {
+    $f = tcindex;
+    drop on $f element(0);
+}
+EOF
+ERROR
+<stdin>:3: we currently don't support "drop on" near "element"

@@ -1,0 +1,40 @@
+# u32 supports the drop construct ---------------------------------------------
+tcsim -s 4 | awk '{print $2}'
+#include "packet.def"
+
+dev eth0 10000 {
+    #include "fields.tc"
+
+    dsmark (default_index 0) {
+	drop if ip_tos == 0;
+    }
+}
+
+send IP_PCK($ip_tos = 0)
+send IP_PCK($ip_tos = 1)
+end
+EOF
+E
+*
+E
+D
+# u32 supports the drop primitive ---------------------------------------------
+tcsim -s 4 | awk '{print $2}'
+#include "packet.def"
+
+dev eth0 10000 {
+    #include "fields.tc"
+
+    dsmark (default_index 0) {
+	class if ip_tos && drop;
+    }
+}
+
+send IP_PCK($ip_tos = 0)
+send IP_PCK($ip_tos = 1)
+end
+EOF
+E
+D
+E
+*

@@ -1,0 +1,29 @@
+/*
+ * dsmark+policing - Dsmark with tcindex and policing
+ *
+ * Packets with non-zero TOS/DS field are marked with TOS 0xb8 (EF DSCP).
+ * If they exceed the rate limit, they're dropped.
+ */
+
+#define LIMIT 1Mbit	/* be very sure not to use Mbps here ... */
+#define BURST 10kB
+
+#define TOS_ZERO	IP_HDR($ip_tos=0)
+#define TOS_NONZERO	IP_HDR($ip_tos=1)
+#define PAYLOAD		0 x 980	/* 1000-sizeof(iphdr) = 980 bytes */
+
+dev eth0 10000 /* 10 Mbps */
+
+tc qdisc add dev eth0 root handle 1:0 dsmark indices 64 set_tc_index
+tc class change dev eth0 classid 1:1 dsmark mask 0 value 0xb8
+tc filter add dev eth0 parent 1:0 proto ip prio 1 \
+  handle 0 tcindex mask 0xff classid 1:0 pass_on
+tc filter add dev eth0 parent 1:0 proto ip prio 2 \
+  handle 0 tcindex mask 0 classid 1:1 \
+  police rate LIMIT burst BURST action drop
+
+every 0.005s send TOS_ZERO PAYLOAD		/* 1.6 Mbps */
+every 0.005s send TOS_NONZERO PAYLOAD		/* 1.6 Mbps */
+
+time 1s
+end 

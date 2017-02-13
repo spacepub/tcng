@@ -1,0 +1,14 @@
+# fields have scoping, like variables -----------------------------------------
+tcc -xif:err 2>&1 | grep 'action [12]$'
+field f = raw[0];
+
+prio {
+    class if f == 0
+    {
+        field f = raw[1];
+    }
+    class if f == 1;
+}
+EOF
+match 0:0:8=0x00 action 1
+match 0:0:8=0x01 action 2

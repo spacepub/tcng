@@ -1,0 +1,11 @@
+# access without index crashed iflib_off.c:use_offset -------------------------
+tcc -xif:err 2>&1 >/dev/null | sed '/^#/d'
+prio {
+    class if raw == 1;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = class 1:1
+match 0:0:8=0x01 action 1
+match action 0

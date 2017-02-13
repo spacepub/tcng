@@ -1,0 +1,89 @@
+# class selection path: CBQ, one level ----------------------------------------
+tcsim -v | sed '/cbq/d;/.*eth0 /s///p;d' | sed 's/protocol all //;s/ limit .*//'
+#include "tcngreg.def"
+
+dev eth0 {
+    dsmark {
+        class (<$x>) if raw[0] == 1;
+        class (<$y>) if 1;
+        cbq (CBQ_PARAMS) {
+            $x = class (rate 1Mbps,prio 1);
+	    $y = class (rate 1Mbps,prio 1);
+        }
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+parent 2:0 prio 1 tcindex mask 0x3 shift 0
+parent 2:0 prio 1 handle 2 tcindex classid 2:2
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u8 0x1 0xff at 0 classid 1:1
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:2
+# class selection path: CBQ, two levels, at end -------------------------------
+tcsim -v | sed '/cbq/d;/.*eth0 /s///p;d' | sed 's/protocol all //;s/ limit .*//'
+#include "tcngreg.def"
+
+dev eth0 {
+    dsmark {
+        class (<$x>) if raw[0] == 1;
+        class (<$y>) if 1;
+        cbq (CBQ_PARAMS) {
+	    class (rate 2Mbps,prio 1) {
+		$x = class (rate 1Mbps,prio 1);
+		$y = class (rate 1Mbps,prio 1);
+	    }
+        }
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+parent 2:0 prio 1 tcindex mask 0x3 shift 0
+parent 2:0 prio 1 handle 2 tcindex classid 2:3
+parent 2:0 prio 1 handle 1 tcindex classid 2:2
+parent 1:0 prio 1 u32 match u8 0x1 0xff at 0 classid 1:1
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:2
+# class selection path: CBQ, two levels, over-qualified -----------------------
+tcsim -v 2>&1
+#include "tcngreg.def"
+
+dev eth0 {
+    dsmark {
+        class (<$x $z>) if raw[0] == 1;
+        class (<$z $y>) if 1;
+        cbq (CBQ_PARAMS) {
+	    $z = class (rate 2Mbps,prio 1) {
+		$x = class (rate 1Mbps,prio 1);
+		$y = class (rate 1Mbps,prio 1);
+	    }
+        }
+    }
+}
+EOF
+ERROR
+<stdin>:5: unfinished class selection path reaches leaf
+# class selection path: CBQ, two levels, mixed --------------------------------
+tcsim -v | sed '/cbq/d;/.*eth0 /s///p;d' | sed 's/protocol all //;s/ limit .*//'
+#include "tcngreg.def"
+
+dev eth0 {
+    dsmark {
+        class (<$x>) if raw[0] == 1;
+        class (<$z>) if raw[0] == 2;
+        class (<$y>) if 1;
+        cbq (CBQ_PARAMS) {
+	    $z = class (rate 2Mbps,prio 1) {
+		$x = class (rate 1Mbps,prio 1);
+		$y = class (rate 1Mbps,prio 1);
+	    }
+        }
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+parent 2:0 prio 1 tcindex mask 0x3 shift 0
+parent 2:0 prio 1 handle 3 tcindex classid 2:3
+parent 2:0 prio 1 handle 2 tcindex classid 2:1
+parent 2:0 prio 1 handle 1 tcindex classid 2:2
+parent 1:0 prio 1 u32 match u8 0x1 0xff at 0 classid 1:1
+parent 1:0 prio 1 u32 match u8 0x2 0xff at 0 classid 1:2
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:3

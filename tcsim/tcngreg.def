@@ -1,0 +1,9 @@
+/* tcngreg.def - Auxiliary definitions for TCNG regression tests */
+
+/* Written 2001 by Werner Almesberger, EPFL-ICA */
+
+
+#define RED_PARAMS \
+  bandwidth 10Mbps, avpkt 1kB, burst 5kB, limit 10kB, max 8kB, min 2kB
+#define CBQ_PARAMS \
+  bandwidth 10Mbps, allot 1.5kB, avpkt 1kB, maxburst 2p

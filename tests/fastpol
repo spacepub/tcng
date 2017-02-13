@@ -1,0 +1,60 @@
+# tcc does not disturb assigned policer ids -----------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep bucket
+$a = bucket(10,burst 1kB,rate 1kbps);
+$b = bucket(20,burst 1kB,rate 1kbps);
+$c = bucket(30,burst 1kB,rate 1kbps);
+prio {
+    class if conform $a || conform $b || conform $c;
+}
+EOF
+bucket 10 = 125 0 1024 1024 0
+bucket 20 = 125 0 1024 1024 0
+bucket 30 = 125 0 1024 1024 0
+# tcc assigns policer ids -----------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep bucket
+$a = bucket(burst 1kB,rate 1kbps);
+$b = bucket(burst 1kB,rate 1kbps);
+$c = bucket(burst 1kB,rate 1kbps);
+prio {
+    class if conform $a || conform $b || conform $c;
+}
+EOF
+bucket 1 = 125 0 1024 1024 0
+bucket 2 = 125 0 1024 1024 0
+bucket 3 = 125 0 1024 1024 0
+# tcc fills policer id "holes" ------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep bucket
+$a = bucket(10,burst 1kB,rate 1kbps);
+$b = bucket(burst 1kB,rate 1kbps);
+$c = bucket(30,burst 1kB,rate 1kbps);
+prio {
+    class if conform $a || conform $b || conform $c;
+}
+EOF
+bucket 10 = 125 0 1024 1024 0
+bucket 1 = 125 0 1024 1024 0
+bucket 30 = 125 0 1024 1024 0
+# tcc skips policer ids in use ------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep bucket
+$a = bucket(10,burst 1kB,rate 1kbps);
+$b = bucket(burst 1kB,rate 1kbps);
+$c = bucket(1,burst 1kB,rate 1kbps);
+prio {
+    class if conform $a || conform $b || conform $c;
+}
+EOF
+bucket 10 = 125 0 1024 1024 0
+bucket 2 = 125 0 1024 1024 0
+bucket 1 = 125 0 1024 1024 0
+# tcc skips policer ids in use (numbers requiring sorting) --------------------
+tcc -xif:err -Xx,all 2>&1 | grep bucket
+$a = bucket(3,burst 1kB,rate 1kbps);
+$b = bucket(burst 1kB,rate 1kbps);
+$c = bucket(1,burst 1kB,rate 1kbps);
+prio {
+    class if conform $a || conform $b || conform $c;
+}
+EOF
+bucket 3 = 125 0 1024 1024 0
+bucket 2 = 125 0 1024 1024 0
+bucket 1 = 125 0 1024 1024 0

@@ -1,0 +1,20 @@
+# Double headers at external interface (nested; INEFFICIENT) ------------------
+tcc -xif:err tests/lib/nested.tc 2>&1 | \
+  sed '/^offset/,/^match/p;d'
+offset 100 = 0+(0:0:8 << 5)
+offset 101 = 0+(100:16:8 << 6)
+offset 102 = 101+(0:0:8 << 5)
+offset 103 = 102+(102:0:8 << 5)
+action 0 = unspec
+action 1 = class 1:1
+match 102:24:8=0x05 action 1
+# idem, test equality of classifiers ------------------------------------------
+trinity -v tests/lib/nested.tcsim
+OK (0) (1:1)
+UNSPEC (-1)
+UNSPEC (-1)
+# Double-check one result of previous run -------------------------------------
+tcsim -v tests/lib/nested.tcsim | sed '/.* c .*returns /{s///;s/ (.*//;p;};d'
+OK
+UNSPEC
+UNSPEC

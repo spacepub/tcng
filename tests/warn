@@ -1,0 +1,39 @@
+# "warn nounused" works -------------------------------------------------------
+tcc 2>&1
+warn "nounused";
+$foo = 1;
+EOF
+# preparation for "warn truncate" test ----------------------------------------
+tcc -c 2>&1
+$p = police(rate 12bps,burst 1kB);
+EOF
+<stdin>:1: warning: unused variable p
+# "warn truncate" works -------------------------------------------------------
+tcc -c 2>&1
+warn "truncate";
+$p = police(rate 12bps,burst 1kB);
+EOF
+<stdin>:2: warning: parameter rate (12.000000) will be truncated near ","
+<stdin>:2: warning: unused variable p
+# "warn nounused,truncate" works ----------------------------------------------
+tcc -c 2>&1
+warn "nounused","truncate";
+$p = police(rate 12bps,burst 1kB);
+EOF
+<stdin>:2: warning: parameter rate (12.000000) will be truncated near ","
+# "warn nonsense" yields a warning --------------------------------------------
+tcc 2>&1
+warn "nonsense";
+EOF
+<stdin>:1: warning: unrecognized warning switch near ""nonsense"
+# -W takes precedence over "warn" (1) -----------------------------------------
+tcc -Wunused 2>&1
+warn "nounused";
+$foo = 1;
+EOF
+<stdin>:2: warning: unused variable foo
+# -W takes precedence over "warn" (2) -----------------------------------------
+tcc -Wnounused 2>&1
+warn "unused";
+$foo = 1;
+EOF

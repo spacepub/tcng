@@ -1,0 +1,71 @@
+/*
+ * idiomatic.tc - Convenience macros to test for common idiomatic patterns in
+ *                in TCP/IP packets
+ *
+ * Written 2001,2002 by Werner Almesberger
+ * Copyright 2001 Network Robots
+ * Copyright 2002 Bivio Networks, Network Robots
+ */
+
+
+#ifndef __INCLUDED_FROM_FIELDS_TC
+#warning idiomatic.tc should only be included from fields.tc
+#endif
+
+#ifndef IDIOMATIC_TC
+#define IDIOMATIC_TC
+
+/*
+ * Macros to use in classifiers to drop certain unwanted packets
+ *
+ * These macros are designed for use in the affirmative sense. They will
+ * perform extraordinarily poorly if used with "!". Instead, the negated
+ * versions should be used.
+ */
+
+#define ip_is_fragment		(ip_MF || ip_off != 0)
+#define not_ip_is_fragment	(!ip_MF && ip_off == 0)
+
+#define ip_has_options		(ip_hl != 5)
+#define not_ip_has_options	(ip_hl == 5)
+
+#define ip_is_tiny_fragment /* RFC1858/RFC3128 */ \
+  (ip_off == 1 || \
+   (ip_off == 0 && \
+    ((ip_proto == IPPROTO_TCP && ip_len < 40) || \
+     (ip_proto == IPPROTO_UDP && ip_len < 28) || \
+     ip_len < 24)))
+#define not_ip_is_tiny_fragment (!ip_is_tiny_fragment)
+  /* No rule without exception: in the case of ip_is_tiny_fragment, negation
+     is actually the only viable choice, although not a particularly good one
+     either. */
+
+/*
+ * Note: tcc currently can't optimize !tcp_xxx because of the implicit
+ * pre-condition, so we have to use == 0 instead of !.
+ */
+
+#define tcp_incoming		(tcp_SYN && tcp_ACK == 0)
+#define not_tcp_incoming 	(ip_proto != 6 || tcp_SYN == 0 || tcp_ACK)
+
+
+/* ----- Convenience fields for retrieving the DS field (RFC2474) ---------- */
+
+
+field ip_dsfield = ip_tos;
+field ip_dscp = ip_dsfield >> 2;
+
+
+/* ----- Convenience fields for retrieving TOS octet values (RFC791) ------- */
+
+/*
+ * Note that the use of ip_tos_delay, ip_tos_throughput, and ip_tos_reliability
+ * is deprecated by RFC2474
+ */
+
+field ip_tos_prec = ip_tos >> 5;		/* precedence */
+field ip_tos_delay = (ip_tos >> 4) & 1;		/* delay */
+field ip_tos_throughput = (ip_tos >> 3) & 1;	/* throughput */
+field ip_tos_reliability = (ip_tos >> 2) & 1;	/* reliability */
+
+#endif /* IDIOMATIC_TC */

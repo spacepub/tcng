@@ -1,0 +1,18 @@
+# != works for 128 bit values -------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+egress {
+    drop if raw.ipv6 != 1::;
+}
+EOF
+match 0:0:128=0x00010000000000000000000000000000 action 1
+match action 0
+# "c" targets does detect invalid field root ----------------------------------
+tcc -tc 2>&1 >/dev/null
+field foo = field_root(1234);
+
+egress {
+    class (<>) if foo == 0;
+}
+EOF
+ERROR
+"c" only supports field roots 0 and 1

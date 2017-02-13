@@ -1,0 +1,51 @@
+# tcsim: default rate unit is kbps --------------------------------------------
+tcsim | tcsim_filter -c -d
+dev eth0 20	/* 20 kbps, expect 25 packets */
+
+time 0s
+every 0.00001s send 0 x 10	/* 8 Mbps */
+time 0.1s
+EOF
+D 26
+# tcsim: rate unit "bps" ------------------------------------------------------
+tcsim | tcsim_filter -c -d
+dev eth0 30000 bps	/* 30 kbps, expect 38 packets */
+
+time 0s
+every 0.00001s send 0 x 10	/* 8 Mbps */
+time 0.1s
+EOF
+D 38
+# tcsim: rate unit "kBps" -----------------------------------------------------
+tcsim | tcsim_filter -c -d
+dev eth0 10 kBps	/* 80 kbps, expect 100 packets */
+
+time 0s
+every 0.00001s send 0 x 10	/* 8 Mbps */
+time 0.1s
+EOF
+D 101
+# tcsim: rate unit "MBps" -----------------------------------------------------
+tcsim | tcsim_filter -c -d
+dev eth0 1MBps	/* 8 Mbps, expect 1000 packets */
+
+time 0s
+every 0.00001s send 0 x 10	/* 8 Mbps */
+time 0.01s
+EOF
+D 1001
+# tcsim: rate unit "Gbps" -----------------------------------------------------
+tcsim | tcsim_filter -c -d
+dev eth0 2 Gbps	/* 2 Mbps, expect 250 packets */
+
+time 0s
+every 0.000001s send 0 x 1000	/* 8 Gbps */
+time 0.001s
+EOF
+D 251
+# tcsim: minimum rate is 1 kbps -----------------------------------------------
+tcsim 2>&1
+dev eth0 999 bps
+EOF
+ERROR
+<stdin>:1: interface rate must be at least 1 kbps near "bps"

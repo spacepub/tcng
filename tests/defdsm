@@ -1,0 +1,122 @@
+# dsmark without nounspec (base for following tests) --------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "fields.tc"
+
+    dsmark (indices 256) {
+	class (5) if ip_tos == 4;
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=1)
+send IP_HDR($tos=4)
+send IP_HDR($tos=8)
+EOF
+UNSPEC (-1)
+OK (0) (1:5, 0x0)
+UNSPEC (-1)
+# dsmark with nounspec: using default_index -----------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    dsmark (indices 256,default_index 7) {
+	class (0)
+	    if 0; /* we need this to make -x work */
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=1)
+send IP_HDR($tos=4)
+send IP_HDR($tos=8)
+EOF
+OK (0) (1:7, 0x0)
+OK (0) (1:7, 0x0)
+OK (0) (1:7, 0x0)
+# dsmark with nounspec: using default_index and classifier --------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "fields.tc"
+
+    dsmark (indices 256,default_index 7) {
+	class (5) if ip_tos == 4;
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=1)
+send IP_HDR($tos=4)
+send IP_HDR($tos=8)
+EOF
+OK (0) (1:7, 0x0)
+OK (0) (1:5, 0x0)
+OK (0) (1:7, 0x0)
+# dsmark with nounspec: using set_tc_index ------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    dsmark (indices 256,set_tc_index) {
+	class (0)
+	    if 0; /* we need this to make -x work */
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+send IP_HDR($tos=4)
+send IP_HDR($tos=80)
+send IP_HDR($tos=0xff)
+EOF
+OK (0) (1:0, 0x0)
+OK (0) (1:1, 0x0)
+OK (0) (1:4, 0x0)
+OK (0) (1:50, 0x0)
+OK (0) (1:ff, 0x0)
+# dsmark with nounspec: using set_tc_index and classifier ---------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "fields.tc"
+
+    dsmark (indices 256,set_tc_index) {
+	class (7)
+	    if ip_tos == 4;
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+send IP_HDR($tos=4)
+send IP_HDR($tos=80)
+send IP_HDR($tos=0xff)
+EOF
+OK (0) (1:0, 0x0)
+OK (0) (1:1, 0x0)
+OK (0) (1:7, 0x0)
+OK (0) (1:50, 0x0)
+OK (0) (1:ff, 0x0)
+# dsmark with nounspec: none of the above -------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:test -Xx,nounspec 2>&1 >/dev/null
+#include "fields.tc"
+
+dsmark (indices 256) {
+    class (5) if ip_tos == 4;
+}
+EOF
+ERROR
+<stdin>:3: dsmark_default_class: need "default_index" or "set_tc_index"

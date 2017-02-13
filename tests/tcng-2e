@@ -1,0 +1,9 @@
+# TCNG: parameter truncation warning is issued only once ----------------------
+tcc -Wtruncate 2>&1 | grep warning
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 7bps);
+}
+EOF
+<stdin>:4: warning: parameter rate (7.000000) will be truncated near ")"

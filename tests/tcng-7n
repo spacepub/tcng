@@ -1,0 +1,43 @@
+# -S joins struct entries with without a dot ----------------------------------
+tcc -S -c -Wnounused -ustderr 2>&1
+$foo.bar = 42;
+EOF
+$foobar = 42
+# dsmark auto-assigns class number in implicit class --------------------------
+tcc -c
+dsmark {
+    fifo;
+}
+EOF
+# dsmark auto-assigns class number in class with explicit qdisc ---------------
+tcc -c -Wnoexplicit
+dsmark {
+    class {
+	fifo;
+    }
+}
+EOF
+# dsmark auto-assigns class number in single class with implicit qdisc --------
+tcc -c
+dsmark {
+    class;
+}
+EOF
+# dsmark refuses to auto-assign multiple class numbers ------------------------
+tcc -c 2>&1
+dsmark {
+    class;
+    class;
+}
+EOF
+ERROR
+<stdin>:2: dsmark does not auto-assign class numbers
+# dsmark now detects duplicate class numbers ----------------------------------
+tcc -c 2>&1
+dsmark {
+    class (0) if raw[0] == 1;
+    class (0) if raw[0] == 2;
+}
+EOF
+ERROR
+<stdin>:2: duplicate class number 0

@@ -1,0 +1,18 @@
+# -Xx,fifos does not add fifos to yet-to-be-numbered classes ------------------
+tcc -xif:err -Xx,all -Xx,fifos 2>&1 | grep -v '^#'
+egress {
+    class (<>) if raw[0] == 1;
+    class (<>) if raw[0] == 2;
+}
+EOF
+block eth0 egress
+qdisc 2 = fifo
+qdisc 1 = dsmark indices 2
+class 0 = qdisc 2
+class 1 =
+action 2 = unspec
+action 1 = class 1:1
+action 0 = class 1:0
+match 0:0:8=0x01 action 0
+match 0:0:8=0x02 action 1
+match action 2

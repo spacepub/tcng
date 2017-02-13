@@ -1,0 +1,23 @@
+; Well, you can't nest class selection paths. But if we ever allow it, this is
+; what is will look like.
+
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol ip //'
+eth0 {
+    dsmark {
+	class (<$x>) if raw[0] == 1;
+	class (<$y>) if raw[0] == 2;
+	class (<$z>) if 1;
+	prio {
+	    $x = class;
+	    dsmark {
+		class (<$a>) if 1;
+		$y = class (<$b>);
+		prio {
+		    $a = class;
+		    $z = class;
+		    $b = $z;
+		}
+	    }
+	}
+    }
+}

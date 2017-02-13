@@ -1,0 +1,101 @@
+BEGIN CONDITIONAL
+tcsim
+dev eth0
+tc qdisc add dev eth0 root handle 1:0 tbf limit 20kB rate 1Mbit burst 3kB
+tc qdisc add dev eth0 parent 1:0 pfifo
+EOF
+# TBF without inner qdisc (ext) ------------------------------------------------
+tcc -x if:err -Xx,all 2>&1 | grep =
+tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB);
+EOF
+qdisc 1 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+action 0 = unspec
+# TBF with empty inner block (ext) --------------------------------------------
+tcc -x if:err -Xx,all 2>&1 | grep =
+tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB) {
+}
+EOF
+qdisc 1 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+action 0 = unspec
+# TBF with inner fifo (ext) ---------------------------------------------------
+tcc -x if:err -Xx,all 2>&1 | grep =
+tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB) {
+    fifo;
+}
+EOF
+qdisc 2 = fifo
+qdisc 1 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+class 0 = qdisc 2
+action 0 = unspec
+# TBF without inner qdisc, -Xx,fifos (ext) ------------------------------------
+tcc -x if:err -Xx,all -Xx,fifos 2>&1 | grep =
+tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB);
+EOF
+qdisc 2 = fifo
+qdisc 1 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+class 0 = qdisc 2
+action 0 = unspec
+# TBF in egress, with inner fifo, -Xx,nounspec (ext) --------------------------
+tcc -x if:err -Xx,all -Xx,nounspec 2>&1 | grep =
+egress {
+    tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB) {
+	fifo;
+    }
+}
+EOF
+qdisc 3 = fifo
+qdisc 2 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+class 0 = qdisc 3
+qdisc 1 = dsmark indices 1
+class 0 = qdisc 2
+action 0 = class 1:0
+# TBF at top-level, with inner fifo, -Xx,nounspec (ext) -----------------------
+tcc -x if:err -Xx,all -Xx,nounspec 2>&1 | grep =
+tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB) {
+    fifo;
+}
+EOF
+qdisc 2 = fifo
+qdisc 1 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+class 0 = qdisc 2
+action 0 = class 1:0
+# TBF at top-level, without inner qdisc, -Xx,nounspec (ext) -------------------
+tcc -x if:err -Xx,all -Xx,nounspec 2>&1 | grep =
+tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB);
+EOF
+qdisc 1 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+class 0 =
+action 0 = class 1:0
+# TBF with inner prio (ext) ----------------------------------------------------
+tcc -x if:err -Xx,all 2>&1 | grep =
+egress {
+    class (<$c1>) if raw[0] == 1;
+    class (<$c2>) if raw[0] == 2;
+    class (<$c3>) if 1;
+
+    tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 2kB) {
+	prio {
+	    $c1 = class (1);
+	    $c2 = class (2);
+	    $c3 = class (3);
+	}
+    }
+}
+EOF
+qdisc 3 = prio bands 3
+class 1 =
+class 2 =
+class 3 =
+qdisc 2 = tbf burst 2048 limit 10240 mtu 1536 rate 1000
+class 0 = qdisc 3
+qdisc 1 = dsmark indices 8
+class 0 = qdisc 2
+class 5 =
+class 6 =
+class 7 =
+action 7 = class 1:7,2:0,3:3
+action 6 = class 1:6,2:0,3:2
+action 5 = class 1:5,2:0,3:1
+match 0:0:8=0x01 action 5
+match 0:0:8=0x02 action 6
+END CONDITIONAL

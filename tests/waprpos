@@ -1,0 +1,34 @@
+# global pragma can follow global items ---------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+warn "nounused";
+$foo = 5;
+pragma ("whatever");
+EOF
+pragma whatever
+# multiple global pragmas are not allowed -------------------------------------
+tcc 2>&1
+pragma ("one");
+pragma ("two");
+EOF
+ERROR
+<stdin>:2: only one global pragma allowed near "pragma"
+# "warn" can be mixed with variables and fields in global scope ---------------
+tcc -c 2>&1
+$foo = 5;
+warn "nounused";
+$foo = 7;
+field foo = raw[42];
+warn "unused";
+EOF
+<stdin>:3: warning: unused variable foo
+# "warn" can be mixed with variables and fields in local scope ----------------
+tcc -c 2>&1
+prio {
+    $foo = 5;
+    field foo = raw[42];
+    warn "nounused";
+    $foo = 7;
+    warn "unused";
+}
+EOF
+<stdin>:5: warning: unused variable foo

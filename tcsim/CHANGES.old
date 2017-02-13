@@ -1,0 +1,412 @@
+THIS FILE IS NO LONGER UPDATED. NEW ENTRIES ARE NOW IN ../CHANGES !
+
+
+Version 1o (24-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- enqueue_wrapper and requeue_wrapper accessed skb after freeing it
+
+Version 1n (24-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- now compiling modules with -g
+- added copying information (GPL)
+- runtests.sh now removes Electric Fence's banner message
+- runtests.sh: new option -i to continue after errors
+- Makefile: RUNTESTS_FLAGS are propagated to runtests.sh
+
+Version 1m (23-APR-2001)
+------------------------
+
+- added more tcng and tcsim regression tests
+- README: added description of module usage
+- added "preload" command to preload iproute2/tc modules
+- tcsim no longer searches $TOPDIR/modules for iproute2/tc modules
+- updated tests/modules and tests/trace accordingly
+- added cross-device policing example examples-ng/xdev
+- README: entry for "host" command was incomplete
+- typo: variable names could contain "+" but not "_"
+
+Version 1l (23-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- host with valid bare name test was incorrectly flagged as obsolete
+- generalized tracing to include insmod'ed elements
+
+Version 1k (23-APR-2001)
+------------------------
+
+- removed compatibility code for 1j name changes
+- examples-ng/gred incorrectly assumed pre-1g behaviour, with DP always >= 1
+
+Version 1j (23-APR-2001)
+------------------------
+
+- ip.def: renamed parameter "saddr" to "src", "daddr" to "dst", and "proto" to
+  "ipproto" (the old names are still recognized)
+- tcsim: format prefixes (fmt:) replace suffixes (.fmt) for more intuitive
+  precedence (the old syntax is still recognized)
+- made saddr/src and daddr/dst transition also in filter.pl
+- made name transition in all examples, tests, and the documentation
+- added more tcng regression tests
+
+Version 1i (22-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- Makefiles: marked all phony targets as such
+- added example modules for qdisc and filter in modules/
+- README: various minor updates and corrections
+- added command "insmod" to load traffic control elements built as modules
+- added insmod usage example in modules/
+- added regression test for modules
+- runtests.sh: now strips trailing blanks from output lines before comparing
+- configure now checks if "tcc" is an executable, to catch common mistake
+  --tcc /somewhere/tcng
+
+Version 1h (21-APR-2001)
+------------------------
+
+- runtests.sh: now also supports direct invocation of tcc
+- split tests/tcng in test files named by tcsim/tcng version
+- added more tcng regression tests
+- added "tests" make target as synonym for "test"
+
+Version 1g (20-APR-2001)
+------------------------
+
+- new attribute "tc_index" to set skb->tc_index
+- @ is no longer allowed in interface names
+- updated README, examples{,-ng}/ingress and tests/ingress accordingly
+- tcsim now resets skb attributes to zero when crossing links
+- new command line option -p to preserve skb attributes across links
+- runtests.sh: new "magic" keyword EOF to delimit standard input for test
+- updated tests/tcng to use EOF instead of ugly continuation lines
+- added GRED DP 0 test to tests/tcng
+
+Version 1f (20-APR-2001)
+------------------------
+
+- runtests.sh can now also be invoked with the file names as arguments
+- runtests.sh: new option -d to run tests without redirecting or checking their
+  output
+- new include file tcngreg.def containing useful definitions for tcng
+  regression tests
+- new regression test tests/tcng to track tcng development
+
+Version 1e (20-APR-2001)
+------------------------
+
+- added reporting functions errorf and debugf for better abstraction
+- changed examples-ng/ef-prio to use new priomap syntax
+- added usage example prototypes in toys/cbq and toys/tunnel
+
+Version 1d (19-APR-2001)
+------------------------
+
+- configure now warns if assuming tcc is in PATH
+- tcsum now flushes stdout before printing to stderr, and stderr always when
+  printing is done
+- added new attribute "priority" to set skb->priority
+- added example examples-ng/priority
+- tcsim now refuses routes pointing to interface on different host
+- added regression test for above: tests/route
+- updated examples-ng/prio+rsvp to follow removal of double quotes in tcng
+
+Version 1c (19-APR-2001)
+------------------------
+
+- adjusted tcsim's version number of follow tcng's
+- build process: added possibility to optimize or profile tcsim core
+- make clean  didn't delete object files in ulib
+
+Version 0z (18-APR-2001)
+------------------------
+
+- tp->prio is now printed as hex 32 bit value, because it contains two 16 bit
+  fields (reported by Jacob Teplitsky)
+- filter.pl used string offsets when checking packet areas (counted in bytes),
+  breaking most selections
+- examples-ng/prio+rsvp now works
+
+Version 0y (12-APR-2001)
+------------------------
+
+- added check for -lefence to  make dist
+- fixed indentation of usage message
+- klink.c:__kernel_enqueue accessed free'd skb if enqueue failed
+- command line parsing now uses memory allocators with built-in error checking
+- TIME after END now yields an error, not only a warning
+- added SFQ examples
+
+Version 0x (11-APR-2001)
+------------------------
+
+- configure is now compatible with 2.4.4 (pre-release)
+- cfg.y assumed yyerror takes printf-style format; added yyerrorf and friends
+- runtests.sh left _err.$$ file after test with expected error
+- changed upload location to public FTP directory
+- skb->nfmark can be set using "send" command attribute nfmark=...
+- added "fw" filter to tcsim
+- added examples for GRED and "fw"
+
+Version 0w (14-MAR-2001)
+------------------------
+
+- option parser now also handles -I dir (instead of -Idir) correctly
+- CPP options no longer have to be last
+- CPP options other than -I, -D, and -U are no longer accepted
+- runtest.sh: removed re-ordering of options (wouldn't have worked in cases
+  like  echo "..." | tcsim -s 20)
+- runtest.sh: checks exit status of command; added tests expected to yield
+  errors
+- updated time reversal test in tests/basic to expect error
+
+Version 0v (7-MAR-2001)
+-----------------------
+
+- added "echo" command to print expressions and strings
+- added regression test for "echo"
+- << and >> had the shift direction reversed, oops ...
+
+Version 0u (7-MAR-2001)
+-----------------------
+
+- allowed "tc" command also in host construct (which in turn allows the use of
+  tcng configurations)
+- runtest.sh now copies all but the last argument to tcsim before the -I option
+- added ingress example for tcng
+- added regression test for ingress
+
+Version 0t (6-MAR-2001)
+-----------------------
+
+- configure is now compatibile with 2.4.3
+- added support for multiple network devices and hosts
+- D, E, and * events now include device name
+- added new field type "dev" to filter.pl (device name)
+- @ can now be used in interface names (but not as the first character)
+- added sch_ingress
+- added new event types "I" and "i" for ingress
+
+Version 0s (26-FEB-2001)
+------------------------
+
+- tcsim crashed if trying to execute "send" without creating an interface
+- added option -g to print skb generation numbers instead of skb addresses
+- started adding regression tests
+
+Version 0r (24-FEB-2001)
+------------------------
+
+- removed #include <stdio.h> from var.c (left-over from debugging)
+- filter.pl no longer prints garbage if input is truncated (tcsim -s ...)
+- added do_gettimeofday
+- jiffies wasn't updated at the end of advance_time (reported by Martin
+  Jacobsson)
+
+Version 0q (22-FEB-2001)
+------------------------
+
+- added 2.4.2 compatibility (linux/malloc.h content moved to linux/slab.h)
+- -d -d now also prints addition of timers
+- ffz off-by-one error (crashed CBQ)
+- expressions can now also used in variable assignment
+- variables are no longer allowed just about everywhere, but only before
+  commands and between "send" values
+  
+Version 0p (16-FEB-2001)
+------------------------
+
+- enabled SFQ qdisc
+- ; comment at end of "tc" command led to concatenation with next line
+- plot.pl now detects unfiltered tcsim output and gives more helpful error
+  message
+- filter.pl now complains if combining -e and -d
+- added plot type "delay" (queuing delay) to plot.pl
+
+Version 0o (12-FEB-2001)
+------------------------
+
+- added binary number format 0b...
+- constant values in "send" and "dev" can now be given as arithmetic and bit
+  expressions
+- added repetition operator "x"
+- updated all examples to use "x"
+- configure: tcc path included "tcsim", which should be "tcng"
+
+Version 0n (12-FEB-2001)
+------------------------
+
+- plot.pl now ignores additional data in records (to allow for future
+  extensions)
+- filter.pl now includes skb addresses in its output
+- added ef-prio examples
+- dsmark+policing example now works
+- variables with hexadecimal value were not parsed properly
+- configure now also looks in ../tcc for tcc (preparing for integration of
+  tcsim into tcng)
+- configure printed garbled error message if encountering the wrong kernel
+- configure now also recognizes 2.4.2 (release predicted RSN)
+- tcsim didn't add timestamp to * events
+- pretty.pl no longer trips over * events but pretty-prints them too
+- pretty.pl now complains more clearly about unrecognizable input
+- tracing code now handles special cases like pfifo_fast less awkwardly
+- now also the noop qdisc is traced
+- do_every could generate de-normalized time with 1000000 ujiffies
+- missing break in switch: after ct_send, also kernel_poll(1) was invoked,
+  conveniently eliminating all congestion
+
+Version 0m (8-FEB-2001)
+-----------------------
+
+- changed stralloc macro to evaluate argument only once
+- empty tcng-style specifications crashed the writer sub-process
+- added tbf example
+- added tcng versions of all examples (directory examples-ng)
+- fixed build error and many warnings with gcc 2.96
+- configure now tries to generate absolute path to tcc command
+- tcsim fed file not ending with \n to tcc, which modern CPPs don't like
+
+Version 0l (5-FEB-2001)
+-----------------------
+
+- oops, left -lefence enabled in Makefile:LIBS
+- configure didn't stop if user specified non-existent tcc
+- configure now checks that tcc is the tc-compiler (unless defaulting to "tcc")
+- added script plot.pl to plot filter.pl output
+
+Version 0k (5-FEB-2001)
+-----------------------
+
+- tcsim now resets the tc options -d, -r, and -s before invoking tc
+- setup.ulib now generates prototypes for librtnl_{recvmsg,send{to,msg}}
+- del_timer no longer crashes when deleting timers that aren't running
+- moved "every" from time.c to new file command.c
+- renamed time.c to timer.c to avoid conflict between time.h and system time.h
+- "every" can now execute all commands, except "end" and "time"
+- "tc" commands are now also traced (event type "T")
+- new option -q for quiet operation (no tracing of E or D events)
+- new option -V to print version number
+- pretty.pl now wraps long lines
+- pretty.pl: new option -l to disable wrapping
+- pretty.pl: new option -w to set the line width
+- ; was not treated as a comment character in tc command arguments
+- cfg.l: set_var and get_var weren't static
+- interface configurations can now contain a description in tcng syntax
+
+Version 0j (2-FEB-2001)
+-----------------------
+
+- when creating multiple devices, only the last one was available
+- added ll_name_to_index, so "tc qdisc show" and such work now
+- fixed examples/dsmark+policing (grmbl)
+- added trace output filtering script filter.pl
+
+Version 0i (2-FEB-2001)
+-----------------------
+
+- event scheduling model is now similar to real kernel (added netif_schedule
+  and netif_queue_stopped)
+- added casts for all uses of uint32_t in printf
+- added pretty printer pretty.pl (for traces)
+
+Version 0h (1-FEB-2001)
+-----------------------
+
+- tcsim now interfaces between tc and the kernel at the level of
+  sendmsg/recvmsg, and no longer rtnl_talk (which was higher)
+- added bi-directional communication, so dumps (e.g. tc qdisc show) work now
+- configuration language now allows tc commands everywhere
+- "end" no longer terminates the simulation (because it may be followed by
+  tc commands)
+
+Version 0g (31-JAN-2001)
+------------------------
+
+- added tracing also for requeue and drop functions
+- added tracing for reshape_fail callback and for policing
+- enabled rate estimator
+- added wrappers for pfifo_fast (the default qdisc)
+- trace.c is no longer a generated file; moved the attachment functions into
+  generated file trace_attach.c
+- setup.trace now makes trace_attach.c read-only to prevent accidental editing
+- don't print an error when encountering cpp options -D or -I
+- moved example "in" to examples/prio+rsvp; added more examples
+- kernel_enqueue tried to access skb even if it was dropped
+
+Version 0f (31-JAN-2001)
+------------------------
+
+- ip.def generated IP headers with the 3rd word missing, grr
+- added tracing capabilities for classification, enqueueing, and dequeuing
+  (enabled with option -v or -v -v)
+- bytesex.c used "unsigned long" instead of uint32_t, which is not a good idea
+  on 64 bit big-endian platforms (fixed by David Miller)
+- added ; as comment character for tcng compatibility
+- tcsim no longer includes cls_fw and cls_route, and, for now, sch_ingress and
+  sch_sfq
+
+Version 0e (30-JAN-2001)
+------------------------
+
+- upgraded to the 2.4.1 kernel
+- dropped implicit hex byte mode for "send"; hex bytes now need to be prefixed
+  with "0x", like everywhere else
+- in "send", the size of a value can be explicitly specified (.net32, host16,
+  etc.)
+- variables can be used instead of numbers in configurations
+- language is now free-format, except for "tc" command
+- updated "ip.def" and "in" to use new syntax
+- no longer prints KERN_DEBUG by default
+- added option -d to enable all kernel messages, -d -d enables tcsim debugging
+  messages
+- printks are now prefixed with "| "
+- README: described how to add new traffic control elements
+- ll_name_to_index now really does an interface lookup
+- moved timer handling from ksvc.c to new file time.c
+- replaced various calls to malloc and strdup to allocators alloc, alloc_t,
+  and stralloc with built-in error-checking
+- tcsim now only sets the IPv4 total length if the packet really looks like
+  IPv4
+- eliminated attempt to generate .depend when compiling bytesex.c (while
+  running configure)
+- configure now terminates if it can't compile bytesex.c
+
+Version 0d (28-JAN-2001)
+------------------------
+
+- added dotted quad type for packet construction
+- moved some of the worst "extern"s to new files tcsim.h tckernel.h
+- moved jiffie calculations to new files jiffies.h and jiffies.c
+- added "every" command to send packets at fixed intervals
+- added option -j to select jiffies as the time unit for reports
+- time specifications must now be typed and are in seconds or in jiffies
+- fixed various little problems in timer handling
+- added more items to ip.def
+
+Version 0c (28-JAN-2001)
+------------------------
+
+- added micro-jiffie resolution timers
+- setup.ulib enables Diffserv support in iproute2
+- upgraded to iproute2 version 001007
+- tested with plain 2.4.0 kernel
+- configure script now also sets byte order
+- added option -s <bytes> to limit number of bytes printed
+- added option -h to print usage
+
+Version 0b (27-JAN-2001)
+------------------------
+
+- added all "interesting" traffic control elements
+- compilation and linking now succeed; passes initial tests (file in)
+- added some text to README
+
+Version 0a (26-JAN-2001)
+------------------------
+
+- initial version (development only)

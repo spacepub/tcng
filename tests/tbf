@@ -1,0 +1,8 @@
+# TBF old-style example -------------------------------------------------------
+tcsim examples/tbf | tcsim_filter -c | sed 's/1526/1590/'
+D 1590
+E 2002
+# TBF new-style example -------------------------------------------------------
+tcsim examples-ng/tbf | tcsim_filter -c
+D 1526
+E 2002

@@ -1,0 +1,113 @@
+# external: tcc output for child qdisc ----------------------------------------
+tcc -xif:err -Xx,all -Wnoexplicit 2>&1 >/dev/null | sed '/#/d'
+dsmark (indices 4) {
+    class if 1 {
+	fifo;
+    }
+}
+EOF
+block eth0 egress
+qdisc 2 = fifo
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+action 0 = class 1:0
+match action 0
+# external: ext/echo output for child qdisc -----------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echo -Xx,all -Wnoexplicit 2>&1 >/dev/null | \
+  grep -v warning
+dsmark (indices 4) {
+    class if 1 {
+	fifo;
+    }
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+qdisc 2 = fifo
+action 0 = class 1:0
+match action 0
+# external: tcc output for parent class ---------------------------------------
+tcc -xif:err -Xx,all 2>&1 -Wnoexplicit >/dev/null | \
+  sed '/#/d;s/ rate.*//'
+#include "tcngreg.def"
+
+dsmark (indices 4) {
+    class (1) if 1;
+    class {
+	cbq (CBQ_PARAMS) {
+	    tcindex {
+		class (rate 5Mbps)
+		  on (0)
+		{
+		    class (rate 3Mbps)
+		      on (1)
+		    {
+			fifo;
+		    }
+		    class (rate 2Mbps)
+		      on (2)
+		    {
+			fifo;
+		    }
+		}
+	    }
+	}
+    }
+}
+EOF
+block eth0 egress
+qdisc 3 = fifo
+qdisc 4 = fifo
+qdisc 2 = cbq
+class 0 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2
+class 1 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 parent 0
+class 2 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 parent 1 qdisc 3
+class 3 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 parent 1 qdisc 4
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+class 1 =
+action 1 = class 1:1,2:2
+match action 1
+# external: ext/echo output for parent class ----------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echo -Xx,all -Wnoexplicit 2>&1 >/dev/null | \
+  sed 's/allot.* rate //'
+#include "tcngreg.def"
+
+dsmark (indices 4) {
+    class (1) if 1;
+    class {
+	cbq (CBQ_PARAMS) {
+	    tcindex {
+		class (rate 5Mbps)
+		  on (0)
+		{
+		    class (rate 3Mbps)
+		      on (1)
+		    {
+			fifo;
+		    }
+		    class (rate 2Mbps)
+		      on (2)
+		    {
+			fifo;
+		    }
+		}
+	    }
+	}
+    }
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+class 1 =
+qdisc 2 = cbq
+class 0 = 1250000
+class 1 = 625000 parent 0
+class 2 = 375000 parent 1 qdisc 3
+class 3 = 250000 parent 1 qdisc 4
+qdisc 4 = fifo
+qdisc 3 = fifo
+action 1 = class 1:1,2:2
+match action 1

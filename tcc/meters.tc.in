@@ -1,0 +1,202 @@
+/*
+ * meters.tc - Convenience macros for implementing traffic meters
+ *
+ * Written 2001,2002 by Werner Almesberger
+ * Copyright 2001,2002 Network Robots
+ */
+
+/*
+ * Note: this doesn't always work yet. Although the default and the -B
+ * algorithm can both handle ! and such, they don't scale very well.
+ *
+ * In particular, the default algorithm freaks out rather quickly when
+ * encountering negation. The macros beginning with __ are better in this
+ * respect, see below.
+ */
+
+#ifndef METERS_TC
+#define METERS_TC
+
+/*
+ * This file defines the following "official" macros:
+ *
+ * SLB			define single leaky bucket meter
+ * SLB_ok		test SLB for conformance
+ * SLB_else_drop	test SLB for conformance, and drop if non-conformant
+ *
+ * DLB			define double leaky bucket meter
+ * DLB_ok		test DLB for conformance
+ * DLB_else_drop	test DLB for conformance, and drop if non-conformant
+ *
+ * srTCM		define single-rate three color marker
+ * srTCM_green		test if srTCM color is "green"
+ * srTCM_yellow		test if srTCM color is "yellow"
+ * srTCM_red		test if srTCM color is "red"
+ *
+ * trTCM		define two-rate three color marker
+ * trTCM_green		test if trTCM color is "green"
+ * trTCM_yellow		test if trTCM color is "yellow"
+ * trTCM_red		test if trTCM color is "red"
+ *
+ * Furthermore, it defines the following macros which are optimized for
+ * performance, but are constrained in where and how they can be used:
+ *
+ * __srTCM_green	like srTCM_green
+ * __srTCM_yellow	like srTCM_yellow
+ * __srTCM_red		like srTCM_red
+ *
+ * __trTCM_green	like trTCM_green
+ * __trTCM_yellow	like trTCM_yellow
+ * __trTCM_red		like trTCM_red
+ *
+ * All tests for conformance or color imply that the packet is attributed
+ * to the respective class, and update the bucket counter(s) accordingly.
+ */
+
+/*
+ * The macros set_SLB, set_DLB, set_srTCM, and set_trTCM are obsolete and
+ * should be replaced with their counterparts without set_ prefix.
+ */
+
+
+/* ----- Two color meters -------------------------------------------------- */
+
+/*
+ * xLB_else_drop are convenient short-cuts for the common drop policer idiom.
+ * The following two expressions are equivalent:
+ *
+ * xxx if condition && SLB_ok(...)
+ * drop if condition
+ *
+ * and
+ *
+ * xxx if condition && SLB_else_drop(...)
+ */
+
+/*
+ * Single Leaky Bucket
+ */
+
+#define __set_SLB_fixed2(name,CIR,CBS,MTU,MPU,TAG,PRAGMA) \
+  name = bucket(rate CIR,burst CBS,mpu MPU,tag TAG,pragma (PRAGMA))
+#define __set_SLB_fixed(name,CIR,CBS,MTU,MPU) \
+  __set_SLB_fixed2(name,CIR,CBS,MTU,MPU,"","")
+
+#define SLB_ok(name) { $__ = (name); conform $__ && count $__; }
+
+#define SLB_else_drop(name) (SLB_ok(name) || drop)
+
+
+/*
+ * Double Leaky Bucket
+ */
+
+#define __set_DLB_fixed2(name,CIR,CBS,PIR,PBS,MTU,MPU,TAG,PRAGMA) \
+  name._Tc = bucket(rate CIR,burst CBS,mpu MPU,tag TAG,pragma (PRAGMA)); \
+  name._Tp = bucket(rate PIR,burst PBS,mpu MPU,tag TAG,pragma (PRAGMA))
+#define __set_DLB_fixed(name,CIR,CBS,PIR,PBS,MTU,MPU) \
+  __set_DLB_fixed2(name,CIR,CBS,PIR,PBS,MTU,MPU,"","")
+
+#define DLB_ok(name) \
+  { $__ = (name); \
+  conform $__._Tc && conform $__._Tp && \
+  count $__._Tc && count $__._Tp; }
+
+#define DLB_else_drop(name) (DLB_ok(name) || drop)
+
+
+/* ----- Three color meters ------------------------------------------------ */
+
+/*
+ * The color test macros not beginning with __ can be used in any order, some
+ * of them can be omitted, and each of them can be combined with any other
+ * conditions.
+ *
+ * The __* versions are order-dependent, need to be applied green to red, only
+ * tests at the end may be omitted (e.g. green-yellow or just green are valid,
+ * but yellow-red isn't), and the same pre-conditions must be used with all of
+ * them.
+ *
+ * The __* macros are easier to process for tcc, so they may be useful if
+ * converting a given configuration consumes too many resources.
+ */
+
+/*
+ * Color-blind Single Rate Three Color Marker (srTCM), RFC2697
+ */
+
+#define __set_srTCM_fixed2(name,CIR,CBS,EBS,MTU,MPU,TAG,PRAGMA) \
+  name._Te = bucket(rate 0 kbps,burst EBS,mpu MPU,tag TAG,pragma (PRAGMA)); \
+  name._Tc = bucket(rate CIR,burst CBS,mpu MPU,overflow bucket name._Te, \
+    tag TAG,pragma (PRAGMA))
+#define __set_srTCM_fixed(name,CIR,CBS,EBS,MTU,MPU) \
+  __set_srTCM_fixed2(name,CIR,CBS,EBS,MTU,MPU,"","")
+
+#define __srTCM_green(name) \
+  { $__ = (name); \
+  conform bucket $__._Tc && count $__._Tc; }
+#define __srTCM_yellow(name) \
+  { $__ = (name); \
+  conform bucket $__._Te && count bucket $__._Te; }
+#define __srTCM_red(name) 1
+
+#define srTCM_green(name) __srTCM_green(name)
+#define srTCM_yellow(name) \
+  { $__ = (name); \
+  !conform bucket $__._Tc && __srTCM_yellow($__); }
+#define srTCM_red(name) \
+  { $__ = (name); \
+  !conform bucket $__._Tc && !conform bucket $__._Te; }
+
+
+/*
+ * Color-blind Two Rate Three Color Marker (trTCM), RFC2698
+ */
+
+#define __set_trTCM_fixed2(name,CIR,CBS,PIR,PBS,MTU,MPU,TAG,PRAGMA) \
+  name._Tc = bucket(rate CIR,burst CBS,mpu MPU,tag TAG,pragma (PRAGMA)); \
+  name._Tp = bucket(rate PIR,burst PBS,mpu MPU,tag TAG,pragma (PRAGMA))
+#define __set_trTCM_fixed(name,CIR,CBS,PIR,PBS,MTU,MPU) \
+  __set_trTCM_fixed2(name,CIR,CBS,PIR,PBS,MTU,MPU,"","")
+
+#define __trTCM_green(name) \
+  { $__ = (name); \
+  conform bucket $__._Tc && conform bucket $__._Tp && \
+  count bucket $__._Tc && count bucket $__._Tp; }
+#define __trTCM_yellow(name) \
+  { $__ = (name); \
+  conform bucket $__._Tp && count bucket $__._Tp; }
+#define __trTCM_red(name) 1
+
+#define trTCM_green(name) __trTCM_green(name)
+#define trTCM_yellow(name) \
+  { $__ = (name); \
+  !conform bucket $__._Tc && __trTCM_yellow(name); }
+#define trTCM_red(name) \
+  { $__ = (name); \
+  !conform bucket $__._Tp; }
+
+
+/* ----- Position-independent macros --------------------------------------- */
+
+/*
+ * The following macros turn a parameter list with the usual tcng syntax
+ * param_name param_value  into a list of fixed-position values. They also
+ * handle default values to some extent.
+ */
+
+#map set_SLB(var,, cir = -1, cbs = -1, mtu = 1.5kB, mpu = 0B, \
+  tag = "", pragma = "") __set_SLB_fixed2
+#map set_DLB(var,, cir = -1, cbs = -1, pir = -1, pbs = -1, mtu = 1.5kB, \
+  mpu = 0B, tag = "", pragma = "") __set_DLB_fixed2
+#map set_srTCM(var,, cir = -1, cbs = -1, ebs = -1, mtu = 1.5kB, mpu = 0B, \
+  tag = "", pragma = "") __set_srTCM_fixed2
+#map set_trTCM(var,, cir = -1, cbs = -1, pir = -1, pbs = -1, mtu = 1.5kB, \
+  mpu = 0B, tag = "", pragma = "") __set_trTCM_fixed2
+
+#define SLB(...) { set_SLB($__,__VA_ARGS__); $__; }
+#define DLB(...) { set_DLB($__,__VA_ARGS__); $__; }
+#define srTCM(...) { set_srTCM($__,__VA_ARGS__); $__; }
+#define trTCM(...) { set_trTCM($__,__VA_ARGS__); $__; }
+
+#endif /* METERS_TC */

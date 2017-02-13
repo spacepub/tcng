@@ -1,0 +1,19 @@
+# TCNG: work around offset at beginning of && chain ---------------------------
+tcsim -n 2>&1 | sed 's/.*, //;1q'
+/* was: tcsim -n -v | fgrep -c 'filter add'  yielded: 11 */
+#include "ip.def"
+
+dev eth0 {
+  #include "fields.tc"
+
+  prio (bands 5) {
+        class if (ip_proto == IPPROTO_UDP); /* ... if (udp)  would be neat */
+        class if (tcp_sport == PORT_USER && tcp_dport == PORT_TELNET);
+        class if (tcp_sport == PORT_USER && tcp_dport == PORT_SMTP &&
+		ip_src == 1.1.1.1);
+        class if (ip_proto == IPPROTO_TCP);
+        class if (ip_dst == 10.0.0.2);
+    }
+}
+EOF
+unsupported offset sequence - please try to reorder matches)

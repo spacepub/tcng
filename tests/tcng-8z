@@ -1,0 +1,28 @@
+# -Wexpensive warns about implicit negation -----------------------------------
+tcc -Wexpensive 2>&1 >/dev/null
+prio {
+    class if raw[0];
+}
+EOF
+warning: negation is an "expensive" operation
+warning: negation is an "expensive" operation
+# tcc accepts one file name ---------------------------------------------------
+tcc /dev/null
+EOF
+# tcc does not accept more than one file name ---------------------------------
+tcc /dev/null foo 2>&1 | sed '/^\\(usage:\\).*/s//\\1/p;d'
+EOF
+usage:
+# tcsim accepts one file name -------------------------------------------------
+tcsim /dev/null
+EOF
+# tcsim does not accept more than one file name -------------------------------
+tcsim /dev/null foo 2>&1 | sed '/^\\(usage:\\).*/s//\\1/p;d'
+EOF
+usage:
+# prio now supports policing --------------------------------------------------
+tcc >/dev/null
+prio {
+    class on fw element (1) police(burst 1kB,rate 1kbps);
+}
+EOF

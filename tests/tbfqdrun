@@ -1,0 +1,48 @@
+BEGIN CONDITIONAL
+tcsim
+dev eth0
+tc qdisc add dev eth0 root handle 1:0 tbf limit 20kB rate 1Mbit burst 3kB
+tc qdisc add dev eth0 parent 1:0 pfifo
+EOF
+# TBF with prio (tc) ----------------------------------------------------------
+tcsim | tcsim_filter -d tos | sed 's/ 1024.*//'
+dev eth0 10Mbps {
+    tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 1.5kB) {
+	prio {
+	    class (1) if raw[0] == 1;
+	    class (2) if raw[0] == 2;
+	    class (3) if 1;
+	}
+    }
+}
+
+send 3 x 1024
+send 2 x 1024
+send 1 x 1024
+end
+EOF
+0.000000 D:03
+0.520000 D:01
+1.540000 D:02
+# TBF with prio (ext) ---------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  tcsim_filter -d tos | sed 's/ 1024.*//'
+dev eth0 10Mbps {
+    tbf (mtu 1.5kB,limit 10kB,rate 1kBps,burst 1.5kB) {
+	prio {
+	    class (1) if raw[0] == 1;
+	    class (2) if raw[0] == 2;
+	    class (3) if 1;
+	}
+    }
+}
+
+send 3 x 1024
+send 2 x 1024
+send 1 x 1024
+end
+EOF
+0.000000 D:03
+0.520000 D:01
+1.540000 D:02
+END CONDITIONAL

@@ -1,0 +1,25 @@
+# filter variables can be used without "filter" prefix (1/2) ------------------
+tcsim
+dev eth0 {
+    prio {
+        $f = fw;
+        class on $f(5);
+    }
+}
+EOF
+# filter variables can be used without "filter" prefix (2/2) ------------------
+tcsim
+dev eth0 {
+    prio {
+        $f = fw;
+        class on $f element (5);
+    }
+}
+EOF
+# policer variables can be used without "police" prefix -----------------------
+tcc -tc >/dev/null
+$p = police(rate 5kbps,burst 2kB);
+prio {
+    class if conform $p;
+}
+EOF

@@ -1,0 +1,14 @@
+# tcc-ext-echo used to loop if > 1 bucket -------------------------------------
+tcc/ext/tcc-ext-echo build 1234 2>&1 | sed 5q
+bucket 1 = 1 2 3 4 0
+bucket 2 = 1 2 3 4 0
+EOF
+bucket 2 = 1 2 3 4 0
+bucket 1 = 1 2 3 4 0
+# ext_all generates code even without "if" ------------------------------------
+echo 'fifo;' | tcc -xif:err -Xx,all 2>&1 >/dev/null | \
+  grep -v '^#'
+block eth0 egress
+qdisc 1 = fifo
+action 0 = unspec
+match action 0

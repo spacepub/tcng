@@ -1,0 +1,40 @@
+# base test for -Xx tests -----------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class if 1;
+}
+EOF
+block eth0 egress
+action 1 = class 1:1
+match action 1
+# -Xx from tcc to tcc-ext-err -------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -c '^qdisc'
+prio {
+    class if 1;
+}
+EOF
+1
+# -Xx from tcsim to tcc-ext-err -----------------------------------------------
+tcsim -Xc,-xif:err -Xx,all 2>&1 >/dev/null | grep -c '^qdisc'
+dev eth0 10000 {
+    prio {
+	class if 1;
+    }
+}
+EOF
+1
+# -Xxfoo does not select tcc-ext-err ------------------------------------------
+tcc -xif:err -Xxfoo,all 2>&1 >/dev/null | grep -c '^qdisc'
+prio {
+    class if 1;
+}
+EOF
+ERROR
+0
+# -Xxerr does select tcc-ext-err ----------------------------------------------
+tcc -xif:err -Xxerr,all 2>&1 >/dev/null | grep -c '^qdisc'
+prio {
+    class if 1;
+}
+EOF
+1

@@ -1,0 +1,80 @@
+# tcc-ext-xlat works ----------------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+fifo (pragma "[<foo@bar>]");
+EOF
+block eth0 egress
+qdisc 1 = fifo pragma [<foo bar>]
+action 0 = unspec
+match action 0
+# qdisc location is translated ------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+fifo (2,pragma "[<qdisc@eth0:2>]");
+EOF
+block eth0 egress
+qdisc 2 = fifo pragma <stdin>:1
+action 0 = unspec
+match action 0
+# text before and after location is preserved ---------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+fifo (2,pragma "line@[<qdisc@eth0:2>]@has@problems");
+EOF
+block eth0 egress
+qdisc 2 = fifo pragma line <stdin>:1 has problems
+action 0 = unspec
+match action 0
+# fake braces are ignored: [[<...>] -------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+fifo (2,pragma "[[<qdisc@eth0:2>]");
+EOF
+block eth0 egress
+qdisc 2 = fifo pragma [<stdin>:1
+action 0 = unspec
+match action 0
+# fake braces are ignored: [<...>>] --------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+fifo (2,pragma "[<qdisc@eth0:2>>]");
+EOF
+block eth0 egress
+qdisc 2 = fifo pragma [<qdisc eth0:2>>]
+action 0 = unspec
+match action 0
+# fake braces are ignored: [<...>]] --------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+fifo (2,pragma "[<qdisc@eth0:2>]]");
+EOF
+block eth0 egress
+qdisc 2 = fifo pragma <stdin>:1]
+action 0 = unspec
+match action 0
+# class location is translated ------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+prio (1,pragma "[<class@eth0:1:3>]") {
+    class (3);
+}
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3 pragma <stdin>:2
+class 3 =
+action 0 = unspec
+match action 0
+# filter location is translated (at qdisc) ------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+prio (1,pragma "[<filter@eth0:1::1>]") {
+    class (3) if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3 pragma <stdin>:1
+class 3 =
+action 3 = class 1:3
+match action 3
+# policer location is translated ----------------------------------------------
+PATH=$PATH:tcc/ext tcc -Wnounused -xif:xlat -Xx,all 2>&1 | grep -v '^#'
+$p = police(4,rate 0bps,burst 0B);
+
+fifo (2,pragma "[<police@4>]");
+EOF
+block eth0 egress
+qdisc 2 = fifo pragma <stdin>:1
+action 0 = unspec
+match action 0

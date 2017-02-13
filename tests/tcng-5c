@@ -1,0 +1,18 @@
+# variables before first implict device have global scope ---------------------
+tcc | sed '/.* classid /s///p;d'
+$foo = 2;
+
+fifo;
+
+eth1 {
+    prio {
+	class ($foo) if 1;
+    }
+}
+EOF
+1:2
+# unused global variables are reported at end of file -------------------------
+tcc 2>&1
+$foo = 10;
+EOF
+<stdin>:1: warning: unused variable foo

@@ -1,0 +1,45 @@
+# aligned IPv6 test for 32 bit 0 (u32) ----------------------------------------
+tcc | sed '/.* 1 u32 /{s///;s/match /@/g;p;};d' | tr @ '\\012' | sed '/^$/d' 
+prio {
+    class (1) if ip6_src == 0;
+}
+EOF
+u32 0x0 0xffffffff at 8 
+u32 0x0 0xffffffff at 12 
+u32 0x0 0xffffffff at 16 
+u32 0x0 0xffffffff at 20 classid 1:1
+# unaligned (1) IPv6 test for 128 bit 0 (u32) ---------------------------------
+tcc | sed '/.* 1 u32 /{s///;s/match /@/g;p;};d' | tr @ '\\012' | sed '/^$/d'
+prio {
+    class (1) if raw[1].ipv6 == ::;
+}
+EOF
+u8 0x0 0xff at 1 
+u16 0x0 0xffff at 2 
+u32 0x0 0xffffffff at 4 
+u32 0x0 0xffffffff at 8 
+u32 0x0 0xffffffff at 12 
+u8 0x0 0xff at 16 classid 1:1
+# unaligned (2) IPv6 test for 128 bit non-zero (u32) --------------------------
+tcc | sed '/.* 1 u32 /{s///;s/match /@/g;p;};d' | tr @ '\\012' | sed '/^$/d'
+prio {
+    class (1) if raw[2].ipv6 == 1:2:3:4:5:6:7:8;
+}
+EOF
+u16 0x1 0xffff at 2 
+u32 0x20003 0xffffffff at 4 
+u32 0x40005 0xffffffff at 8 
+u32 0x60007 0xffffffff at 12 
+u16 0x8 0xffff at 16 classid 1:1
+# unaligned (3) IPv6 test for 32 bit non-zero (u32) ---------------------------
+tcc | sed '/.* 1 u32 /{s///;s/match /@/g;p;};d' | tr @ '\\012' | sed '/^$/d'
+prio {
+    class (1) if raw[3].ipv6 == 0xbae;
+}
+EOF
+u8 0x0 0xff at 3 
+u32 0x0 0xffffffff at 4 
+u32 0x0 0xffffffff at 8 
+u32 0x0 0xffffffff at 12 
+u16 0xb 0xffff at 16 
+u8 0xae 0xff at 18 classid 1:1

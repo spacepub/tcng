@@ -1,0 +1,46 @@
+# GRED does not cut class selection paths to other qdiscs ---------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+#include "tcngreg.def"
+
+dsmark (default_index 0) {
+    class (<$a>) if raw[0] == 1;
+    class (<$b>) if raw[0] == 2;
+
+    prio {
+	$a = class {}
+	class {
+	    gred (RED_PARAMS) {
+		$b = class (1,default);
+	    }
+	}
+    }
+}
+EOF
+block eth0 egress
+qdisc 3 = gred bandwidth 1250000 default 1
+class 1 = avpkt 1024 burst 5120 limit 10240 max 8192 min 2048
+qdisc 2 = prio bands 3
+class 1 =
+class 2 = qdisc 3
+qdisc 1 = dsmark default_index 0 indices 64
+class 0 = qdisc 2
+class 16 =
+class 33 =
+action 0 = unspec
+action 33 = class 1:33,2:2,3:1
+action 16 = class 1:16,2:1
+match 0:0:8=0x01 action 16
+match 0:0:8=0x02 action 33
+match action 0
+# "old" algorithm can't handle side-effect && side-effect ---------------------
+tcc -xif:file -Xx,file=/dev/null 2>&1 >/dev/null
+$p = police(rate 0bps,burst 0B);
+$q = police(rate 0bps,burst 0B);
+
+prio {
+    drop if count $p && raw[0] == 1;
+    drop if count $q;
+}
+EOF
+ERROR
+can't dump subexpression (iflib_act.c, too many side effects)

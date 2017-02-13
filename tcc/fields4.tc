@@ -1,0 +1,102 @@
+/*
+ * IPv4 field definitions for tcng
+ *
+ * Written 2001,2002 by Werner Almesberger
+ * Copyright 2001 EPFL-ICA, Network Robots
+ * Copyright 2002 Network Robots, Bivio Networks, Werner Almesberger
+ */
+
+#ifndef __INCLUDED_FROM_FIELDS_TC
+#warning fields4.tc should only be included from fields.tc
+#endif
+
+#ifndef FIELDS4_TC
+#define FIELDS4_TC
+
+/* IP header. BSD-style naming (from /usr/include/netinet/ip.h) */
+
+#ifdef USE_META_PROTOCOL
+field ip_hdr = raw if meta_protocol == ETH_P_IP; /* base */
+#else
+field ip_hdr = raw;			/* base */
+#endif
+
+field ip_v = ip_hdr[0] >> 4;		/* version */
+field ip_hl = ip_hdr[0] & 0xf;		/* header length */
+field ip_tos = ip_hdr[1].b;		/* type of service */
+field ip_len = ip_hdr[2].ns;		/* total length */
+field ip_id = ip_hdr[4].ns;		/* identification */
+field ip_RF = (ip_hdr[6].b >> 7) & 1;	/* reserved fragment flag */
+field ip_DF = (ip_hdr[6].b >> 6) & 1;	/* don't fragment flag */
+field ip_MF = (ip_hdr[6].b >> 5) & 1;	/* more fragments flag */
+field ip_off = ip_hdr[6].ns & 0x1fff;	/* fragment offset field */
+field ip_ttl = ip_hdr[8].b;		/* time to live */
+field ip_proto = ip_hdr[9].b;		/* protocol */
+field ip_sum = ip_hdr[10].ns;		/* checksum */
+field ip_src = ip_hdr[12].ipv4;		/* source address */
+field ip_dst = ip_hdr[16].ipv4; 	/* destination address */
+field ip_options = ip_hdr[20];		/* beginning of options */
+field ip_nexthdr = ip_hdr[ip_hl << 2];	/* next header */
+
+
+/* UDP header. BSD-style naming (from /usr/include/netinet/udp.h) */
+
+field udp_hdr = ip_nexthdr if ip_proto == IPPROTO_UDP;
+field udp_sport = udp_hdr[0].ns;	/* source port */
+field udp_dport = udp_hdr[2].ns;	/* destination port */
+field udp_ulen = udp_hdr[4].ns;		/* udp length */
+field udp_sum = udp_hdr[6].ns;		/* udp checksum */
+field udp_data = udp_hdr[8];		/* data */
+
+
+/* TCP header. BSD-style naming (from /usr/include/netinet/tcp.h) */
+
+field tcp_hdr = ip_nexthdr if ip_proto == IPPROTO_TCP;
+field tcp_sport = tcp_hdr[0].ns;	/* source port */
+field tcp_dport = tcp_hdr[2].ns;	/* destination port */
+field tcp_seq = tcp_hdr[4].nl;		/* sequence number */
+field tcp_ack = tcp_hdr[8].nl;		/* acknowledgement number */
+field tcp_off = tcp_hdr[12].b >> 4;	/* data offset */
+field tcp_URG = (tcp_hdr[13].b >> 5) & 1; /* URG */
+field tcp_ACK = (tcp_hdr[13].b >> 4) & 1; /* ACK */
+field tcp_PSH = (tcp_hdr[13].b >> 3) & 1; /* PSH */
+field tcp_RST = (tcp_hdr[13].b >> 2) & 1; /* RST */
+field tcp_SYN = (tcp_hdr[13].b >> 1) & 1; /* SYN */
+field tcp_FIN = tcp_hdr[13].b & 1;	/*   FIN */
+field tcp_win = tcp_hdr[14].ns;		/* window */
+field tcp_sum = tcp_hdr[16].ns;		/* checksum */
+field tcp_urp = tcp_hdr[18].ns;		/* urgent pointer */
+field tcp_options = tcp_hdr[20];	/* beginning of options */
+field tcp_data = tcp_hdr[tcp_off << 2];	/* data */
+
+/*
+ * @@@ This is of course nonsense. We can't usefully process TCP options,
+ * because tcc currently doesn't know how to loop.
+ */
+
+field tcpopt_mss = tcp_options[2].ns if tcp_options[0].b == TCPOPT_MAXSEG;
+field tcpopt_wscale = tcp_options[2].b if tcp_options[0].b == TCPOPT_WINDOW;
+
+field tcpopt_ts = tcp_options[2] if tcp_options[0].b == TCPOPT_TIMESTAMP;
+field tcpopt_ts_value = tcpopt_ts[0].nl;
+field tcpopt_ts_echo_reply = tcpopt_ts[4].nl;
+
+
+/* ICMP header. BSD-style naming (from /usr/include/netinet/ip_icmp.h) */
+
+field icmp_hdr = ip_nexthdr if ip_proto == IPPROTO_ICMP;
+field icmp_type = icmp_hdr[0].b;	/* type of message, see below */
+field icmp_code = icmp_hdr[1].b;	/* type sub code */
+field icmp_sum = icmp_hdr[2].ns;	/* checksum (was icmp_cksum) */
+field icmp_data = icmp_hdr[4];		/* data */
+
+
+/* IGMP header. From /usr/include/netinet/igmp.h */
+
+field igmp_hdr = ip_nexthdr if ip_proto == IPPROTO_IGMP;
+field igmp_type = igmp_hdr[0].b;	/* IGMP type */
+field igmp_code = igmp_hdr[1].b;	/* routing code */
+field igmp_sum = igmp_hdr[2].ns;	/* checksum (was igmpcksum) */
+field igmp_group = igmp_hdr[4].ipv4;	/* group address */
+
+#endif /* FIELDS4_TC */

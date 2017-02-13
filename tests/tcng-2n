@@ -1,0 +1,28 @@
+# TCNG: if 1 ------------------------------------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+	class if 1;
+    }
+}
+EOF
+u32 0x0 0x0 at 0
+# TCNG: if 0 ------------------------------------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+	class if 0;
+    }
+}
+EOF
+# TCNG: bundle doesn't recurse endlessly on un-optimized || -------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    #include "fields.tc"
+
+    prio {
+	class if (ip_dst:12 == 10.0.0.0 || ip_dst:12 == 10.0.0.0);
+    }
+}
+EOF
+u32 0xa000000 0xfff00000 at 16

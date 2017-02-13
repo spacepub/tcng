@@ -1,0 +1,45 @@
+# TCNG: CBQ default propagation: up and not forward ---------------------------
+tcc
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS,mpu 100B) {
+    class (rate 1Bps,mpu 200B) {
+	class (rate 2Bps);
+    }
+    class (rate 3Bps);
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root cbq bandwidth 1250000bps avpkt 1024 mpu 100
+tc class add dev eth0 parent 1:0 classid 1:1 cbq bandwidth 1250000bps rate 1bps allot 1536 avpkt 1024 maxburst 2 mpu 200
+tc class add dev eth0 parent 1:1 classid 1:2 cbq bandwidth 1250000bps rate 2bps allot 1536 avpkt 1024 maxburst 2 mpu 200
+tc class add dev eth0 parent 1:0 classid 1:3 cbq bandwidth 1250000bps rate 3bps allot 1536 avpkt 1024 maxburst 2 mpu 100
+# TCNG: CBQ default propagation: not down -------------------------------------
+tcc
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS,mpu 100B) {
+    class (rate 1Bps) {
+	class (rate 2Bps,mpu 300B);
+    }
+    class (rate 3Bps);
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root cbq bandwidth 1250000bps avpkt 1024 mpu 100
+tc class add dev eth0 parent 1:0 classid 1:1 cbq bandwidth 1250000bps rate 1bps allot 1536 avpkt 1024 maxburst 2 mpu 100
+tc class add dev eth0 parent 1:1 classid 1:2 cbq bandwidth 1250000bps rate 2bps allot 1536 avpkt 1024 maxburst 2 mpu 300
+tc class add dev eth0 parent 1:0 classid 1:3 cbq bandwidth 1250000bps rate 3bps allot 1536 avpkt 1024 maxburst 2 mpu 100
+# TCNG: CBQ default propagation: not backward ---------------------------------
+tcc
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 1Bps) {
+	class (rate 2Bps);
+    }
+    class (rate 3Bps,mpu 200B);
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root cbq bandwidth 1250000bps avpkt 1024
+tc class add dev eth0 parent 1:0 classid 1:1 cbq bandwidth 1250000bps rate 1bps allot 1536 avpkt 1024 maxburst 2
+tc class add dev eth0 parent 1:1 classid 1:2 cbq bandwidth 1250000bps rate 2bps allot 1536 avpkt 1024 maxburst 2
+tc class add dev eth0 parent 1:0 classid 1:3 cbq bandwidth 1250000bps rate 3bps allot 1536 avpkt 1024 maxburst 2 mpu 200

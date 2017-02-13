@@ -1,0 +1,51 @@
+# global variables can contain expressions ------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+$a = raw[0] == 1;
+prio {
+    class if $a;
+}
+EOF
+match 0:0:8=0x01 action 1
+match action 0
+# local variables can contain expressions -------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+prio {
+    $a = raw[0] == 1;
+    class if $a;
+}
+EOF
+match 0:0:8=0x01 action 1
+match action 0
+# field expansion in global variables -----------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+field a = raw[1];
+$a = a == 1;
+field a = raw[2];
+prio {
+    class if $a;
+}
+EOF
+match 0:8:8=0x01 action 1
+match action 0
+# field expansion in local variables ------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+prio {
+    field a = raw[1];
+    $a = a == 1;
+    field a = raw[2];
+    class if $a;
+}
+EOF
+match 0:8:8=0x01 action 1
+match action 0
+# field expansion with mixed scope --------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep match
+field a = raw[1];
+prio {
+    $a = a == 1;
+    field a = raw[2];
+    class if $a;
+}
+EOF
+match 0:8:8=0x01 action 1
+match action 0

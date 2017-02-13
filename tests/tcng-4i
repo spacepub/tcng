@@ -1,0 +1,42 @@
+# two classes of PRIO may not have the same number ----------------------------
+tcc 2>&1
+prio {
+    class (1);
+    class (1);
+}
+EOF
+ERROR
+<stdin>:2: duplicate class ID 0x1
+# two classes of CBQ may not have the same number -----------------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (3,rate 2Mbps) {
+	class (3,rate 1Mbps);
+    }
+}
+EOF
+ERROR
+<stdin>:4: duplicate class ID 0x3
+# variable scoping was outside-in ---------------------------------------------
+tcc 2>/dev/null | sed '/.*classid /s///p;d'
+$n = 2;
+prio {
+    $n = 1;
+    class ($n)
+	on fw element (1);
+}
+EOF
+1:1
+# existing variable did shadow forward-reference ------------------------------
+tcc 2>/dev/null | sed '/.*classid /s///p;d'
+$c = 5;
+prio (priomap $c) {
+    $c = class if 1;
+}
+EOF
+1:1
+# "drop" without selector prints warning --------------------------------------
+echo 'prio { drop; }' | tcc 2>&1 >/dev/null
+<stdin>:1: warning: ignoring "drop" without selector near ";"

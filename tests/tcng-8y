@@ -1,0 +1,6 @@
+# fifo: cannot use limit and plimit together ----------------------------------
+tcc -c 2>&1
+fifo(limit 10kB,limit 10kB);
+EOF
+ERROR
+<stdin>:1: duplicate parameter "limit" near ")"

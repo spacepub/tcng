@@ -1,0 +1,468 @@
+THIS FILE IS OBSOLETE !
+
+Please use the more up to date and heavily improved documentation in ../doc
+Will be removed as soon as the plain text generated from the LaTeX document
+is "perfect".
+
+-------------------------------------------------------------------------------
+
+TC simulator
+============
+
+tcsim allows event-driven simulation of the behaviour of traffic control
+elements in user space. In order to simulate exactly what happens in the
+kernel, tcsim uses the original source. It also uses the "tc" command-line
+utility for configuration, to also any consistency checks of tc, and any
+other effects caused by it, are carefully preserved.
+
+
+Invocation
+----------
+
+See ./tcsim -h
+
+Examples:
+
+  Normal simulation run (we enqueue three packets in the order A, B, C,
+  and they're dequeued in the order A, C, B):
+
+  ./tcsim -s 20 -I. ../examples/prio+rsvp
+
+  The same simulation, with full tracing enabled:
+
+  ./tcsim -s 20 -v -v -I. ../examples/prio+rsvp
+
+
+Configuration
+-------------
+
+Simulations are described in a file. Each description begins with the
+definition of interfaces, followed by tc commands, and then continues
+with instructions for timing and packet enqueuing/dequeuing.
+
+System definition:
+  Syntax:  dev <name> [<kbps>] [{ <tcng-spec> }]
+  Example: dev eth0 10000
+  Effect:  Creates network interface <name> sending at the specified
+	   number of kbps. If the rate is omitted, the interface will
+	   only send when polled. The interface definition can be
+	   followed by a configuration specification in tcng syntax,
+	   in curly braces. tcsim invokes tcc to translate the
+	   specification.
+
+           The interface name begins with an alphabetic character or
+           an underscore and is followed by any number of alphanumeric
+           characters, or underscores. The interface name must not be a
+	   keyword of the tcsim language (e.g. "send", "dev", "x", etc.)
+
+  Syntax:  host { <items> ... }
+  Effect:  Defines a host structure. See section "Multi-interface
+	   configurations", below.
+
+
+System configuration:
+  Syntax:  insmod <path>
+  Example: insmod modules/sch_discard.o
+  Effect:  Loads the kernel part of an element built as an external object
+	   module.
+
+           Note: such modules must have been compiled with modules/kmod_cc
+	   Normal kernel modules will not work.
+
+  Syntax:  preload <path>
+  Example: preload modules/q_discard.so
+  Effect:  Preloads the iproute2/tc part of an element built as an external
+	   object module.
+
+           Note: such modules must have been compiled with modules/tcmod_cc
+
+  Syntax:  tc <argument> ...
+  Example: tc add qdisc dev eth0 root prio
+  Effect:  Issues the corresponding tc command.
+
+
+Timing:
+  Syntax:  time <time>
+  Example: time 17.5s
+  Effect:  Advances the simulation clock to the specified time. Any
+	   timers expiring before that time are triggered. It is an
+	   error to try to make time go backwards. The time can be
+	   specified in seconds (e.g. 5s) or in jiffies (e.g. 0.2j).
+	   The time resolution is micro-seconds or micro-jiffies.
+
+  Syntax:  every <time> [until <time>] <command>
+  Example: every 100s send 0x41 0x00 0x00 0x14
+  Effect:  Executes the specified command immediately, and then
+	   repeatedly after the specified interval. Only the commands
+	   "tc", "send", "poll", "every", and "echo" can be used with
+	   "every".
+
+           If an end time is given, the every command is not longer
+           executed after this time. It is valid to specify and end
+           time before the current time, in which case the "every"
+           command has no effect.
+
+  Syntax:  end
+  Example: end
+  Effect:  Stops all "every" commands and waits for all timers to
+	   complete. If a simulation does not use "end", it simply stops
+	   when reaching the end of the script, without waiting for
+	   timers. All commands but "every" can follow "end", although
+	   the use of "time" is discouraged. Typically, only "tc"
+	   commands should be used after "end".
+
+
+Packet enqueuing:
+  Syntax:  send [<device>] [<attribute>=<value> ...] <value> ...
+  Example: send 0x04 0x00 ns: 258 0x03
+  Effect:  Enqueues the specified byte sequence. tcsim assumes all
+           packets to be IPv4, without link-layer header. tcsim
+	   automatically sets the length field.
+
+	   The device name can be omitted if only a single device exists
+	   in the system when the send command is executed.
+
+	   The attributes set meta-data in the packet. The following
+	   attributes are supported:
+
+	     Attribute Default Description
+	     --------- ------- ------------------------------------------
+	     nfmark    0       the network filter mark value (used by the
+			       fw classifier)
+	     priority  0       priority value the "real" kernel derives
+			       from the TOS byte or some socket options
+	     tc_index  0       shared traffic control decision
+
+	   Note: usually, attributes are reset to their default values
+	   when crossing links. They are preserved when invoking tcsim
+	   with the -p option. (Use with caution: it's very easy to forget
+	   setting e.g. skb->tc_index, and things will still appear to
+	   work.)
+	   
+	   Values are arithmetic or bit expressions, IP addresses in
+	   dotted quad notation (e.g. 10.0.0.1), or variables ($var).
+	   Numeric constants can be given as decimal, hexadecimal, or
+	   binary (0b...) numbers. Also a Perl-like repetition operator
+	   "x" is available.
+
+	   By default, values are treated as bytes and extra bits are
+	   silently discarded. (Exception: dotted quads are treated as
+	   four bytes in network byte order.) A value can optionally be
+	   prefixed by a type: b: (byte), ns: (network short),
+	   hs: (host short), nl: (network long), or hl: (host long).
+
+	   Example: ns: 258 is equivalent to 0x01 0x02.
+
+	   Note that, when using a variable containing a value larger
+	   than a byte, the type needs to be specified.
+	   
+
+Packet dequeuing:
+  Syntax:  poll [<device>]
+  Example: poll
+  Effect:  Tries to dequeue packets. If no packets are available, poll
+	   has no effect. If no device name is specified, poll polls all
+	   available devices.
+
+
+Debugging:
+  Syntax:  echo <expression>|<quoted_string> ...
+  Example: echo 1 "<<" 8 "is" 0x%x 1 << 8 "(hex)"
+  Effect:  Prints the arguments, separated by spaces. An argument is
+           either a string in double quotes (e.g. "string"), or an
+           expression. Expressions can be prefixed with a printf-style
+           format string. The following strings are currently recognized:
+            %u    unsigned decimal integer, e.g. 100 is printed as 100
+            %x    unsigned hexadecimal integer, e.g. 100 is printed as 64
+            0x%x  like %x, but add 0x prefix, e.g. 100 is printed as 0x64
+
+	   "echo" commands have no effect if using the -q option.
+
+
+The "tc" and "insmod" commands terminate at the end of the line. Lines can
+be continued by ending them with a backslash. All other commands terminate
+at the next command keyword. Comments begin with a hash sign (#) and extend
+to the end of the line. The description file may contain cpp directives.
+
+The configuration language also provides simple variable handling
+capabilities. Variables are mainly used for constructing packet commands,
+typically in cpp macros. Variable assignments are of the form
+$var=expression. Variable assignments can appear either before a command,
+or between values in the "send" command.
+
+Variable references are of the form $var, and can appear anywhere
+where an integer number or a dotted quad could be used, except in the
+"tc" command.
+
+Example:
+
+  #define foo(params) \
+    $answer=42 params \
+    $answer $value
+
+  send foo($value=5)
+  send foo($value=10 $answer=8)
+
+yields the following two packets:
+
+  2a05
+  080a
+
+In order to process scripts with many "send" command efficiently (e.g.
+in a trace-driven simulation), the command can be stored in a variable.
+Command variables are set with the syntax:
+
+  command $var = <command>
+
+They are referenced with  command $var , e.g.
+
+  time 1s command $var
+
+All command that can be used with "every" can be stored in a variable.
+
+
+Multi-interface configurations
+------------------------------
+
+When using multiple interfaces, the usage of tcsim changes as follows:
+ - the output interface has to specified in the  "send" command
+ - the "poll" command takes an interface name as an optional argument
+
+Furthermore, the "host" construct is used to define logical groupings
+of devices and to specify routes:
+
+  host {
+      dev ...
+      tc ...
+      route ...
+      ...
+  }
+
+The "dev" and "tc" commands are used like in single-interface
+configurations. "route" is used as follows:
+
+  Syntax:  route <destination> [netmask <netmask>] <device>
+           route default <device>
+  Example: route 10.0.0.0 netmask 255.0.0.0 b_eth1
+
+It is an error to try to enter a more specific route after entering
+a more general route. (This restriction may be removed in the future.)
+
+Interfaces are connected with the "connect" command:
+
+  Syntax:  connect <device> <device>
+  Example: connect a_eth0 b_eth0
+
+"connect" may appear inside a "host" construct or at any other place
+where commands are allowed. "connect" creates a bi-directional
+connection. Connections in tcsim currently have no delay.
+
+
+Output
+------
+
+tcsim prints tracing information on standard output. Each line has the
+following format:
+
+<time> <event> : ...
+
+time      The simulation time at which the even has occurred, either in
+	  seconds or in jiffies.
+event	  The event type. Currently, the following events are reported:
+           I  ingress qdisc
+           E  device enqueue
+           D  device dequeue
+	   T  execution of a tc command
+           *  error or diagnostic
+
+          Additionally, if function call tracing is enabled (with -v),
+	  the following events are reported:
+           c  call to classifier
+           i  call to enqueue function of the ingress qdisc
+           e  call to enqueue function
+           d  call to dequeue function
+	   r  call to requeue function
+	   x  call to drop function
+           s  call to reshape_fail callback
+	   p  call to tcf_police
+
+For device enqueue and dequeue events, the following additional information
+is printed:
+
+<skb_addr> <length> : <device>: <content> ...
+
+skb_addr  The address of the skb.
+length    Length of the packet.
+content	  Packet content, printed in groups of for hex bytes. The
+	  length can be limited with the -s option. If bytes were
+	  not displayed due to -s, tcsim ends the line with "...".
+
+For tc command execution, the command line (including the "tc" command)
+is printed.
+
+For all tracing events, the following information is printed:
+
+<skb_addr> <length> : <<level>> <descr> ...
+
+skb_addr  see above, 0x0 if no skb is available
+length    see above, 0 if no skb is available
+level     Is the call depth (enclosed by <>), starting at zero.
+descr     Is a description of the event, usually including the kind
+	  and ID of the element, and the return value of the function
+
+The script tcsim_pretty can be used to format traces in a more
+human-readable way. E.g.
+
+  ./tcsim -s 20 -v -v -v -I. ../examples/dsmark+policing | ./tcsim_pretty
+
+tcsim_pretty usually wraps long lines. The default line width of 79
+characters can be changed with the  -w width  option. Wrapping is turned
+off with the  -l  option.
+
+
+Output filtering
+----------------
+
+Enqueue and dequeue records can be selected in trace output with the
+tcsim_filter script.
+
+Usage:
+
+  tcsim_filter [-c] [-e|-d] [selector ...] [output ...] [file ...]
+
+-c	  Count the results instead of printing data points on standard
+	  output.
+-e	  Only consider enqueue events (default: enqueue and dequeue)
+-d	  Only consider dequeue events
+selector  Expression of the type field=value. Only records where the
+	  field has the specified value will be shown or counted.
+output	  Include the value of the specified field in the output.
+file	  Read from the specified file. Default: read from stdin.
+
+The following fields are recognized:
+
+  tos	 TOS byte
+  len	 Total length field
+  src	 Source IP address
+  dst	Destination IP address
+  sport  Source port (TCP or UDP)
+  dport  Destination port (TCP or UDP)
+  dev    Device name (e.g. eth0)
+
+Selected records are condensed into an identification string that begins
+with the event type (E or D), followed by the hexadecimal values of all
+output fields, separated by commas.
+
+When counting, the records with the same ID string is counted. When
+printing records, each line contains the time, the ID string, and the
+packet length in bytes, separated by spaces.
+
+Examples:
+
+  ./tcsim -I. ../examples/dsmark+policing | ./tcsim_filter -c tos
+  D:00 201
+  D:b8 139
+  E:00 201
+  E:01 201
+
+  ./tcsim -I. ../examples/dsmark+policing | ./tcsim_filter tos=0xb8
+  D 139
+
+  ./tcsim -I. ../examples/dsmark+policing | ./tcsim_filter src | sed 4q
+  0.000000 E:0a000001 1000
+  0.000000 D:0a000001 1000
+  0.000000 E:0a000001 1000
+  0.000800 D:0a000001 1000
+
+Filtered output can be further processed with the script tcsim_plot, which
+uses gnuplot to generate plots.
+
+Usage: tcsim_plot [-a samples] [-j] [-m] [-p ps_file] [-t plot_type]
+		  [file ...]
+
+-a samples    Average over the number of samples
+-j            Time is in jiffies, not seconds (i.e. tcsim was run with -j)
+-m            Generate monochrome output
+-p ps_file    Generate Postscript output
+-t plot_type  Specifies the plot type.
+
+The following plot types are available:
+  rate   Bit rate (based on the inter-arrival time)
+  iat    Packet inter-arrival time
+  cumul  Cumulative amount of data
+  delay  Queuing delay, measured at dequeue time
+
+"rate" and "iat" normally require averaging in order to produce anything
+useful. With "rate", packets apparently arriving at the same time are
+treated like one large packet arriving at the time.
+
+Examples:
+
+  ./tcsim -I. ../examples/dsmark+policing | ./tcsim_filter | \
+    ./tcsim_plot -t cumul
+
+  ./tcsim -I. ../examples/dsmark+policing | ./tcsim_filter | \
+    ./tcsim_plot -a 10
+
+  ./tcsim -I. ../examples/ef-prio | ./tcsim_filter tos | \
+    ./tcsim_plot -t delay
+
+
+Adding new traffic control elements
+-----------------------------------
+
+There are two ways for making new components available in tcsim:
+ - adding them directly to tcsim. This is how tcsim obtains all components
+   provided by the kernel.
+ - building them as external loadable modules
+
+New traffic control elements are added to tcsim as follows:
+
+ - first, add the necessary code to the kernel source tree and to
+   iproute2/tc
+ - edit "config" or modify "configure" so that tcsim can find and use
+   the new source trees
+ - in setup.klib, add a command to copy the new kernel source file(s)
+   to the klib directory
+ - add the name(s) of the new kernel code object file(s) to OBJS in
+   Makefile.klib
+ - if your component requires any new kernel configuration option(s)
+   to be set, add them to include/linux/config.h in setup.klib
+   (seatch for "CONFIG")
+ - if your component requires a new entry in iproute2/Config, enable
+   it in setup.ulib (search for "Config")
+ - run make
+
+Modules are used as follows:
+
+ - build "kernel" modules with
+     kmod_cc -c -D__KERNEL__ -DMODULE -O -fomit-frame-pointer \
+       -fno-strict-aliasing -I/usr/src/linux/include -o module.o module.c
+ - build iproute2/tc modules with
+     tcmod_cc -shared -o module.so module.c
+ - in the simulation, load the "kernel" module with the "insmod" command.
+   If the iproute2/tc module is in a directory where dlopen(3) can find
+   it, it is automatically loaded. Otherwise, load it with the "preload"
+   command.
+
+The kmod_cc command-line options are the same as used when building real
+kernel modules. kmod_cc automatically adjusts the command line such that
+tcsim's private includes are used.
+
+Note: there may be include file problems when building for tcsim, even
+if your code normally compiles perfectly. The reason for this is that
+tcsim replaces many kernel include files in order to limit the amount of
+functionality that needs to be provided by the glue code.
+
+
+Restrictions
+------------
+
+- tcsim only includes a small part of the network stack, and does not
+  support full routing or firewalling. Therefore, the route classifier
+  is not available in tcsim, and the usefulness of the fw classifier is
+  limited.
+- tc bugs may crash tcsim, e.g. try running  tc class show dev eth0
+  at the end of ../examples/prio+rsvp
+
+For known bugs, see separate file BUGS.

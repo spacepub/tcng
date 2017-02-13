@@ -1,0 +1,46 @@
+# check syntax of examples/dsmark+policing ------------------------------------
+tcsim -c examples/dsmark+policing
+# check syntax of examples/ef-prio --------------------------------------------
+tcsim -c examples/ef-prio
+# check syntax of examples/gred -----------------------------------------------
+tcsim -c examples/gred
+# check syntax of examples/ingress --------------------------------------------
+tcsim -c examples/ingress
+# check syntax of examples/pfifo_fast -----------------------------------------
+tcsim -c examples/pfifo_fast
+# check syntax of examples/prio+fw --------------------------------------------
+tcsim -c examples/prio+fw
+# check syntax of examples/prio+rsvp ------------------------------------------
+tcsim -c examples/prio+rsvp
+# check syntax of examples/sfq ------------------------------------------------
+tcsim -c examples/sfq
+# check syntax of examples/tbf ------------------------------------------------
+tcsim -c examples/tbf
+# check syntax of examples/u32 ------------------------------------------------
+tcsim -c examples/u32
+# check syntax of examples-ng/dsmark+policing ---------------------------------
+tcsim -c examples-ng/dsmark+policing
+# check syntax of examples-ng/ef-prio -----------------------------------------
+tcsim -c examples-ng/ef-prio
+# check syntax of examples-ng/gred --------------------------------------------
+tcsim -c examples-ng/gred
+# check syntax of examples-ng/ingress -----------------------------------------
+tcsim -c examples-ng/ingress
+# check syntax of examples-ng/pfifo_fast --------------------------------------
+tcsim -c examples-ng/pfifo_fast
+# check syntax of examples-ng/prio+fw -----------------------------------------
+tcsim -c examples-ng/prio+fw
+# check syntax of examples-ng/prio+rsvp ---------------------------------------
+tcsim -c examples-ng/prio+rsvp
+# check syntax of examples-ng/priority ----------------------------------------
+tcsim -c examples-ng/priority
+# check syntax of examples-ng/sfq ---------------------------------------------
+tcsim -c examples-ng/sfq
+# check syntax of examples-ng/tbf ---------------------------------------------
+tcsim -c examples-ng/tbf
+# check syntax of examples-ng/u32 ---------------------------------------------
+tcsim -c examples-ng/u32
+# check syntax of examples-ng/xdev --------------------------------------------
+tcsim -c examples-ng/xdev
+# check syntax of tcc/example -------------------------------------------------
+tcc -c tcc/example

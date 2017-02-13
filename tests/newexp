@@ -1,0 +1,45 @@
+# normally, "expensive" operations yield no comments --------------------------
+tcc 2>&1 >/dev/null
+prio {
+    class if raw[0] != 0;
+}
+EOF
+# -Wexpensive enables "expensive" warnings ------------------------------------
+tcc -Wexpensive 2>&1 >/dev/null
+prio {
+    class if raw[0] != 0;
+}
+EOF
+<stdin>:2: warning: "!=" is an "expensive" operation
+warning: negation is an "expensive" operation
+warning: negation is an "expensive" operation
+# -Wexperror makes them fatal errors ------------------------------------------
+tcc -Wexpensive -Wexperror 2>&1 >/dev/null
+prio {
+    class if raw[0] != 0;
+}
+EOF
+ERROR
+<stdin>:2: "!=" is an "expensive" operation
+# -Wexperror alone has no effect ----------------------------------------------
+tcc -Wexperror 2>&1 >/dev/null
+prio {
+    class if raw[0] != 0;
+}
+EOF
+# -Wexppostopt defers "expensive" check ---------------------------------------
+tcc -Wexppostopt 2>&1 >/dev/null
+prio {
+    class if raw[0] != 0;
+}
+EOF
+warning: negation is an "expensive" operation
+warning: negation is an "expensive" operation
+# -Wexppostopt plus -Wexperror yields fatal errors ----------------------------
+tcc -Wexppostopt -Wexperror 2>&1 >/dev/null
+prio {
+    class if raw[0] != 0;
+}
+EOF
+ERROR
+negation is an "expensive" operation

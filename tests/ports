@@ -1,0 +1,16 @@
+# test availability of some common port names ---------------------------------
+tcc -c -Wnounused
+#include "ports.tc"
+
+$a = PORT_BOOTPS+0;
+$b = PORT_FINGER+0;
+$c = PORT_X11+0;
+EOF
+# verify that above test could fail -------------------------------------------
+tcc -c -Wnounused 2>&1
+#include "ports.tc"
+
+$a = PORT_DOESNOTEXIST+0;
+EOF
+ERROR
+<stdin>:3: syntax error near "PORT_DOESNOTEXIST"

@@ -1,0 +1,15 @@
+# interface names with 16 (or more) characters are refused --------------------
+tcc 2>&1
+abcdefghijklmnop {
+    fifo;
+}
+EOF
+ERROR
+<stdin>:1: interface name longer than 15 characters near "{"
+# interface names with 15 characters are accepted -----------------------------
+tcc
+abcdefghijklmno {
+    fifo;
+}
+EOF
+tc qdisc add dev abcdefghijklmno handle 1:0 root pfifo

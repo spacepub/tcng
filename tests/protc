@@ -1,0 +1,53 @@
+# protocol support in c: unspecified ------------------------------------------
+LD_LIBRARY_PATH=. tcsim -Xc,-tc -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+dev eth0 {
+    egress {
+        class (<>) if raw[0] == 0;
+        drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 0
+send 1
+EOF
+00
+00
+01
+enqueue returns POLICED (3)
+# protocol support in c: ip4 only ---------------------------------------------
+LD_LIBRARY_PATH=. tcsim -Xc,-tc -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+dev eth0 {
+    egress {
+        class (<>) if ip_hdr[0] == 0;
+        drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 0
+send 1
+EOF
+00
+00
+enqueue returns POLICED (3)
+01
+enqueue returns POLICED (3)
+# protocol support in c: ip6 only ---------------------------------------------
+LD_LIBRARY_PATH=. tcsim -Xc,-tc -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+dev eth0 {
+    egress {
+        class (<>) if ip6_hdr[0] == 0;
+        drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 0
+send 1
+EOF
+00
+enqueue returns POLICED (3)
+00
+01
+enqueue returns POLICED (3)

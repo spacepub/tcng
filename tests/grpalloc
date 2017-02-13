@@ -1,0 +1,45 @@
+# Offset groups below ten are reserved ----------------------------------------
+tcc -c 2>&1
+field foo = field_root(9);
+EOF
+ERROR
+<stdin>:1: field root numbers < 10 are reserved for internal use near ";"
+# Offset groups starting with ten can be used ---------------------------------
+tcc -c
+field foo = field_root(10);
+EOF
+# tcc auto-assigns offset group numbers starting with 100 ---------------------
+tcc -xif:err 2>&1 | grep 'match [0-9]'
+field foo = raw;
+field bar = foo[foo];
+
+prio {
+    class if bar == 0;
+}
+EOF
+match 100:0:8=0x00 action 1
+# tcc avoids user-assigned offset group numbers (1) ---------------------------
+tcc -xif:err 2>&1 | grep 'match [0-9]'
+field user = field_root(100);
+field foo = raw;
+field bar = foo[foo];
+
+prio {
+    class if bar == 0;
+}
+EOF
+match 101:0:8=0x00 action 1
+# tcc avoids user-assigned offset group numbers (2) ---------------------------
+tcc -xif:err 2>&1 | grep 'match [0-9]'
+field user1 = field_root(100);
+field user2 = field_root(101);
+field user3 = field_root(102);
+field user5 = field_root(104);
+field foo = raw;
+field bar = foo[foo];
+
+prio {
+    class if bar == 0;
+}
+EOF
+match 103:0:8=0x00 action 1

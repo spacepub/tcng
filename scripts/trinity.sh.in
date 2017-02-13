@@ -1,0 +1,63 @@
+#!/bin/sh -e
+#
+# trinity.sh - Run test with targets "tc" (u32) , "c", and "ext" (test)
+#
+# Written 2001,2002 by Werner Almesberger
+# Copyright 2001 Network Robots
+# Copyright 2002 Bivio Networks
+#
+# This script is modified by the Makefile to include TOPDIR
+
+
+filter()
+{
+    sed '/.* c .* returns /s///p;d' | sed 's/\(.*:[0-9a-fA-F].*\),.*/\1)/'
+}
+
+
+usage()
+{
+    echo "usage: $0 [-v] [file]" 2>&1
+    exit 1
+}
+
+
+verify=false
+while [ ! -z "$1" ]; do
+    case "$1" in
+	-v) verify=true;;
+	-*) usage;;
+	*) break;;
+    esac
+    shift
+done
+
+if [ -z "$1" ]; then
+   cat "$@" >_tri_in.$$
+   in_file=_tri_in.$$
+else
+   in_file="$1"
+fi
+
+[ -z "$2" ] || usage
+
+topdir=$TOPDIR
+[ -z "$TCNG_TOPDIR" ] || topdir=$TCNG_TOPDIR
+
+PATH=$topdir/bin:$PATH
+TCNG_TOPDIR=$topdir tcsim -v "$in_file" | filter >_tri_tc.$$
+LD_LIBRARY_PATH=. TCNG_TOPDIR=$topdir \
+  tcsim -v -Xc,-tc "$in_file" | filter >_tri_c.$$
+LD_LIBRARY_PATH=. PATH=$PATH:$topdir/tcc/ext \
+  TCNG_TOPDIR=$topdir tcsim -v -Xc,-xif:test "$in_file" | filter >_tri_ext.$$
+diff -u _tri_tc.$$ _tri_c.$$ || {
+    echo "tc and c output differ" 2>&1
+    exit 1
+}
+diff -u _tri_tc.$$ _tri_ext.$$ || {
+    echo "tc and ext output differ" 2>&1
+    exit 1
+}
+$verify && cat _tri_c.$$
+rm -f _tri_in.$$ _tri_tc.$$ _tri_c.$$ _tri_ext.$$
+exit 0

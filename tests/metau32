@@ -1,0 +1,240 @@
+# classify based on meta_tc_index ---------------------------------------------
+tcsim | tcsim_filter -d tos | awk '{print $2}'
+dev eth0 10Mbps {
+    dsmark (mask 0) {
+	class (1,value 1) if meta_tc_index == 1;
+	class (2,value 2) if meta_tc_index == 2;
+	class (3,value 3) if 1;
+    }
+}
+
+send tc_index=1 0 x 20
+send tc_index=2 0 x 20
+send tc_index=3 0 x 20
+end
+EOF
+D:01
+D:02
+D:03
+# classify based on meta_nfmark -----------------------------------------------
+tcsim | tcsim_filter -d tos | awk '{print $2}'
+dev eth0 10Mbps {
+    dsmark (mask 0) {
+	class (1,value 3) if meta_nfmark == 1;
+	class (2,value 2) if meta_nfmark == 2;
+	class (3,value 1) if 1;
+    }
+}
+
+send nfmark=1 0 x 20
+send nfmark=2 0 x 20
+send nfmark=3 0 x 20
+end
+EOF
+D:03
+D:02
+D:01
+# meta_nfmark followed by u32 -------------------------------------------------
+tcsim | tcsim_filter -d tos | awk '{print $2}'
+dev eth0 10Mbps {
+    dsmark (mask 0) {
+	class (1,value 1) if meta_nfmark == 1;
+	class (2,value 2) if raw[0] == 1;
+	class (3,value 3) if 1;
+    }
+}
+
+send nfmark=0 0 0 x 19
+send nfmark=0 1 0 x 19
+send nfmark=1 0 0 x 19
+send nfmark=1 1 0 x 19
+end
+EOF
+D:03
+D:02
+D:01
+D:01
+# u32 followed by meta_nfmark -------------------------------------------------
+tcsim | tcsim_filter -d tos | awk '{print $2}'
+dev eth0 10Mbps {
+    dsmark (mask 0) {
+	class (1,value 1) if raw[0] == 1;
+	class (2,value 2) if meta_nfmark == 1;
+	class (3,value 3) if 1;
+    }
+}
+
+send nfmark=0 0 0 x 19
+send nfmark=0 1 0 x 19
+send nfmark=1 0 0 x 19
+send nfmark=1 1 0 x 19
+end
+EOF
+D:03
+D:01
+D:02
+D:01
+# meta_nfmark surrounded by u32 -----------------------------------------------
+tcsim | tcsim_filter -d tos | awk '{print $2}'
+dev eth0 10Mbps {
+    dsmark (mask 0) {
+	class (1,value 1) if raw[0] == 1;
+	class (2,value 2) if meta_nfmark == 1;
+	class (3,value 3) if raw[0] == 2;
+	class (4,value 4) if 1;
+    }
+}
+
+send nfmark=0 0 0 x 19
+send nfmark=0 1 0 x 19
+send nfmark=0 2 0 x 19
+send nfmark=1 0 0 x 19
+send nfmark=1 1 0 x 19
+send nfmark=1 2 0 x 19
+end
+EOF
+D:04
+D:01
+D:03
+D:02
+D:01
+D:02
+# u32 surrounded by meta_nfmark -----------------------------------------------
+tcsim | tcsim_filter -d tos | awk '{print $2}'
+dev eth0 10Mbps {
+    dsmark (mask 0) {
+	class (1,value 1) if meta_nfmark == 1;
+	class (2,value 2) if raw[0] == 1;
+	class (3,value 3) if meta_nfmark == 2;
+	class (4,value 4) if 1;
+    }
+}
+
+send nfmark=0 0 0 x 19
+send nfmark=0 1 0 x 19
+send nfmark=1 0 0 x 19
+send nfmark=1 1 0 x 19
+send nfmark=2 0 0 x 19
+send nfmark=2 1 0 x 19
+end
+EOF
+D:04
+D:02
+D:01
+D:01
+D:03
+D:02
+# cannot u32 && meta ----------------------------------------------------------
+tcc 2>&1 >/dev/null
+prio {
+    class if raw[0] == 0 && meta_nfmark == 0;
+}
+EOF
+ERROR
+<stdin>:1: invalid combination of meta and non-meta fields
+# cannot meta && u32 ----------------------------------------------------------
+tcc 2>&1 >/dev/null
+prio {
+    class if meta_nfmark == 1 && raw[0] == 0;
+}
+EOF
+ERROR
+<stdin>:1: invalid combination of meta and non-meta fields
+# cannot mix regular meta fields ----------------------------------------------
+tcc 2>&1 >/dev/null
+prio {
+    class if meta_nfmark == 1 && meta_tc_index == 0;
+}
+EOF
+ERROR
+<stdin>:1: invalid combination of meta fields
+# can mix regular meta field with protocol ------------------------------------
+tcsim -v | sed '/.* OK .*(1:\\(.\\).*/s//\\1/p;d'
+dev eth0 10Mbps {
+    egress {
+	class (1) if meta_protocol == 1;
+	class (2) if meta_protocol == 2 && meta_nfmark == 1;
+	class (3) if 1;
+    }
+}
+
+send protocol=0 nfmark=0 0 x 20
+send protocol=1 nfmark=0 0 x 20
+send protocol=2 nfmark=0 0 x 20
+send protocol=0 nfmark=1 0 x 20
+send protocol=1 nfmark=1 0 x 20
+send protocol=2 nfmark=1 0 x 20
+end
+EOF
+3
+1
+3
+3
+1
+2
+# redundant tests are ignored -------------------------------------------------
+tcc | grep fw | sed '/.* handle /s///p;d'
+EOF
+prio {
+    class (1) if meta_nfmark == 3 && meta_nfmark == 3;
+    class (2) if 1;
+}
+EOF
+3 fw classid 1:1
+# conflicting tests are eliminated --------------------------------------------
+tcc | grep fw | sed '/.* handle /s///p;d'
+prio {
+    class (1) if meta_nfmark == 2 && meta_nfmark == 3;
+    class (2) if 1;
+}
+EOF
+# tcc detects invalid test for meta_nfmark value 0 ----------------------------
+tcc 2>&1 >/dev/null
+prio {
+    class if meta_nfmark == 0;
+}
+EOF
+ERROR
+<stdin>:1: cannot test meta_nfmark == 0
+# meta_tc_index == 0xffff yields test -----------------------------------------
+tcc | grep -c tcindex
+prio {
+    class if meta_tc_index == 0xffff;
+}
+EOF
+1
+# meta_tc_index == 0x10000 is eliminated --------------------------------------
+tcc | grep -c tcindex; true
+prio {
+    class if meta_tc_index == 0x10000;
+}
+EOF
+0
+# priority is not needlessly incremented --------------------------------------
+tcc | sed '/.*\\(prio [0-9]\\).*/s//\\1/p;d' | sort -r | sed 1q
+prio {
+    class if meta_nfmark == 1;
+    class if meta_nfmark == 2;
+    class if raw[0] == 1;
+    class if raw[0] == 2;
+    class if meta_nfmark == 3;
+    class if meta_nfmark == 4;
+    class if 1;
+}
+EOF
+prio 4
+# meta-fields can be combined with policing -----------------------------------
+tcsim
+dev eth0 {
+    $t = trTCM(cir 1Mbps,pir 2Mbps,cbs 10kB,pbs 5kB);
+    prio {
+	class if meta_nfmark == 1 && __trTCM_green($t);
+	class if meta_nfmark == 1 && __trTCM_yellow($t);
+	class if meta_nfmark == 1 && __trTCM_red($t);
+	class if raw[0] == 0 && __trTCM_green($t);
+	class if raw[0] == 0 && __trTCM_yellow($t);
+	class if raw[0] == 0 && __trTCM_red($t);
+	class if 1;
+    }
+}
+EOF

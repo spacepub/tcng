@@ -1,0 +1,36 @@
+/*
+ * u32 - Classify using u32
+ *
+ * We distinguish UDP, TCP in general, two TCP port pairs in particular,
+ * and a specific destination host last
+ */
+
+
+#define PORT_USER 0x1234
+
+#define MY_UDP		UDP_PCK($ip_src=10.0.0.1 $ip_dst=10.0.0.2 \
+			  $udp_sport=PORT_USER $udp_dport=PORT_DOMAIN)
+#define MY_TCP(PARAMS)	TCP_PCK($ip_src=10.0.0.1 $ip_dst=10.0.0.2 \
+			  $tcp_sport=PORT_USER $tcp_dport=PORT_HTTP PARAMS)
+#define MY_ICMP(PARAMS) ICMP_PCK($ip_src=10.0.0.2 $ip_dst=10.0.0.1 PARAMS)
+
+dev eth0 100000 /* 100 Mbps */ {
+    #define PORT_USER 0x1234
+
+    prio (bands 5) {
+	class if ip_proto == IPPROTO_UDP; /* ... if (udp)  would be neat */
+	class if tcp_sport == PORT_USER && tcp_dport == PORT_TELNET;
+	class if tcp_sport == PORT_USER && tcp_dport == PORT_SMTP;
+	class if ip_proto == IPPROTO_TCP;
+	class if ip_dst == 10.0.0.2;
+    }
+}
+
+send MY_UDP
+send MY_TCP($tcp_dport=PORT_TELNET)
+send MY_TCP($tcp_dport=PORT_SMTP)
+send MY_TCP($tcp_dport=PORT_HTTP $ip_dst=10.0.0.2)
+send MY_ICMP($ip_dst=10.0.0.2)
+send MY_ICMP($ip_dst=10.0.0.1)
+
+end

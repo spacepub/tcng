@@ -1,0 +1,6 @@
+# meters.tc: set_SLB sometimes used __dlb_ names ------------------------------
+tcc -c -Wnounused
+#include "meters.tc"
+
+set_SLB($foo,cir 1Mbps,cbs 10kB);
+EOF

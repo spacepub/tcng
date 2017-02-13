@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# tcmod_cc - Compilation script for iproute2/tc modules to be used by tcsim
+#
+# Written 2001,2004 by Werner Almesberger
+# Copyright 2001 EPFL-ICA
+# Copyright 2004 Werner Almesberger
+#
+# This script is modified by the Makefile to include TOPDIR
+
+topdir=$TOPDIR
+[ -z "$TCNG_TOPDIR" ] || topdir=$TCNG_TOPDIR
+
+${CC:-cc} -fPIC \
+  `if [ -d $topdir/lib/tcng/include/ulib/iproute2/include-glibc ]; then \
+    echo '' -I$topdir/lib/tcng/include/ulib/iproute2/include-glibc; \
+    echo '' -include \
+      $topdir/lib/tcng/include/ulib/iproute2/include-glibc/glibc-bugs.h;
+   fi` \
+  -I$topdir/lib/tcng/include/klib/include \
+  -I$topdir/lib/tcng/include/ulib/iproute2/tc \
+  -I$topdir/lib/tcng/include/ulib/iproute2/include \
+  "$@"

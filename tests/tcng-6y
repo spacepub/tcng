@@ -1,0 +1,30 @@
+# tcsim accepts device names in double quotes ---------------------------------
+tcsim
+dev "foo.bar" {
+}
+
+send "foo.bar" 1 2 3 4
+EOF
+0.000000 E : 0x00000000 4 : foo.bar: 01020304
+# ip_MF and ip_DF flags have the right values ---------------------------------
+PATH=$PATH:tcc/ext LD_LIBRARY_PATH=. tcsim -v | \
+  sed '/.*1:\\(.\\),.*/s//\\1/p;d'
+dev eth0 {
+    #include "fields.tc"
+
+    prio {
+	class (1) if ip_MF;
+	class (2) if ip_DF;
+	class (3) if 1;
+    }
+}
+
+send 0x45 0 0 0  0 0 0x00 0 	/* none */
+send 0x45 0 0 0  0 0 0x20 0 	/* ip_MF */
+send 0x45 0 0 0  0 0 0x40 0 	/* ip_DF */
+send 0x45 0 0 0  0 0 0x80 0 	/* ip_RF */
+EOF
+3
+1
+2
+3

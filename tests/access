@@ -1,0 +1,269 @@
+# basic access works (byte) ---------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if raw[0].b == 0xff;
+}
+EOF
+0:0:8=0xFF
+# basic access works (short) --------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if raw[0].ns == 0x12;
+}
+EOF
+0:0:16=0x0012
+# basic access works (long) ---------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if raw[0].nl == 0x1234;
+}
+EOF
+0:0:32=0x00001234
+# reversed order is corrected by earlier stages -------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if 0x8000 == raw[0].ns;
+}
+EOF
+0:0:16=0x8000
+# X rel X is refused ----------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null
+prio {
+    class if raw[0].ns > raw[2].ns;
+}
+EOF
+ERROR
+can't dump subexpression (iflib_arith.c, "rel const" expected)
+# X op X rel C is refused -----------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null
+prio {
+    class if raw[0].ns+raw[2].ns != 13;
+}
+EOF
+ERROR
+can't dump subexpression (if_ext.c, bad operator)
+# X & X rel C is refused ------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null
+prio {
+    class if raw[0].ns & raw[2].ns == 42;
+}
+EOF
+ERROR
+can't dump subexpression (if_ext.c, must be "& constant")
+# X << X rel C is refused -----------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null
+prio {
+    class if raw[0].ns << raw[2].ns == 44;
+}
+EOF
+ERROR
+can't dump subexpression (if_ext.c, bad operator)
+# X >> X rel C is refused -----------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null
+prio {
+    class if raw[0].ns >> raw[2].ns == 33;
+}
+EOF
+ERROR
+can't dump subexpression (if_ext.c, bad operator)
+# X.ns & 0xf works ------------------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[2].ns & 0xf) == 7;
+}
+EOF
+0:28:4=0x7
+# X.b << 1 works (ext) --------------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[0].b << 1) == 0x20;
+}
+EOF
+0:0:8=0x10
+# X.b << 1 works (u32) --------------------------------------------------------
+tcc 2>&1 | sed '/.*match \\(.*\\) classid.*/s//\\1/p;d'
+prio {
+    class if (raw[0].b << 1) == 0x20; /* old algorithm generated mask 0x7f */
+}
+EOF
+u8 0x10 0xff at 0
+# X.b << 30 works (ext) --------------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[0].b << 30) == 0xc0000000;
+    /* since we're using 128 bit arithmetic, the 32 bit overflow leaves tcc
+       utterly unimpressed */
+}
+EOF
+0:0:8=0x03
+# X.b << 126 works (ext) ------------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[0].b << 126) == c000::;
+}
+EOF
+0:6:2=0x3
+# X.nl >> 2 works (ext) -------------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[2].nl >> 2) == 1; /* ext uses bit alignment */
+}
+EOF
+0:16:30=0x00000001
+# X.nl >> 2 works (u32) -------------------------------------------------------
+tcc | sed '/.*match \\(.*\\) classid.*/s//\\1/p;d'
+prio {
+    class if (raw[4].nl >> 2) == 1;
+	/* u32 has long alignment, so we have to be careful */
+}
+EOF
+u32 0x4 0xfffffffc at 4
+# (X.ns >> 4) << 4 works (ext) ------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[0].ns >> 4) << 4 == 256; /* lower four bits are lost */
+}
+EOF
+0:0:12=0x010
+# (X.ns >> 4) << 4 works (u32) ------------------------------------------------
+tcc | sed '/.*match \\(.*\\) classid.*/s//\\1/p;d'
+prio {
+    class if (raw[0].ns >> 4) << 4 == 256; 
+}
+EOF
+u16 0x100 0xfff0 at 0
+# (X.ns << 4) >> 4 works (ext) ------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[0].ns << 4) >> 4 == 256; /* no losses */
+}
+EOF
+0:0:16=0x0100
+# (X.ns << 4) >> 4 works (u32) ------------------------------------------------
+tcc 2>&1 | sed '/.*match \\(.*\\) classid.*/s//\\1/p;d'
+prio {
+    class if (raw[0].ns << 4) >> 4 == 256; /* no losses */
+}
+EOF
+u16 0x100 0xffff at 0
+# X >> N == C without overflow ------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].nl >> 4 == 0x1000000;
+}
+EOF
+match 0:0:28=0x1000000 action 1
+match action 0
+# X >> N == C with overflow ---------------------------------------------------
+tcc -xif:err 2>&1 | sed '/match/p;/warning/p;d'
+prio {
+    class if raw[0].nl >> 4 == 0x80000000;
+}
+EOF
+warning: left-shift of value in access exceeds 32 bit range
+match action 0
+# X >> N != C with overflow ---------------------------------------------------
+tcc -xif:err 2>&1 | sed '/match/p;/warning/p;d'
+prio {
+    class if raw[0].nl >> 4 != 0x80000000;
+}
+EOF
+warning: left-shift of value in access exceeds 32 bit range
+match action 1
+# X << N == C without underflow -----------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].nl << 4 == 32;
+}
+EOF
+match 0:0:32=0x00000002 action 1
+match action 0
+# X << N == C with underflow --------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].nl << 4 == 33;
+}
+EOF
+match action 0
+# X << N != C with underflow --------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].nl << 4 != 33;
+}
+EOF
+match action 1
+# X << N < C with underflow ---------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].nl << 4 < 33; /* <= 2 */
+}
+EOF
+match 0:0:31=0x00000000 action 1
+match 0:0:30=0x00000000 0:31:1=0x0 action 1
+match action 0
+# X << N <= C with underflow --------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].b << 4 <= 33; /* <= 2 */
+}
+EOF
+match 0:0:7=0x00 action 1
+match 0:0:6=0x00 0:7:1=0x0 action 1
+match action 0
+# X << N > C with underflow ---------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].b << 4 > 33; /* > 3 */
+}
+EOF
+match 0:0:6=0x00 action 0
+match action 1
+# X << N >= C with underflow ---------------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0].b << 4 >= 33; /* > 2 */
+}
+EOF
+match 0:0:1=0x1 action 1
+match 0:1:1=0x1 action 1
+match 0:2:1=0x1 action 1
+match 0:3:1=0x1 action 1
+match 0:4:1=0x1 action 1
+match 0:5:1=0x1 action 1
+match 0:6:2=0x3 action 1
+match action 0
+# (X.nl & 0xf0) << 2 works ----------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (raw[0].nl & 0xf0) << 2 == 0x40;
+}
+EOF
+0:24:4=0x1
+# (X.nl << 2) & 0xf0 works ----------------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if ((raw[0].nl << 2) & 0xf0) == 0x40;
+}
+EOF
+0:26:4=0x4
+# ((X.nl & 0xf0) >> 2) & 0xf0 works -------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (((raw[0].nl & 0xf0) >> 2) & 0xf0) == 0x20;
+}
+EOF
+0:24:2=0x2
+# ((X.nl & 0xf0) >> 2) & 0xf0 works -------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if (((raw[0].nl & 0xf0) >> 2) & 0xf0) == 0x20;
+}
+EOF
+0:24:2=0x2
+# ((X.nl << 2) & 0xf0) >> 3 works ---------------------------------------------
+tcc -xif:err 2>&1 | sed '/^match \\(.*\\) action.*/s//\\1/p;d'
+prio {
+    class if ((raw[0].nl << 2) & 0xf0) >> 3 == 6;
+}
+EOF
+0:26:4=0x3

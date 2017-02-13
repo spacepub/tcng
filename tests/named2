@@ -1,0 +1,52 @@
+# "host" construct can now use string expressions -----------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$host = "1.2.3.4";
+$a = host $host;
+$b = host ("local"+"host");
+EOF
+$host = "1.2.3.4"
+$a = 1.2.3.4
+$b = 127.0.0.1
+# host parameters can use string expression -----------------------------------
+tcc | sed '/.*session /{s///;s/ .*$//p;};d'
+prio {
+    $dot = ".";
+    class
+	on rsvp element(ipproto "tcp",dst "1.2"+$dot+"3.4");
+}
+EOF
+1.2.3.4
+# port parameters can use string expression -----------------------------------
+tcc | sed '/.* ipproto/s//ipproto/p;d'
+$finger = "finger";
+prio {
+    class
+        on rsvp(ipproto "tcp") element (dst 1.2.3.4,sport $finger);
+}
+EOF
+ipproto 6 session 1.2.3.4 sender any/79 classid 1:1
+# IP protocol parameter can use string expression -----------------------------
+tcc | sed '/.* ipproto/s//ipproto/p;d'
+prio {
+    $proto = "tc";
+    class
+        on rsvp(ipproto $proto+"p") element (dst 1.2.3.4,sport 123);
+}
+EOF
+ipproto 6 session 1.2.3.4 sender any/123 classid 1:1
+# Ether protocol parameter can use string expression --------------------------
+tcc | grep filter
+prio {
+    $version = "6";
+    fw(protocol "ipv"+$version);
+}
+EOF
+tc filter add dev eth0 parent 1:0 protocol ipv6 prio 1 fw
+# device names can use string expressions -------------------------------------
+tcc
+$number = "1";
+dev "eth"+$number {
+    fifo;
+}
+EOF
+tc qdisc add dev eth1 handle 1:0 root pfifo

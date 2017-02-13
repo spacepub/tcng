@@ -1,0 +1,106 @@
+Element	Parameter name	Opt/Re-	Type	Value range	Default value
+name			quired
+-------	--------------- -------	------- ---------------	-----------------------
+
+Policing @@@ (no parameter checking)
+	avrate		opt	rate	> 0		n/a
+	burst		opt	size	>= mtu		n/a	only if rate
+								(req for tc)
+	(buffer, maxburst)
+	mpu		opt	size	<= mtu		0	only if rate
+	mtu		opt	size	> 0, >= psched_mtu
+	(minburst)
+	overflow	opt	police	n/a		n/a	only if rate
+	peakrate	opt	rate	> rate		n/a	only if rate
+	rate		opt	rate	>= 0		n/a
+
+Tunnel
+	skip		req	size	> 0
+
+CBQ
+qdisc	bandwidth	req	rate	> 0
+qdc/cls allot		opt	size	> 0, ~ mtu		req on class
+	avpkt		opt	size	> 0			req on class
+	defmap		opt	list of var [TC_PRIO_MAX]
+	ewma		opt	unum	1..31 ???	TC_CBQ_DEF_EWMA (5)
+	maxburst	opt	psize	> 0, >= minburst	req on class
+	minburst	opt	psize	<= maxburst
+	mpu		opt	size	2047
+	prio		opt	unum	1..TC_CBQ_MAXPRIO
+							TC_CBQ_MAXPRIO (8)
+	weight		opt	rate	> 0		1 or rate
+class	bounded		opt
+	isolated	opt
+	rate		req	rate	0 < rate <= bandwidth
+
+DSMARK
+qdisc	default_index	opt	unum	0..0xffff	none
+	indices		req	unum	2^n, n >= 0
+	set_tc_index	opt	flag	n/a		off
+qdc/cls	mask		opt	unum	0..0xff		0xff
+class	value		opt	unum	0..0xff		0
+
+FIFO
+qdisc	limit		opt	size	any		default to tx_queue_len
+	plimit		opt	psize	any		idem
+
+GRED
+qdisc	bandwidth	req	rate
+	grio		opt	flag	n/a		off
+qdc/cls	avpkt		opt	size	> 0		req if not on qdisc
+	burst		opt	size			req if not on qdisc
+	limit		opt	size	> 0		req if not on qdisc
+	max		opt	size	<= limit	req if not on qdisc
+	min		opt	size	<= max		req if not on qdisc
+class	default		opt	flag	n/a		must be set on one class
+	probability	opt	fnum			0.02
+	prio		opt	unum	1..DPs		req if grio
+
+PRIO
+qdisc	bands		opt	unum	2..16		3
+	priomap		opt	list of var [16]
+	
+RED @@@ (checks incomplete)
+qdisc	avpkt		req	size
+	bandwidth	req	rate
+	burst		req	size
+	ecn		opt	flag			off
+	limit		req	size	> 0
+	max		req	size	<= limit
+	min		req	size	<= max
+	probability	opt	fnum			0.02
+
+ROUTE
+flt/ele	from		opt	unum	0..0xff
+	fromif		opt	string
+	order		opt	unum	0..0xff
+	to		opt	unum	0..0xff
+
+RSVP
+flt/ele	src		opt	unum	> 0		n/a
+	dst		opt	unum	> 0		n/a	req on element
+	sport		opt	unum	1..0xffff	n/a	or AH, ESP
+	dport		opt	unum	1..0xffff	n/a	or AH, ESP
+	ipproto		opt	unum/name 0..255	n/a	    \
+	ah		opt	unum	> 0		IPPROTO_AH   } pick one
+	esp		opt	unum	> 0		IPPROTO_ESP /
+
+SFQ
+qdisc	perturb		opt	time			0
+	quantum		opt	size	>= mtu		mtu
+
+TCINDEX
+filter	fall_through	opt	flag	n/a		set
+	hash		opt	unum	1-0x10000	mask+1 or 64
+	mask		opt	unum	0-0xffff	0xffff
+	shift		opt	unum	0-15		0
+
+TBF @@@ (checks incomplete)
+qdisc	burst		req	size	>= mtu
+	(buffer, maxburst)
+	limit		req	size	> 0
+	mpu		opt	size	<= mtu		0	
+	mtu		req	size	> 0, >= psched_mtu
+	(minburst)
+	peakrate	opt	rate	> rate
+	rate		req	rate	> 0

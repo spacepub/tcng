@@ -1,0 +1,56 @@
+# tcsim_filter -s 1 works -----------------------------------------------------
+tcsim | tcsim_filter -s 1 -c -e | sed 's/# /#-/'
+dev eth0 10 Mbps
+time 0s
+send 0
+time 0.5s
+send 0
+time 1s
+send 0
+time 1.5s
+send 0
+end
+EOF
+#-t=1
+#-E 2
+E 4
+# tcsim_filter -s 2 -s 1 works ------------------------------------------------
+tcsim | tcsim_filter -s 2 -s 1 -c -e | sed 's/# /#-/'
+dev eth0 10Mbps
+time 0s
+send 0
+time 0.5s
+send 0
+time 1s
+send 0
+time 1.5s
+send 0
+time 2s
+send 0
+time 2.5s
+send 0
+end
+EOF
+#-t=1
+#-E 2
+#-t=2
+#-E 4
+E 6
+# tcsim_plot passes on tcsim_filter snapshots data ----------------------------
+tcsim | tcsim_filter -s 1 | tcsim_plot -t cumul -p /dev/null | sed 's/# /#-/'
+dev eth0 /* block */
+send 0
+time 1s
+send 0
+EOF
+#-t=1
+#-E 1
+# tcsim_plot suppresses snapshots if writing to standard output ---------------
+tcsim | tcsim_filter -s 1 | tcsim_plot -t cumul -p - | grep '^# '
+dev eth0 /* block */
+send 0
+time 1s
+send 0
+end
+EOF
+ERROR

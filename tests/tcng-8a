@@ -1,0 +1,19 @@
+# better error message when using qdisc in class selection path --------------- 
+tcc -xif:err -Xx,all 2>&1
+egress {
+    class (<$q>) if 1;
+    $q = fifo;
+}
+EOF
+ERROR
+<stdin>:2: invalid type in class selection path (expected class, not queuing discipline)
+# "egress" becomes "dsmark" on tc target --------------------------------------
+tcc
+egress (default_index 1);
+EOF
+tc qdisc add dev eth0 handle 1:0 root dsmark indices 1 default_index 1
+# add default_index 0 to "egress" on tc target --------------------------------
+tcc
+egress;
+EOF
+tc qdisc add dev eth0 handle 1:0 root dsmark indices 1 default_index 0

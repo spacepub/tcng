@@ -1,0 +1,132 @@
+# location map: map flat hierarchy --------------------------------------------
+tcc -c -l stderr 2>&1
+"dev" {				/* 1 */
+    prio (1) {			/* 2 */
+	fw (5) {		/* 3 */
+	    class (1) on (10);	/* 4 */
+	    class (2) on (20);	/* 5 */
+	}			/* 6 */
+    }				/* 7 */
+}
+EOF
+device dev - <stdin> 1
+qdisc dev:1 - <stdin> 2
+class dev:1:1 - <stdin> 4
+class dev:1:2 - <stdin> 5
+filter dev:1::5 - <stdin> 3
+element dev:1::5:0 - <stdin> 4
+element dev:1::5:1 - <stdin> 5
+# location map: map deep hierarchy --------------------------------------------
+tcc -c -l stderr 2>&1
+#include "tcngreg.def"			/* 1 */
+					/* 2 */
+cbq (1,CBQ_PARAMS) {			/* 3 */
+    class (2,rate 5Mbps) {		/* 4 */
+	fw (4) {			/* 5 */
+	    class (3,rate 1Mbps)	/* 6 */
+		on (1);			/* 7 */
+	}				/* 8 */
+    }					/* 9 */
+}					/* 10 */
+EOF
+device eth0 - <stdin> 3
+qdisc eth0:1 - <stdin> 3
+class eth0:1:0 - <stdin> 3
+class eth0:1:2 - <stdin> 4
+class eth0:1:3 - <stdin> 6
+filter eth0:1:2:4 - <stdin> 5
+element eth0:1:2:4:0 - <stdin> 7
+# location map: map policer ---------------------------------------------------
+tcc -c -l stderr 2>&1
+prio {						/* 1 */
+    class (1)					/* 2 */
+	on fw element(2)			/* 3 */
+	    police (1,rate 1Mbps,burst 2kB);	/* 4 */
+}						/* 5 */
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:1 - <stdin> 1
+class eth0:1:1 - <stdin> 2
+filter eth0:1::1 - <stdin> 3
+element eth0:1::1:0 - <stdin> 3
+police 1 - <stdin> 4
+# location map: (don't) map unused policer ------------------------------------
+tcc -c -l stderr 2>&1
+$p = police (rate 1Mbps,burst 1kB);	/* 1 */
+					/* 2 */
+prio;					/* 3 */
+EOF
+<stdin>:1: warning: unused variable p
+device eth0 - <stdin> 3
+qdisc eth0:1 - <stdin> 3
+# location map: map tunnels ---------------------------------------------------
+tcc -c -l stderr 2>&1
+prio {						/* 1 */
+    rsvp (src 1.2.3.4) {			/* 2 */
+	tunnel (4,skip 8B)			/* 3 */
+	    on (ah 7,dst 5.6.7.8)		/* 4 */
+	    on (ah 7,dst 5.6.7.9)		/* 5 */
+	  {					/* 6 */
+	    class (1)				/* 7 */
+		on (ipproto "tcp",dst 10.0.0.0);/* 8 */
+	  }					/* 9 */
+    }						/* 10 */
+}						/* 11 */
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:1 - <stdin> 1
+class eth0:1:1 - <stdin> 7
+filter eth0:1::1 - <stdin> 2
+element eth0:1::1:0 - <stdin> 4
+tunnel eth0:1::1:4 - <stdin> 3
+element eth0:1::1:1 - <stdin> 5
+element eth0:1::1:2 - <stdin> 8
+# location map: map if --------------------------------------------------------
+tcc -c -l stderr 2>&1
+prio (1) {		/* 1 */
+    class (2) if 0;	/* 2 */
+    class (3) if 1;	/* 3 */
+}			/* 4 */
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:1 - <stdin> 1
+class eth0:1:2 - <stdin> 2
+class eth0:1:3 - <stdin> 3
+filter eth0:1::1 - <stdin> 1
+element eth0:1::1:0 - <stdin> 2
+element eth0:1::1:1 - <stdin> 3
+# location map: map generated fifos -------------------------------------------
+tcc -c -xif:err -Xx,fifos -l stderr 2>&1 | grep -v warning:
+prio (13) {	/* 1 */
+    class (2);	/* 2 */
+}		/* 3 */
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:13 - <stdin> 1
+class eth0:13:2 - <stdin> 2
+qdisc eth0:1 - <stdin> 2
+# location map: map unnumbered elements ---------------------------------------
+tcc -c -l stderr 2>&1
+prio {						/* 1 */
+    class					/* 2 pushed to next line */
+	on fw element(2)			/* 3 */
+	    police(rate 9kbps,burst 1.5kB);	/* 4 */
+}						/* 5 */
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:1 - <stdin> 1
+class eth0:1:1 - <stdin> 3
+filter eth0:1::1 - <stdin> 3
+element eth0:1::1:0 - <stdin> 3
+police 1 - <stdin> 4
+# location map: map ingress qdisc ---------------------------------------------
+tcc -c -l stderr 2>&1
+ingress {
+    class (1) if 1;
+}
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:ingress - <stdin> 1
+class eth0:ingress:1 - <stdin> 2
+filter eth0:ingress::1 - <stdin> 1
+element eth0:ingress::1:0 - <stdin> 2

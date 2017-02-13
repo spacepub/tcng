@@ -1,0 +1,29 @@
+# "bundle" handles multiple optimizations at same level -----------------------
+tcc -xif:err -Wexpensive -Wexperror 2>&1 >/dev/null | grep -v '^#'
+#include "fields.tc"
+
+field ip_nexthdr = ip_hdr[20] if ip_hl == 5;
+
+$from_c1_net = ip_src:24 == 10.10.1.0;
+$from_c1_ssh = $from_c1_net && tcp_sport == 22;
+$from_c1_http = $from_c1_net && tcp_sport == 80;
+
+prio {
+    class if $from_c1_ssh && conform (police(rate 1kbps,burst 2kB));
+    drop if $from_c1_ssh;
+    class if $from_c1_http && conform (police(rate 1kbps,burst 2kB));
+    drop if $from_c1_http;
+}
+EOF
+block eth0 egress
+bucket 1 = 125 0 2048 2048 0
+bucket 2 = 125 0 2048 2048 0
+action 0 = unspec
+action 3 = drop
+action 2 = class 1:2
+action 4 = conform 2 action 2 action 3
+action 1 = class 1:1
+action 5 = conform 1 action 1 action 3
+match 0:4:4=0x5 0:72:8=0x06 0:96:24=0x0A0A01 0:160:16=0x0016 action 5
+match 0:4:4=0x5 0:72:8=0x06 0:96:24=0x0A0A01 0:160:16=0x0050 action 4
+match action 0

@@ -1,0 +1,60 @@
+# expression is treated as X != 0 ---------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0];
+}
+EOF
+match 0:0:8=0x00 action 0
+match action 1
+# !expression is treated as X == 0 --------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if !raw[0];
+}
+EOF
+match 0:0:8=0x00 action 1
+match action 0
+# -Wexpensive detects implicit X != 0 -----------------------------------------
+tcc -Wexpensive -Wexperror 2>&1 >/dev/null
+prio {
+    class if raw[0];
+}
+EOF
+ERROR
+negation is an "expensive" operation
+# implicit X == 0 passes -Wexppostopt -----------------------------------------
+tcc -Wexppostopt -Wexperror >/dev/null
+prio {
+    class if !raw[0];
+}
+EOF
+# single bit is handled efficiently -------------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if raw[0] & 4;
+}
+EOF
+match 0:5:1=0x1 action 1
+match action 0
+# -Wexppostopt acknowledges this ----------------------------------------------
+tcc -Wexppostopt -Wexperror >/dev/null
+prio {
+    class if raw[0] & 4;
+}
+EOF
+# single bit is handled efficiently (negation) --------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    class if !(raw[0] & 4);
+}
+EOF
+match 0:5:1=0x0 action 1
+match action 0
+# multi-bit tests are not efficient -------------------------------------------
+tcc -Wexpensive -Wexperror 2>&1 >/dev/null
+prio {
+    class if raw[0] & 6;
+}
+EOF
+ERROR
+negation is an "expensive" operation

@@ -1,0 +1,134 @@
+# verify SLB macros (1) -------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+#include "meters.tc"
+
+set_SLB($p,cir 8kbps,cbs 2000B);
+
+prio {
+    class if SLB_ok($p);
+}
+EOF
+block eth0 egress
+bucket 1 = 1000 0 2000 2000 0
+action 0 = unspec
+action 1 = class 1:1
+action 2 = count 1 action 1
+action 3 = conform 1 action 2 action 0
+match action 3
+# verify SLB macros (2) -------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+#include "meters.tc"
+
+set_SLB($p,cir 8kbps,cbs 2000B);
+
+prio {
+    class if SLB_else_drop($p);
+}
+EOF
+block eth0 egress
+bucket 1 = 1000 0 2000 2000 0
+action 0 = drop
+action 1 = class 1:1
+action 2 = count 1 action 1
+action 3 = conform 1 action 2 action 0
+match action 3
+# verify DLB macros (1) -------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+#include "meters.tc"
+
+set_DLB($p,cir 8kbps,cbs 2000B,pir 12kbps,pbs 500B);
+
+prio {
+    class if DLB_ok($p);
+}
+EOF
+block eth0 egress
+bucket 1 = 1000 0 2000 2000 0
+bucket 2 = 1500 0 500 500 0
+action 0 = unspec
+action 1 = class 1:1
+action 2 = count 2 action 1
+action 3 = count 1 action 2
+action 4 = conform 2 action 3 action 0
+action 5 = conform 1 action 4 action 0
+match action 5
+# verify DLB macros (2) -------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+#include "meters.tc"
+
+set_DLB($p,cir 8kbps,cbs 2000B,pir 12kbps,pbs 500B);
+
+prio {
+    class if DLB_else_drop($p);
+}
+EOF
+block eth0 egress
+bucket 1 = 1000 0 2000 2000 0
+bucket 2 = 1500 0 500 500 0
+action 0 = drop
+action 1 = class 1:1
+action 2 = count 2 action 1
+action 3 = count 1 action 2
+action 4 = conform 2 action 3 action 0
+action 5 = conform 1 action 4 action 0
+match action 5
+# verify set_srTCM macro ------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep bucket
+#include "meters.tc"
+
+set_srTCM($p,cir 8kbps,cbs 2000B,ebs 500B);
+
+prio {
+    class if srTCM_green($p);
+}
+EOF
+bucket 1 = 0 0 500 500 0
+bucket 2 = 1000 0 2000 2000 1
+# verify set_trTCM macro ------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep bucket
+#include "meters.tc"
+
+set_trTCM($p,cir 8kbps,cbs 2000B,pir 12kbps,pbs 500B);
+
+prio {
+    class if trTCM_green($p);
+}
+EOF
+bucket 1 = 1000 0 2000 2000 0
+bucket 2 = 1500 0 500 500 0
+# meter macro parameter names can be macros too (SLB) -------------------------
+tcc -c -Wnounused
+#include "meters.tc"
+
+#define committed_information_rate cir
+
+set_SLB($p,committed_information_rate 8kbps,cbs 2000B);
+EOF
+# meter macro parameter names can be macros too (DLB) -------------------------
+tcc -c -Wnounused
+#include "meters.tc"
+
+#define peak_information_rate pir
+#define peak_burst_size pbs
+
+set_DLB($p,cir 8kbps,cbs 2000B,peak_information_rate 12kbps,
+  peak_burst_size 500B);
+EOF
+# meter macro parameter names can be macros too (srTCM) -----------------------
+tcc -c -Wnounused
+#include "meters.tc"
+
+#define extended_burst_size ebs
+
+set_srTCM($p,cir 8kbps,cbs 2000B,extended_burst_size 500B);
+EOF
+# meter macro parameter names can be macros too (srTCM) -----------------------
+tcc -c -Wnounused
+#include "meters.tc"
+
+#define committed_information_rate cir
+#define committed_burst_size cbs
+
+set_trTCM($p,committed_information_rate 8kbps,committed_burst_size 2000B,
+  pir 12kbps,pbs 500B);
+EOF

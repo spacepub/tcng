@@ -1,0 +1,894 @@
+#!/bin/sh -e
+#
+# setup.klib - Copy and condition kernel source for tcsim
+#
+# Written 2001-2004 by Werner Almesberger
+# Copyright 2001 EPFL-ICA
+# Copyright 2001,2002 Bivio Networks, Network Robots
+# Copyright 2002-2004 Werner Almesberger
+#
+
+if [ ! -f ../config ]; then
+    echo "please run ./configure" 2>&1
+    exit 1
+fi
+
+. ../config
+
+DIR=klib
+
+rm -rf $DIR
+mkdir -p $DIR/include/{linux,net,asm}
+cd $DIR
+
+cat <<EOF >README.FIRST
+!!! ALL FILES IN THIS DIRECTORY AND BELOW ARE MACHINE-GENERATED !!!
+EOF
+
+cp ../Makefile.klib Makefile
+cp $KSRC/net/sched/sch_{cbq,dsmark,gred,fifo,prio,red,tbf,ingress}.c .
+cp $KSRC/net/sched/cls_{fw,tcindex,rsvp,rsvp6}.c .
+cp $KSRC/net/sched/{estimator.c,cls_rsvp.h} .
+cp $KSRC/include/linux/pkt_{sched,cls}.h include/linux
+cp $KSRC/include/net/pkt_cls.h include/net
+cp $KSRC/include/linux/{spinlock,netlink,rtnetlink}.h include/linux
+cp $KSRC/include/linux/{ip,ipv6,in6,if_ether}.h include/linux
+cp $KSRC/include/net/inet_ecn.h include/net
+
+# Optional .c files
+
+if [ -r $KSRC/lib/rbtree.c ]; then
+    cp $KSRC/lib/rbtree.c .
+else
+    touch rbtree.c
+fi
+if [ -r $KSRC/net/sched/sch_htb.c ]; then
+    #
+    # Stop all of sch_htb's timers when the simulation is terminating
+    #
+    sed 's/.*add_timer(&[^)]*);.*/{ extern int terminating; \
+      if (!terminating || sch->q.qlen) & }/' \
+      <$KSRC/net/sched/sch_htb.c >sch_htb.c
+else
+    touch sch_htb.c
+fi
+
+# Optional .h files
+
+cp_opt()
+{
+    [ ! -r $1 ] || cp $1 $2
+}
+
+cp_opt $KSRC/include/linux/stringify.h include/linux/
+cp_opt $KSRC/include/linux/linkage.h include/linux/
+cp_opt $KSRC/include/linux/rbtree.h include/linux/
+cp_opt $KSRC/include/linux/stddef.h include/linux/
+cp_opt $KSRC/include/linux/list.h include/linux/
+
+#
+# compiler.h is nice, but we need to weed out conflicts with glibc. Also, it
+# exists only in recent kernels.
+#
+
+if [ -r $KSRC/include/linux/compiler.h ]; then
+    sed '/__attribute_used__/d' \
+      <$KSRC/include/linux/compiler.h >include/linux/compiler.h
+else
+    touch include/linux/compiler.h
+fi
+
+#
+# sch_generic.c contains a lot of junk we don't need here.
+# Also, make pfifo_fast_ops non-static.
+#
+
+sed '/qdisc_restart/,/NOOP/d;/under all circumstances/s//\/*/
+  /dev_activate/,$d;' <$KSRC/net/sched/sch_generic.c | \
+  sed 's/^static \(struct Qdisc_ops pfifo_fast_ops =\)/\1/' >sch_generic.c
+
+cat <<EOF >>sch_generic.c
+void dev_activate(struct net_device *dev)
+{
+    if (!dev->qdisc_sleeping || dev->qdisc_sleeping == &noop_qdisc)
+	dev->qdisc_sleeping = qdisc_create_dflt(dev,&pfifo_fast_ops);
+    dev->qdisc = dev->qdisc_sleeping;
+}
+EOF
+
+#
+# dsfield.h uses bare newlines in strings. It seemed like a cute idea back
+# then ...
+#
+
+perl -e '
+    $s = join("",<>);
+    while ($s =~ /(\n[^"\n]*)("[^"\n]*\n[^"]*")/) {
+	($a,$b,$c) = ($`.$1,$2,$'"'"');
+	$b =~ s/\n/\\n"\n"/g;
+	$s = $a.$b.$c;
+    }
+    print $s;' <$KSRC/include/net/dsfield.h >include/net/dsfield.h
+
+#
+# Add tracing hooks to tcf_police, register_qdisc, and register_tcf_proto_ops
+# Also tell sch_api to stop scheduling psched ticks when the simulation is
+# terminating (2.4.20).
+#
+
+sed 's/^int tcf_police(/int do_tcf_police(/' <$KSRC/net/sched/police.c >police.c
+sed 's/^int register_qdisc(/int do_register_qdisc(/' \
+  <$KSRC/net/sched/sch_api.c | \
+  sed 's/.*add_timer(&psched_timer);.*/{ extern int terminating; \
+    if (!terminating) & }/' \
+  >sch_api.c
+sed 's/^int register_tcf_proto_ops(/int do_register_tcf_proto_ops(/' \
+  <$KSRC/net/sched/cls_api.c >cls_api.c
+
+#
+# Kernels >= 2.4.25 use kfree in include/net/pkt_cls.h without including
+# slab.h or such. We play it safe and just add the prototype. (To
+# include/linux/pkt_cls.h, since including this is the first thing
+# include/net/pkt_cls.h does. Well, nobody said this was pretty :-)
+#
+
+echo 'void kfree(const void *ptr);' >>include/linux/pkt_cls.h
+
+#
+# Stop sch_sfq's perturbation timer when the simulation is terminating
+#
+
+sed 's/.*add_timer(&q->perturb_timer);.*/{ extern int terminating; \
+  if (!terminating || sch->q.qlen) & }/' \
+  <$KSRC/net/sched/sch_sfq.c >sch_sfq.c
+
+#
+# Add tracing hooks to u32_classify
+#
+
+sed '/^next_knode:/s/$/ {\
+extern void trace_u32_match(struct sk_buff *skb,u32 handle,int pos,int off2); \
+trace_u32_match(skb,n ? n->handle : 0,ptr-skb->nh.raw,off2); }/' \
+  <$KSRC/net/sched/cls_u32.c |
+  sed 's/off2 += .*/{ \
+  extern void trace_u32_offset(struct sk_buff *skb,u32 handle,int pos, \
+   u16 mask); \
+  trace_u32_offset(skb,n->handle,ptr-skb->nh.raw+n->sel.offoff,n->sel.offmask);\
+  & }/'>cls_u32.c
+
+#
+# De-manipulate include/net/pkt_sched.h (PSCHED_CLOCK_SOURCE is a sort-of
+# configuration option that people may change in their kernel source tree)
+#
+
+# LANG= sed 's/\(#define PSCHED_CLOCK_SOURCE[^ -~]*PSCHED_\)CPU/\1JIFFIES/' \
+#   <$KSRC/include/net/pkt_sched.h >include/net/pkt_sched.h
+LANG= sed 's/\(#define PSCHED_CLOCK_SOURCE[^ -~]*PSCHED_\)CPU/\1GETTIMEOFDAY/' \
+  <$KSRC/include/net/pkt_sched.h >include/net/pkt_sched.h
+
+# #
+# # Make original include files available under kernel/
+# #
+# 
+# ln -s $KSRC kernel
+
+#
+# Hacker in the butcher shop, part I: rtnetlink.c needs some heavy editing ...
+#
+
+cat <<EOF >rtnetlink.c
+#include <linux/config.h>
+#include <linux/types.h>
+#include <linux/netdevice.h>
+#include <linux/rtnetlink.h>
+#include <linux/socket.h>
+
+#define cap_raised(junk1,junk2) 1
+EOF
+sed '/^#include/d;/DECLARE_MUTEX/d;/rtnl_lock/,/^}/d;/rtnl_unlock/,/^}/d
+/^i.*rtnetlink_send/,/^}/d;/^s.*rtnetlink_fill_ifinfo/,/^}/d
+/^i.*rtnetlink_dump_all/,/^}/d
+/^i.*rtnetlink_dump_ifinfo/,/^}/d;/^v.*rtmsg_ifinfo/,/^}/d
+/rtnetlink_event/,$d;/link_rtnetlink_table/,/^}/d
+/^s.*rtnetlink_rcv[(]/,/^}/d;s/__inline__//;s/^static//' \
+  <$KSRC/net/core/rtnetlink.c >>rtnetlink.c
+sed '${/#endif/q;};d' <$KSRC/net/core/rtnetlink.c >>rtnetlink.c
+
+#
+# Hacker in the butcher shop, part II: so does af_netlink.c ...
+#
+
+cat <<EOF >af_netlink.c
+#include <linux/types.h>
+#include <linux/skbuff.h>
+#include <linux/netlink.h>
+
+
+#define sock_rmalloc(sk,size,uh,flags) alloc_skb(size,flags)
+
+
+struct netlink_opt af_netlink;
+struct sock;
+
+void netlink_data_ready(struct sock *sk,int len)
+{
+}
+
+void netlink_error_report(struct sock *sk)
+{
+}
+
+struct sock {
+    struct {
+	struct netlink_opt *af_netlink;
+    } protinfo;
+    struct sk_buff_head receive_queue;
+    void (*data_ready)(struct sock *sk,int bytes);
+    int err;
+    void (*error_report)(struct sock *sk);
+} my_socket = {
+    .protinfo = { .af_netlink = &af_netlink },
+    .data_ready = netlink_data_ready,
+    .error_report = netlink_error_report,
+};
+
+typedef int wait_queue_head_t;
+
+#define netlink_lookup(dont,care) &my_socket
+#define sock_put(sk)
+#define MSG_DONTWAIT 0
+EOF
+sed '/^s.*netlink_destroy_callback/q;d' \
+  <$KSRC/net/netlink/af_netlink.c >>af_netlink.c
+sed '/#include/d
+/^s.*nl_table/,/It looks a bit ugly/d;s|\* It would be better|/*|
+/ifdef NL_EMULATE_DEV/,$d' \
+  <$KSRC/net/netlink/af_netlink.c >>af_netlink.c
+sed '/^s.*netlink_destroy_callback.*[^;]$/,/^}/p;d' \
+  <$KSRC/net/netlink/af_netlink.c >>af_netlink.c
+cat <<EOF >>af_netlink.c
+
+void abort(void);
+
+int netlink_recv(void *buf,int len)
+{
+    struct sk_buff *skb;
+
+    if (my_socket.protinfo.af_netlink->cb) netlink_dump(&my_socket);
+    skb = skb_dequeue(&my_socket.receive_queue);
+    if (!skb) return 0;
+    if (skb->len > len) abort();
+    memcpy(buf,skb->head,skb->len);
+    return skb->len;
+}
+
+int netlink_unicast(struct sock *ssk,struct sk_buff *skb,u32 pid,int nonblock)
+{
+    skb_queue_tail(&my_socket.receive_queue,skb);
+    return skb->len;
+}
+
+void setup_netlink(void)
+{
+    skb_queue_head_init(&my_socket.receive_queue);
+}
+EOF
+
+#
+# Putting the bloody axe aside ...
+#
+
+#
+# Apply patches
+#
+# Need to test explicitly if patch is applied, because patch -N is a bit too
+# chatty and sets the exit status, which we don't want to generally ignore.
+#
+fgrep 'TC_U32_OFFSET|TC_U32_VAROFFSET' cls_u32.c >/dev/null || \
+  patch -p3 -s <$TOPDIR/patches/k-u32-offset
+
+
+# ----- include/linux/config.h ------------------------------------------------
+
+cat <<EOF >include/linux/config.h
+#ifndef _LINUX_CONFIG_H
+#define _LINUX_CONFIG_H
+
+#define CONFIG_NET_SCHED 1
+#define CONFIG_NET_CLS_POLICE 1
+#define CONFIG_RTNETLINK 1
+#define CONFIG_NETFILTER 1
+#define CONFIG_NET_ESTIMATOR
+#undef CONFIG_PROC_FS
+
+#define CONFIG_NET_SCH_CBQ 1
+#define CONFIG_NET_SCH_HTB 1
+#define CONFIG_NET_SCH_CSZ 1
+#define CONFIG_NET_SCH_HPFQ 1
+#define CONFIG_NET_SCH_HFSC 1
+#define CONFIG_NET_SCH_RED 1
+#define CONFIG_NET_SCH_GRED 1
+#define CONFIG_NET_SCH_INGRESS 1
+#define CONFIG_NET_SCH_DSMARK 1
+#define CONFIG_NET_SCH_SFQ 1
+#define CONFIG_NET_SCH_TBF 1
+#define CONFIG_NET_SCH_TEQL 1
+#define CONFIG_NET_SCH_PRIO 1
+#undef CONFIG_NET_SCH_ATM
+#define CONFIG_NET_CLS 1
+#define CONFIG_NET_CLS_U32 1
+#undef CONFIG_NET_CLS_ROUTE4
+#define CONFIG_NET_CLS_FW
+#define CONFIG_NET_CLS_RSVP 1
+#define CONFIG_NET_CLS_TCINDEX 1
+#define CONFIG_NET_CLS_RSVP6 1
+
+/* deal with these later */
+#undef CONFIG_NET_SCH_CSZ
+#undef CONFIG_NET_SCH_HPFQ
+#undef CONFIG_NET_SCH_HFSC
+#undef CONFIG_NET_SCH_TEQL
+
+#endif
+EOF
+
+# ----- include/linux/errno.h -------------------------------------------------
+
+cp $KSRC/include/asm-i386/errno.h include/linux
+
+# cat <<EOF >include/linux/errno.h
+# #ifdef __KERNEL__
+# #include "kernel/include/asm-i386/errno.h"
+# #else
+# #include <../kernel/include/asm-i386/errno.h> /* @@@ UGLY */
+# #endif
+# EOF
+
+# ----- include/linux/highmem.h -----------------------------------------------
+
+cat <<EOF >include/linux/highmem.h
+#ifndef _LINUX_HIGHMEM_H
+#define _LINUX_HIGHMEM_H
+
+#define kmap_atomic(p,i) ({ void abort(void); (void) (p); abort(); NULL; })
+#define kunmap_atomic(v,i) ({ void abort(void); (void) v; abort(); })
+
+#endif
+EOF
+
+# ----- include/linux/if.h ----------------------------------------------------
+
+cat <<EOF >include/linux/if.h
+#ifndef _LINUX_IF_H
+#define _LINUX_IF_H
+
+#define IFNAMSIZ	16
+
+#define IFF_UP		1
+
+#endif
+EOF
+
+# ----- include/linux/in.h ----------------------------------------------------
+
+cat <<EOF >include/linux/in.h
+#ifndef _LINUX_IN_H
+#define _LINUX_IN_H
+
+#include <linux/types.h>
+
+/* from include/linux/byteorder/little_endian.h */
+
+struct in_addr {
+    __u32   s_addr;
+};
+
+/* from include/linux/in.h */
+
+#define __SOCK_SIZE__	16		/* sizeof(struct sockaddr) */
+
+struct sockaddr_in {
+    sa_family_t		sin_family;
+    unsigned short int	sin_port;
+    struct in_addr	sin_addr;
+
+    /* Pad to size of 'struct sockaddr'. */
+    unsigned char __pad[__SOCK_SIZE__-sizeof(short int)-
+      sizeof(unsigned short int)-sizeof(struct in_addr)];
+};
+
+enum {
+    IPPROTO_TCP = 6,
+    IPPROTO_UDP = 17,
+    IPPROTO_ESP = 50,
+};
+
+#if 0
+@@@ fix this !
+static __inline__ __u16 __constant_htons(__u16 v)
+{
+    __u16 s;
+
+    ((__u8 *) &s)[0] = v >> 8;
+    ((__u8 *) &s)[1] = v & 0xff;
+    return s;
+}
+#endif
+
+#define __constant_htons_BIG_ENDIAN(v) (v)
+#define __constant_htonl_BIG_ENDIAN(v) (v)
+
+#define __constant_htons_LITTLE_ENDIAN(v) \
+  ((((v)  >> 8) & 0xff) | (((v) & 0xff) << 8))
+#define __constant_htonl_LITTLE_ENDIAN(v) \
+  ((((v) >> 24) & 0xff) | (((v) >> 8) & 0xff00) | \
+   (((v) << 8) & 0xff0000) | (((v) & 0xff) << 24))
+
+#define __constant_htons(v) __constant_htons_$BYTEORDER(v)
+#define __constant_htonl(v) __constant_htonl_$BYTEORDER(v)
+
+#define htons(v) __constant_htons(v)
+#define ntohs(v) htons(v)
+
+static __inline__ __u32 htonl(__u32 v)
+{
+    __u32 s;
+
+    ((__u8 *) &s)[0] = v >> 24;
+    ((__u8 *) &s)[1] = (v >> 16) & 0xff;
+    ((__u8 *) &s)[2] = (v >> 8) & 0xff;
+    ((__u8 *) &s)[3] = v & 0xff;
+    return s;
+}
+
+#define ntohl(v) htonl(v)
+
+extern int ffz(int v);
+
+#endif
+EOF
+
+# ----- include/linux/init.h --------------------------------------------------
+
+cat <<EOF >include/linux/init.h
+#ifndef _LINUX_INIT_H
+#define _LINUX_INIT_H
+
+#define __init
+
+#endif
+EOF
+
+# ----- include/linux/kernel.h ------------------------------------------------
+
+cat <<EOF >include/linux/kernel.h
+#ifndef _LINUX_KERNEL_H
+#define _LINUX_KERNEL_H
+
+#include <linux/mm.h> /* ugly but necessary ... */
+#include <linux/compiler.h>
+
+#define current_text_addr() 0	/* from include/asm/processor.h */
+
+#define KERN_DEBUG	"<7>"
+#define KERN_INFO	"<6>"
+#define KERN_WARNING	"<4>"
+#define KERN_ERR	"<3>"
+
+#ifdef __KERNEL__
+#define LONG_MAX	((long)(~0UL>>1))
+#endif
+
+int printk(const char *fmt,...);
+
+#define BUG() ({ void abort(void); abort(); })
+#define out_of_line_bug() BUG()
+
+#endif
+EOF
+
+# ----- include/linux/malloc.h ------------------------------------------------
+
+cat <<EOF >include/linux/malloc.h
+#ifndef _LINUX_MALLOC_H
+#define _LINUX_MALLOC_H
+
+#include <linux/slab.h>
+
+#endif
+EOF
+
+# ----- include/linux/mm.h ----------------------------------------------------
+
+cat <<EOF >include/linux/mm.h
+#ifndef _LINUX_MM_H
+#define _LINUX_MM_H
+
+#define PAGE_SIZE	4096
+
+#define GFP_ATOMIC	1
+#define GFP_KERNEL	2
+
+#endif
+EOF
+
+# ----- include/linux/module.h ------------------------------------------------
+
+cat <<EOF >include/linux/module.h
+#ifndef _LINUX_MODULE_H
+#define _LINUX_MODULE_H
+
+#define MOD_INC_USE_COUNT
+#define MOD_DEC_USE_COUNT
+
+#define MODULE_LICENSE(license)
+
+#define EXPORT_SYMBOL(x)
+
+#ifdef MODULE
+#define module_init(x) int init_module(void) { return x(); }
+#define module_exit(x) void cleanup_module(void) { x(); }
+#else
+#define module_init(x)
+#define module_exit(x)
+#endif /* MODULE */
+
+#endif
+EOF
+
+# ----- include/linux/netdevice.h ---------------------------------------------
+
+cat <<EOF >include/linux/netdevice.h
+#ifndef _LINUX_NETDEVICE_H
+#define _LINUX_NETDEVICE_H
+
+/*
+ * Everybody includes netdevice.h, but hardly anything else. So we make sure
+ * that netdevice.h includes everything else ... :-(
+ */
+
+#include <linux/if.h>
+#include <linux/if_ether.h>
+#include <linux/in.h>
+#include <linux/ip.h>
+#include <linux/spinlock.h>
+
+extern struct net_device *dev_base;
+extern rwlock_t dev_base_lock;
+
+#define NPROTO		    32	/* from include/linux/net.h */
+#define ETH_P_ALL	0x0003	/* ETH_P_* from include/linux/if_ether.h */
+#define ETH_P_PUPAT	0x0201
+#define ETH_P_IEEEPUP	0x0a00
+#define	ETH_P_IEEEPUPAT	0x0a01
+
+#define IP_MF       0x2000	/* from include/net/ip.h */
+#define IP_OFFSET   0x1FFF      /* from include/net/ip.h */
+
+enum { NET_XMIT_SUCCESS, NET_XMIT_DROP, NET_XMIT_CN, NET_XMIT_POLICED,
+    NET_XMIT_BYPASS };
+
+struct net_device {
+    const char *name;
+    struct Qdisc *qdisc_list;
+    struct Qdisc *qdisc_ingress;
+    struct Qdisc *qdisc;
+    struct Qdisc *qdisc_sleeping;
+    int tx_queue_len;
+    spinlock_t queue_lock;
+    unsigned short flags;
+    unsigned short hard_header_len;
+    void *hard_header; /* used by psched_mtu */
+    unsigned int mtu;
+    int ifindex;
+    struct net_device *next;
+    /* ----- the following fields are used only inside tcsim ---------------- */
+    int kbps; /* interface rate, kbps. -1 if single-stepping */
+    struct sk_buff *txing; /* NULL if not sending any packet */
+    int scheduled; /* non-zero if the interface should be polled */
+    void *host; /* host to which device is attached; may be NULL */
+    struct net_device *peer; /* peer device; may be NULL */
+};
+
+#define __dev_get_by_index dev_get_by_index
+#define dev_put(dev)
+
+#define net_ratelimit() 1	/* from include/linux/net.h */
+
+extern unsigned long net_random(void);
+extern struct net_device *dev_get_by_index(int ifindex);
+#define netif_queue_stopped(dev) ((dev)->txing)
+#define netif_schedule(dev) ({ (dev)->scheduled = 1; })
+
+struct notifier_block; /* for rtnetlink.h of 2.4.20 */
+
+#include <linux/skbuff.h> /* cls_u32 */
+#include <linux/errno.h> /* FIX sch_dsmark !!! */
+
+#define max_t(t,a,b) (((a)>(b))?(a):(b)) /* sch_tbf */
+#define min_t(t,a,b) (((a)<(b))?(a):(b)) /* sch_sfq */
+
+`if grep 'max(type,x,y)' $KSRC/include/linux/kernel.h >/dev/null; then \
+echo '#define max(t,a,b) max_t(t,(a),(b)) /* sch_tbf */'; else \
+echo '#define max(a,b) (((a)>(b))?(a):(b)) /* sch_tbf */'; fi`
+
+#endif
+EOF
+
+# ----- include/linux/netdevice.h ---------------------------------------------
+
+cat <<EOF >include/linux/netfilter.h
+#ifndef _LINUX_NETFILTER_H
+#define _LINUX_NETFILTER_H
+
+#include <linux/socket.h> /* for PF_INET */
+
+#define NF_DROP 0
+#define NF_ACCEPT 1
+
+struct nf_hook_ops {
+    struct {
+	void *a,*b;
+    } c;
+    void *d;
+    int e,f,g;
+};
+
+#define NF_IP_PRE_ROUTING 0
+#define NF_IP_PRI_FILTER 0
+
+#define nf_register_hook(dummy) ((void) (dummy), 0)
+#define nf_unregister_hook(dummy)
+
+#endif
+EOF
+
+# ----- include/linux/prefetch.h ----------------------------------------------
+
+cat <<EOF >include/linux/prefetch.h
+#ifndef _LINUX_PREFETCH_H
+#define _LINUX_PREFETCH_H
+
+/* linux/list.h wants this */
+
+static inline void prefetch(const void *x) {;}
+
+#endif
+EOF
+
+# ----- include/linux/sched.h -------------------------------------------------
+
+cat <<EOF >include/linux/sched.h
+#ifndef _LINUX_SCHED_H
+#define _LINUX_SCHED_H
+
+#define HZ 100
+
+extern unsigned long jiffies;
+
+/*
+ * The following is from include/linux/timer.h
+ */
+
+struct timer_list {
+    unsigned long expires;
+    unsigned long expires_ujiffies;	/* micro-jiffies */
+    unsigned long data;
+    void (*function)(unsigned long data);
+    struct timer_list *next;
+};
+
+#define init_timer(timer)
+
+extern void add_timer(struct timer_list *timer);
+extern int del_timer(struct timer_list *timer);
+#define del_timer_sync del_timer
+extern int mod_timer(struct timer_list *timer,unsigned long expires);
+
+#define time_after(a,b)		((long)(b) - (long)(a) < 0)
+#define time_after_eq(a,b)	((long)(a) - (long)(b) >= 0)
+
+#endif
+EOF
+
+# ----- include/linux/slab.h --------------------------------------------------
+
+cat <<EOF >include/linux/slab.h
+#ifndef _LINUX_SLAB_H
+#define _LINUX_SLAB_H
+
+#include <linux/types.h>
+
+void *kmalloc(size_t size, int flags);
+void kfree(const void *ptr);
+
+#endif
+EOF
+
+# ----- include/linux/socket.h -------------------------------------------------
+
+cat <<EOF >include/linux/socket.h
+#ifndef _LINUX_SOCKET_H
+
+#define AF_UNSPEC	0
+#define AF_INET		2
+#define PF_UNSPEC	AF_UNSPEC
+#define PF_INET		AF_INET
+
+#endif
+EOF
+
+# ----- include/linux/skbuff.h -------------------------------------------------
+
+cat <<EOF >include/linux/skbuff.h
+#ifndef _LINUX_SKBUFF_H
+
+/* skbuff.h needs a lot of junk */
+struct poll_table_struct;
+struct socket;
+struct file;
+struct iovec;
+
+#if defined(__KERNEL__) || defined(__TCSIM__)
+EOF
+
+cat $KSRC/include/linux/skbuff.h >>include/linux/skbuff.h
+
+cat <<EOF >>include/linux/skbuff.h
+#endif
+
+#include <linux/string.h>	/* for rtnetlink.h */
+#include <linux/netdevice.h>
+#include <linux/rtnetlink.h>	/* a way to get sch_fifo to include it */
+
+#endif
+EOF
+
+# ----- include/linux/string.h ------------------------------------------------
+
+cat <<EOF >include/linux/string.h
+#ifndef _LINUX_STRING_H
+#define _LINUX_STRING_H
+
+#include <linux/types.h>
+
+size_t strlen(const char *s);
+int strcmp(const char *s1,const char *s2);
+int memcmp(const void *s1,const void *s2,size_t n);
+void *memcpy(void *dest,const void *src,size_t n);
+void *memset(void *s,int c,size_t n);
+
+#endif
+EOF
+
+# ----- include/linux/time.h --------------------------------------------------
+
+cat <<EOF >include/linux/time.h
+#ifndef _LINUX_TIME_H
+#define _LINUX_TIME_H
+
+#ifdef __KERNEL__
+
+struct timeval {
+	unsigned long	tv_sec;		/* seconds */
+	unsigned long	tv_usec;	/* microseconds */
+};
+
+#endif /* __KERNEL__ */
+
+void do_gettimeofday(struct timeval *tv);
+
+#endif /* _LINUX_TIME_H */
+EOF
+
+# ----- include/linux/types.h -------------------------------------------------
+
+cat <<EOF >include/linux/types.h
+#ifndef _LINUX_TYPES_H
+#define _LINUX_TYPES_H
+
+typedef char __s8;
+typedef short __s16;
+typedef int __s32;
+typedef unsigned char __u8;
+typedef unsigned short __u16;
+typedef unsigned int __u32;
+typedef unsigned long long __u64;
+
+#if defined(__KERNEL__) || defined(__TCSIM__)
+
+typedef unsigned short sa_family_t;	/* from include/linux/socket.h */
+
+typedef unsigned char u8;
+typedef unsigned short u16;
+typedef unsigned int u32;
+typedef unsigned long long u64;
+
+typedef unsigned int uint32_t;
+
+/* more junk */
+typedef int kernel_cap_t;		
+struct ucred {};
+
+#endif /* __KERNEL__ || __TCSIM__ */
+
+#ifdef __KERNEL__
+
+#include <stddef.h>
+
+#endif /* __KERNEL__ */
+
+#endif
+EOF
+
+# ----- include/asm/atomic.h --------------------------------------------------
+
+cat <<EOF >include/asm/atomic.h
+#ifndef _ASM_ATOMIC_H
+#define _ASM_ATOMIC_H
+
+typedef int atomic_t;
+
+static __inline__ void atomic_inc(atomic_t *v) { (*v)++; }
+static __inline__ int atomic_dec_and_test(atomic_t *v) { return ++(*v) != 0; }
+
+#define atomic_read(v) (*(v))
+#define atomic_set(v,i) (*(v) = (i))
+
+#endif
+EOF
+
+# ----- include/asm/byteorder.h -----------------------------------------------
+
+cat <<EOF >include/asm/byteorder.h
+#ifndef _ASM_BYTEORDER_H
+#define _ASM_BYTEORDER_H
+
+#define __${BYTEORDER}_BITFIELD
+
+#endif
+EOF
+
+# ----- include/asm/system.h --------------------------------------------------
+
+cat <<EOF >include/asm/system.h
+#ifndef _ASM_SYSTEM_H
+#define _ASM_SYSTEM_H
+
+#define local_irq_save(x)	((x) = 0)
+#define local_irq_restore(x)
+#define local_bh_enable()
+#define local_bh_disable()
+
+#define wmb()
+#define xchg(ptr,v) \
+  ({ __typeof(*(ptr)) tmp; tmp = *(ptr); *(ptr) = (v); tmp; })
+
+#endif
+EOF
+
+# -----------------------------------------------------------------------------
+
+# for iproute2
+touch include/linux/autoconf.h
+# for sch_api.c
+touch include/linux/sockios.h
+touch include/linux/interrupt.h
+touch include/linux/{proc_fs,kmod}.h
+touch include/net/sock.h
+touch include/asm/{processor,uaccess,bitops}.h
+# for skbuff.h
+touch include/asm/types.h
+touch include/linux/cache.h
+# for sch_fifo
+touch include/linux/{inet,etherdevice,notifier}.h
+touch include/net/{ip,route}.h
+# for sch_ingress
+touch include/linux/{netfilter_ipv4,stat,smp}.h
+touch include/asm/{smp,stat}.h
+# for sch_htb
+touch include/linux/version.h
+# 2.5.4 compatibility
+touch include/linux/thread_info.h include/linux/net.h include/linux/poll.h
+
+touch .ready

@@ -1,0 +1,27 @@
+# ext_all leaked default parameters among sibling classes ---------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+dsmark (indices 2,default_index 0) {
+    class (0,value 10);
+    class (1);
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark default_index 0 indices 2
+class 0 = value 10
+class 1 =
+action 0 = unspec
+match action 0
+# without -B, we use "unspec" for unspec/continue (was okay)
+tcc -xif:err 2>&1 >/dev/null | grep '^action'
+prio {
+    class if 0;
+}
+EOF
+action 0 = unspec
+# with -B, we also use "unspec" for unspec/continue (was not okay)
+tcc -xif:err -B 2>&1 >/dev/null | grep '^action'
+prio {
+    class if 0;
+}
+EOF
+action 0 = unspec

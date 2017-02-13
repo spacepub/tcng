@@ -1,0 +1,28 @@
+# fromif accepts quoted string ------------------------------------------------
+tcc -c
+prio {
+    class on route element(fromif "eth0");
+}
+EOF
+# fromif no longer accepts bare word ------------------------------------------
+tcc -c 2>&1
+prio {
+    class on route element(fromif eth0);
+}
+EOF
+ERROR
+<stdin>:2: syntax error near "eth0"
+# fromif doesn't accept non-string --------------------------------------------
+tcc -c 2>&1
+prio {
+    class on route element(fromif 42);
+}
+EOF
+ERROR
+<stdin>:2: invalid type conversion (expected string instead of integer) near ")"
+# fromif accepts string expression --------------------------------------------
+tcc -c
+prio {
+    class on route element(fromif "eth"+"0");
+}
+EOF

@@ -1,0 +1,55 @@
+# variable scoping with default device in braces ------------------------------
+tcc -Wnounused | sed '/.* bfifo /s///p;d'
+$n = 10;
+{
+   $n = 20;
+   fifo;
+}
+
+lo {
+   fifo (limit $n B);
+}
+EOF
+limit 10
+# variable scoping with explicit device in braces -----------------------------
+tcc | sed '/.* bfifo /s///p;d'
+$n = 15;
+foo {
+   $n = 30;
+   fifo (limit $n B);
+}
+
+lo {
+   fifo (limit $n B);
+}
+EOF
+limit 30
+limit 15
+# variable scoping between devices in braces (first default) ------------------
+tcc | sed '/.* bfifo /s///p;d'
+{
+   $n = 20;
+   fifo (limit $n B);
+}
+
+$n = 30;
+lo {
+   fifo (limit $n B);
+}
+EOF
+limit 20
+limit 30
+# variable scoping between devices in braces (first explicit) -----------------
+tcc | sed '/.* bfifo /s///p;d'
+foo {
+   $n = 20;
+   fifo (limit $n B);
+}
+
+$n = 30;
+lo {
+   fifo (limit $n B);
+}
+EOF
+limit 20
+limit 30

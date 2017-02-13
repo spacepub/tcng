@@ -1,0 +1,16 @@
+/*
+ * pfifo_fast - What you get without using "tc"
+ *
+ * The most trivial configuration: just the default qdisc pfifo_fast.
+ */
+
+#define NOTHING
+#define PACKET	TCP_PCK(NOTHING)
+
+dev eth0 100000 /* 100 Mbps */ {
+}
+
+send PACKET
+send PACKET
+
+end

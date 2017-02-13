@@ -1,0 +1,6 @@
+# tcsim can send IPv4 addresses -----------------------------------------------
+tcsim | sed 's/.*eth0: //'
+dev eth0
+send ipv4: 1.2.3.4
+EOF
+01020304

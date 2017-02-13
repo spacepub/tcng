@@ -1,0 +1,109 @@
+# semicolon no longer begins comments -----------------------------------------
+tcc -c 2>&1
+$x = 5 ; comment
+EOF
+ERROR
+<stdin>:2: syntax error near ""
+# tcc fails when semicolon is missing -----------------------------------------
+tcc -c 2>&1
+fifo
+EOF
+ERROR
+<stdin>:2: syntax error near ""
+# global pragma and processing directives need semicolon ----------------------
+tcc -c
+warn "nounused";
+pragma("foo");
+
+prio {
+    warn "unused";
+}
+EOF
+# field definitions end with a semicolon --------------------------------------
+tcc -c
+field foo = raw[0];
+field foo = raw[1] if raw[0] == 42; /* redefined */
+EOF
+# assignments end with one semicolon ... --------------------------------------
+tcc -c -Wnounused
+$a = 5;
+$b = 1+2+3;
+$a = raw[0] == 3;
+$b = police(rate 1kbps,burst 100B);
+
+prio {
+    $a = fifo;
+    $b = fw;
+    $c = class (1);
+    $a = class on $b(1);
+    $b = police(rate 1kbps,burst 100B);
+}
+EOF
+# ... or a block --------------------------------------------------------------
+tcc -c -Wnounused
+prio {
+    $a = dsmark {}
+    $b = class (1) {
+	fifo;
+    }
+    $c = fw {
+	class on (1);
+    }
+}
+EOF
+# qdiscs, classes, and filters need semicolon ... -----------------------------
+tcc -c
+prio {
+    class (); /* soon, we'll be able to write  class; */
+    fifo;
+    fw;
+}
+EOF
+# ... or block ----------------------------------------------------------------
+tcc -c
+prio {
+    class {}
+    fifo {}
+    fw {}
+}
+EOF
+# drop needs semicolon too ----------------------------------------------------
+tcc -c
+prio {
+    drop if 1;
+}
+EOF
+# "on" variants and semicolon -------------------------------------------------
+tcc -c
+prio {
+    $p = police(rate 1kbps,burst 1MB);
+    $f = fw;
+    fw {
+	class
+	    on $f(1)
+	    on $f(2) police $p
+	    on fw element (3)
+	    on (4)
+	    on (5) police(rate 1kbps,burst 1kB);
+    }
+}
+EOF
+# fields.tc can be parsed -----------------------------------------------------
+tcc -c
+#include "fields.tc"
+EOF
+# meters.tc can be parsed -----------------------------------------------------
+tcc -c -Wnounused
+#include "meters.tc"
+
+set_SLB($slb,cir 8kbps,cbs 2000B);
+set_DLB($dlb,cir 8kbps,cbs 2000B,pir 12kbps,pbs 500B,mtu 2kB);
+set_srTCM($srTCM, cir 8kbps, cbs 2000B, ebs 500B, mtu 2kB);
+set_trTCM($trTCM,cir 8kbps,cbs 2000B,pir 12kbps,pbs 500B);
+EOF
+# class without anything can be terminated by semicolon -----------------------
+tcc -c
+prio {
+    class;
+}
+EOF

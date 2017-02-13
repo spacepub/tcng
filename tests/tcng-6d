@@ -1,0 +1,21 @@
+# fields in variables were expanded too early ---------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+field a = raw[1] if 0;
+$a5 = a+5;
+prio {
+    class if $a5 == 5;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+match action 0
+# fields in variables were expanded too early (validate) ----------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+field a = raw[1] if 0;
+prio {
+    class if a+5 == 5;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+match action 0

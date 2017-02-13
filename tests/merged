@@ -1,0 +1,78 @@
+# merged class cannot be referenced by variables ------------------------------
+tcc -xif:err 2>&1
+egress {
+    $c = class { fifo; }
+    class (<>) if raw[0] == 1;
+    class $c if 1;
+}
+EOF
+ERROR
+<stdin>:2: warning: class for shared qdisc should be implicit
+<stdin>:2: class has been merged and cannot be referenced by a variable
+# merged class cannot be selected ---------------------------------------------
+tcc -xif:err 2>&1
+egress {
+    class 
+        if raw[0] == 0 
+    { 
+        fifo; 
+    }
+    class (<>) if 1;
+}
+EOF
+ERROR
+<stdin>:3: warning: class for shared qdisc should be implicit
+<stdin>:3: class has been merged and cannot be selected
+# scope of merged class in variable use output --------------------------------
+tcc -w -xif:err -Xx,all -c -u stderr 2>&1
+egress {
+    class (<>) {
+        $x = 3.25;
+    }
+    class {
+        $x = 3.85;
+        fifo;
+    }
+}   
+EOF
+{ device eth0
+{ qdisc eth0:1
+{ class eth0:1:0
+$x = 3.25000
+}
+{ class eth0:1:unnumbered
+$x = 3.85000
+}
+}
+}
+# warn if class of shared qdisc is explicit -----------------------------------
+tcc -c 2>&1
+egress {
+    class {
+	fifo;
+    }
+}
+EOF
+<stdin>:2: warning: class for shared qdisc should be implicit
+# warn if using -Wnoexplicit --------------------------------------------------
+tcc -c -Wnoexplicit 2>&1
+egress {
+    class {
+	fifo;
+    }
+}
+EOF
+# don't warn if class of shared qdisc is implicit -----------------------------
+tcc -c 2>&1
+egress {
+    fifo;
+}
+EOF
+# don't warn if shared qdisc is implicit --------------------------------------
+tcc -c -xif:err -Xx,fifos 2>&1
+egress;
+EOF
+# don't warn if shared qdisc is absent ----------------------------------------
+tcc -c 2>&1
+egress;
+EOF

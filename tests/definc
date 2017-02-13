@@ -1,0 +1,22 @@
+# no #include needed to get fields --------------------------------------------
+tcc -c -Wnounused
+$foo = ip_hdr;
+EOF
+# tcc -n disables default.tc inclusion ----------------------------------------
+tcc -c -n 2>&1
+$foo = ip_hdr;
+EOF
+ERROR
+<stdin>:1: syntax error near "ip_hdr"
+# of course, we can #include fields.tc explicitly (-n) ------------------------
+tcc -c -n -Wnounused
+#include "fields.tc"
+
+$foo = ip_hdr;
+EOF
+# of course, we can #include fields.tc explicitly (no -n) ---------------------
+tcc -c -Wnounused
+#include "fields.tc"
+
+$foo = ip_hdr;
+EOF

@@ -1,0 +1,42 @@
+# tcc-ext-echo printed action index in hex and has order wrong ----------------
+tcc/ext/tcc-ext-echo build xxxx 2>&1
+block eth0 egress
+action 0 = drop
+match action 0
+EOF
+block eth0 egress
+action 0 = drop
+match action 0
+# prio default classification was off by a factor of two ----------------------
+tcc -xif:err -Xx,nounspec 2>&1 | grep match
+prio {
+    class if 0;
+}
+EOF
+match 0:11:4=0x0 action 2
+match 0:11:4=0x1 action 3
+match 0:11:4=0x2 action 2
+match 0:11:4=0x3 action 2
+match 0:11:4=0x4 action 3
+match 0:11:4=0x5 action 3
+match 0:11:4=0x6 action 3
+match 0:11:4=0x7 action 3
+match 0:11:4=0x8 action 1
+match 0:11:4=0x9 action 1
+match 0:11:4=0xA action 1
+match 0:11:4=0xB action 1
+match 0:11:4=0xC action 2
+match 0:11:4=0xD action 2
+match 0:11:4=0xE action 2
+match action 2
+# tccext could not parse consecutive drops actions ----------------------------
+tcc/ext/tcc-ext-echo build xxxx 2>&1
+block eth0 egress
+bucket 1 = 1 2 3 4 0
+action 0 = drop
+action 1 = conform 1 action 0 action 0
+EOF
+bucket 1 = 1 2 3 4 0 
+block eth0 egress
+action 1 = conform 1 action 0 action 0
+action 0 = drop

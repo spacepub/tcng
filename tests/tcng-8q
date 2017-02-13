@@ -1,0 +1,34 @@
+# consistency check: ip_src & 0xff --------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep 'match 0'
+prio {
+    class if ip_src & 0xff;
+}
+EOF
+match 0:120:8=0x00 action 0
+# consistency check: ip_src[3].b ----------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep 'match 0'
+prio {
+    class if ip_src[3].b;
+}
+EOF
+match 0:120:8=0x00 action 0
+# tcc accepts 255.255.255.255 -------------------------------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$x = 255.255.255.255;
+EOF
+$x = 255.255.255.255
+# tcc accepts host "255.255.255.255" ------------------------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$x = host "255.255.255.255";
+EOF
+$x = 255.255.255.255
+# tcc accepts host4 "255.255.255.255" -----------------------------------------
+tcc -c -Wnounused -u stderr 2>&1
+$x = host4 "255.255.255.255";
+EOF
+$x = 255.255.255.255
+# tcsim accepts 255.255.255.255 -----------------------------------------------
+tcsim
+echo 255.255.255.255
+EOF
+0.000000 * : 4294967295

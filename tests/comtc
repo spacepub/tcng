@@ -1,0 +1,132 @@
+# comtc: single line, C-style, qdisc ------------------------------------------
+comtc | tr '#' :
+/* comment for qdisc */
+fifo;
+EOF
+: comment for qdisc 
+tc qdisc add dev eth0 handle 1:0 root pfifo
+# comtc: multiple lines, C-style, class ---------------------------------------
+comtc | tr '#' :
+dsmark {
+    /* comment
+       for
+       class */
+    class (1,mask 128);
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root dsmark indices 2
+: comment
+: for
+: class 
+tc class change dev eth0 classid 1:1 dsmark mask 0x80
+# comtc: multiple comments, C-style, filter -----------------------------------
+comtc -w | tr '#' :
+prio {
+    /* comments */
+    /* for */
+    /* filter */
+    fw {
+	class;
+    }
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root prio
+: comments
+: for
+: filter
+tc filter add dev eth0 parent 1:0 protocol all prio 1 fw
+# comtc: single line, C++-style, filter element -------------------------------
+comtc | tr '#' :
+prio {
+    fw {
+	class
+	   // comment for filter element
+	   on (1);
+    }
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root prio
+tc filter add dev eth0 parent 1:0 protocol all prio 1 fw
+: comment for filter element
+tc filter add dev eth0 parent 1:0 protocol all prio 1 handle 1 fw classid 1:1
+# comtc: multiple comments, C++-style, policer --------------------------------
+comtc | tr '#' : | perl -p -e 'chop; $_ = substr($_,0,40)."\\n";'
+// comments
+// for policer
+$p = police(burst 1kB,rate 1kbps);
+prio {
+    class if SLB_ok($p);
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root pr
+: Policer:
+: comments
+: for policer
+tc filter add dev eth0 parent 1:0 protoc
+# comtc: mixed comment styles, device (1) -------------------------------------
+comtc | tr '#' :
+/* comments */
+// for
+/* device */
+dev "ppp0" {
+    fifo;
+}
+EOF
+: Device ppp0:
+: device
+:
+tc qdisc add dev ppp0 handle 1:0 root pfifo
+# comtc: mixed comment styles, device (2) -------------------------------------
+comtc | tr '#' :
+// comments
+/* for */
+// device
+dev "ppp0" {
+    fifo;
+}
+EOF
+: Device ppp0:
+: device
+:
+tc qdisc add dev ppp0 handle 1:0 root pfifo
+# comtc: multiple elements per line cause confusion ---------------------------
+comtc | tr '#' : | perl -p -e 'chop; $_ = substr($_,0,40)."\\n";'
+// comment reuse
+dev "foo" { prio { class on fw element (1) police(burst 1kB,rate 1kbps); } }
+EOF
+: Device foo:
+: comment reuse
+:
+: comment reuse
+tc qdisc add dev foo handle 1:0 root pri
+: comment reuse
+tc filter add dev foo parent 1:0 protoco
+: comment reuse
+: Policer:
+: comment reuse
+tc filter add dev foo parent 1:0 protoco
+# comtc: /* ... // ... */ -----------------------------------------------------
+comtc | sed '/^# /s///p;d'
+/* foo // fake */
+fifo;
+EOF
+foo // fake
+# comtc: // ... /* ... */ -----------------------------------------------------
+comtc | sed '/^# /s///p;d'
+// bar /* fake */
+fifo;
+EOF
+bar /* fake */
+# comtc: "/* ... */" ----------------------------------------------------------
+comtc -w | sed '/^# /s///p;d'
+$x = "/* fake */";
+fifo;
+EOF
+# comtc: /**/ is comment barrier ----------------------------------------------
+comtc | sed '/^# /s///p;d'
+/* one */
+/**/
+/* two */
+fifo;
+EOF
+two

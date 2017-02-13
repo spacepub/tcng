@@ -1,0 +1,22 @@
+# TCNG: avoid failure on redundant expression (1) -----------------------------
+tcsim
+dev eth0 {
+    #include "fields.tc"
+
+    prio {
+	class if (ip_dst == 10.0.0.2 || ip_dst == 10.0.0.0);
+ 	class if (ip_dst == 10.0.0.0 && ip_src == 11.0.0.0);
+    }
+}
+EOF
+# TCNG: avoid failure on redundant expression (2) -----------------------------
+tcsim
+dev eth0 {
+    #include "fields.tc"
+
+    prio {
+	class if (ip_dst == 10.0.0.2 || ip_dst == 10.0.0.0);
+	class if (ip_dst == 10.0.0.0);
+    }
+}
+EOF

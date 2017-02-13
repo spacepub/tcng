@@ -1,0 +1,166 @@
+# sprintf("%d",0) -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%d",0);
+EOF
+$x = "0"
+# sprintf("%d",20) ------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%d",20);
+EOF
+$x = "20"
+# sprintf("%d",-10) -----------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%d",-10);
+EOF
+$x = "-10"
+# sprintf("%u",20) ------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%u",20);
+EOF
+$x = "20"
+# sprintf("%o",72) ------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%o",72);
+EOF
+$x = "110"
+# sprintf("%x",0) -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%x",0);
+EOF
+$x = "0"
+# sprintf("%x",30) ------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%x",30);
+EOF
+$x = "1e"
+# sprintf("%X",30) ------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%X",30);
+EOF
+$x = "1E"
+# sprintf("%f",10.5) ----------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%f",10.5);
+EOF
+$x = "10.500000"
+# sprintf("%c",65) ------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%c",65);
+EOF
+$x = "A"
+# sprintf("%s","foo") ---------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%s","foo");
+EOF
+$x = "foo"
+# sprintf("test") -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("test");
+EOF
+$x = "test"
+# sprintf("%%") ---------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%%");
+EOF
+$x = "%"
+# sprintf("%03%") -------------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%03%");
+EOF
+$x = "%"
+# sprintf("text %d around %x args",10,10) -------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("text %d around %x args",10,10);
+EOF
+$x = "text 10 around a args"
+# sprintf("%5d",10) -----------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%5d",10);
+EOF
+$x = "   10"
+# sprintf("%-5s","foo") -------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%-5s","foo");
+EOF
+$x = "foo  "
+# sprintf("%010d",12345) ------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%010d",12345);
+EOF
+$x = "0000012345"
+# sprintf("%-010d",12345) -----------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%-010d",12345);
+EOF
+$x = "12345     "
+# sprintf("%.4s","12345") -----------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%.4s","12345");
+EOF
+$x = "1234"
+# sprintf("%*d",6,10) ---------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%*d",6,10);
+EOF
+$x = "    10"
+# sprintf("%*s",-6,"foo") -----------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%*s",-6,"foo");
+EOF
+$x = "foo   "
+# sprintf("%.*s",4,"foobar") --------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%.*s",4,"foobar");
+EOF
+$x = "foob"
+# sprintf("%*.*s",-4,6,"foo") -------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%*.*s",-4,6,"foo");
+EOF
+$x = "foo "
+# sprintf("%0*d",12345) -------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%0*d",10,12345);
+EOF
+$x = "0000012345"
+# sprintf("%.3f",3.1) ---------------------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%.3f",3.1);
+EOF
+$x = "3.100"
+# sprintf complains about missing or invalid precision ------------------------
+tcc 2>&1
+$x = sprintf("%.d",5);
+EOF
+ERROR
+<stdin>:1: invalid precision near ")"
+# sprintf complains about invalid format character ----------------------------
+tcc 2>&1
+$x = sprintf("%?");
+EOF
+ERROR
+<stdin>:1: unrecognized format character "?" near ")"
+# sprintf complains if there are not enough arguments -------------------------
+tcc 2>&1
+$x = sprintf("%d");
+EOF
+ERROR
+<stdin>:1: not enough arguments for format string near ")"
+# sprintf warns if there are too many arguments (1) ---------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%d",1,2);
+EOF
+<stdin>:1: warning: ignoring extra sprintf argument near ")"
+$x = "1"
+# sprintf warns if there are too many arguments (2) ---------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = sprintf("%d",1,2,3);
+EOF
+<stdin>:1: warning: ignoring extra sprintf arguments near ")"
+$x = "1"
+# sprintf only supports precision for %s and %f -------------------------------
+tcc -c 2>&1
+$x = sprintf("%.3d",9999);
+EOF
+ERROR
+<stdin>:1: precision (%.) only allowed for %s or %f near ")"

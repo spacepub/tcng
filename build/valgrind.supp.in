@@ -1,0 +1,38 @@
+# we don't really care about what happens in bash or cc
+
+{
+    bash/any/condition-problem
+    Value0
+    obj:/bin/bash
+    obj:/bin/bash
+}
+
+{
+    cc1/any/condition-problem
+    Value0
+    obj:`gcc -print-prog-name=cc1`
+    obj:`gcc -print-prog-name=cc1`
+}
+
+{
+    cc1/any/addr1-problem
+    Addr1
+    obj:`gcc -print-prog-name=cc1`
+    obj:`gcc -print-prog-name=cc1`
+}
+
+{
+    cpp0/any/addr1-problem
+    Addr1
+    obj:`gcc -print-prog-name=cpp0`
+    obj:`gcc -print-prog-name=cpp0`
+}
+
+# nor do we wish to look too deeply into the abyss that is libc
+
+{
+    libc6/getXbyname/value4
+    Value4
+    obj:/lib/libc-2.2.4.so
+    fun:get*byname
+}

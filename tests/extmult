@@ -1,0 +1,161 @@
+# ext_all does not attempt to share actions across blocks ---------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+eth0 {
+    prio {
+	drop if 1;
+    }
+}
+
+eth1 {
+    prio {
+	drop if 1;
+    }
+}
+EOF
+block eth0 egress
+action 0 = drop
+match action 0
+block eth1 egress
+action 0 = drop
+match action 0
+# similar test, with -B -------------------------------------------------------
+tcc -xif:err -B 2>&1 >/dev/null | grep -v '^#'
+$p = police(rate 1Mbps,burst 2kB);
+
+eth0 {
+    prio {
+	class if raw[0] == 1 && conform $p;
+    }
+}
+
+eth1 {
+    prio {
+	class (2) if raw[0] == 1 && conform $p;
+    }
+}
+EOF
+block eth0 egress
+bucket 1 = 125000 0 2048 2048 0
+action 0 = unspec
+action 1 = class 1:1
+action 2 = conform 1 action 1 action 0
+match 0:0:8=0x1 action 2
+match action 0
+block eth1 egress
+bucket 1 = 125000 0 2048 2048 0
+action 0 = unspec
+action 1 = class 1:2
+action 2 = conform 1 action 1 action 0
+match 0:0:8=0x1 action 2
+match action 0
+# ext_all: same offsets are shared correctly (without -A) ---------------------
+tcc -xif:err 2>&1 >/dev/null | grep offset
+#include "fields.tc"
+
+eth0 {
+    prio {
+	class if tcp_sport == 80;
+    }
+}
+
+eth1 {
+    prio {
+	class if tcp_sport == 53;
+    }
+}
+EOF
+offset 100 = 0+(0:4:4 << 5)
+offset 100 = 0+(0:4:4 << 5)
+# ext_all: same offsets are shared correctly (with -A) ------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep offset
+#include "fields.tc"
+
+eth0 {
+    prio {
+	class if tcp_sport == 80;
+    }
+}
+
+eth1 {
+    prio {
+	class if tcp_sport == 53;
+    }
+}
+EOF
+offset 100 = 0+(0:4:4 << 5)
+# ext_all: different offsets are shared correctly (without -A) ----------------
+tcc -xif:err 2>&1 >/dev/null | grep offset
+#include "fields.tc"
+
+eth0 {
+    prio {
+	class if tcp_sport == 80;
+    }
+}
+
+eth1 {
+    prio {
+	class if tcp_data[0] == 1;
+    }
+}
+EOF
+offset 100 = 0+(0:4:4 << 5)
+offset 100 = 0+(0:4:4 << 5)
+offset 101 = 0+(100:96:4 << 5)
+offset 102 = 101+(0:4:4 << 5)
+offset 103 = 102+(102:4:4 << 5)
+# ext_all: different offsets are shared correctly (with -A) -------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep offset
+#include "fields.tc"
+
+eth0 {
+    prio {
+	class if udp_data[0] == 80;
+    }
+}
+
+eth1 {
+    prio {
+	class if tcp_data[0] == 1;
+    }
+}
+EOF
+offset 100 = 0+(0:4:4 << 5)
+offset 101 = 0+(100:96:4 << 5)
+offset 102 = 101+(0:4:4 << 5)
+offset 103 = 102+(102:4:4 << 5)
+# ext_all: buckets are shared correctly (without -A) --------------------------
+tcc -xif:err 2>&1 >/dev/null | grep bucket
+$p = police(rate 1Mbps,burst 1kB);
+
+eth0 {
+    prio {
+	class if conform $p;
+    }
+}
+
+eth1 {
+    prio {
+	class if conform $p;
+    }
+}
+EOF
+bucket 1 = 125000 0 1024 1024 0
+bucket 1 = 125000 0 1024 1024 0
+# ext_all: buckets are shared correctly (with -A) -----------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep bucket
+$p = police(rate 1Mbps,burst 1kB);
+
+eth0 {
+    prio {
+	class if conform $p;
+    }
+}
+
+eth1 {
+    prio {
+	class if conform $p;
+    }
+}
+EOF
+bucket 1 = 125000 0 1024 1024 0

@@ -1,0 +1,58 @@
+# bare words for strings are forbidden ----------------------------------------
+tcc -c 2>&1
+prio {
+    class
+        on rsvp(ipproto tcp) element (dst 1.2.3.4,sport finger);
+}
+EOF
+ERROR
+<stdin>:3: syntax error near "tcp"
+# quoted strings for strings are okay -----------------------------------------
+tcc -c 2>&1
+prio {
+    class
+        on rsvp(ipproto "tcp") element (dst 1.2.3.4,sport "finger");
+}
+EOF
+# bare words for warning labels are forbidden ---------------------------------
+tcc -c 2>&1
+warn nounused;
+EOF
+ERROR
+<stdin>:1: syntax error near "nounused"
+# quoted strings for warning labels are okay ----------------------------------
+tcc -c 2>&1
+warn "nounused";
+EOF
+# bare words are still okay for device names ----------------------------------
+tcc -c 2>&1
+dev eth0 {
+    fifo;
+}
+EOF
+# quoted strings are also okay for device names -------------------------------
+tcc -c 2>&1
+dev "eth0" {
+    fifo;
+}
+EOF
+# typos don't turn into strings (1) -------------------------------------------
+tcc -c 2>&1
+#include "fields.tc"
+
+prio {
+    class if ip_proto == IPPRORO_TCP;
+}
+EOF
+ERROR
+<stdin>:4: syntax error near "IPPRORO_TCP"
+# typos don't turn into strings (2) -------------------------------------------
+tcc -c 2>&1
+#include "fields.tc"
+
+prio {
+    class if ip_proro == IPPRORO_TCP;
+}
+EOF
+ERROR
+<stdin>:4: syntax error near "ip_proro"

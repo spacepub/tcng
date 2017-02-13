@@ -1,0 +1,47 @@
+# "if", basic DSCP ------------------------------------------------------------
+tcc | sed '/.*match /{s///;s/ classid .*//p;};d'
+#include "fields.tc"
+
+dsmark (indices 64) {
+    class (0) if (ip_tos & 0xfc) == 0x28;
+}
+EOF
+u8 0x28 0xfc at 1
+# "if", better DSCP, shift value ----------------------------------------------
+tcc | sed '/.*match /{s///;s/ classid .*//p;};d'
+#include "fields.tc"
+
+dsmark (indices 64) {
+    class (0) if (ip_tos & 0xfc) == (0xa << 2);
+}
+EOF
+u8 0x28 0xfc at 1
+# "if", better DSCP, shift access ---------------------------------------------
+tcc | sed '/.*match /{s///;s/ classid .*//p;};d'
+#include "fields.tc"
+
+dsmark (indices 64) {
+    class (0) if (ip_tos & 0xfc) >> 2 == 0xa;
+}
+EOF
+u8 0x28 0xfc at 1
+# "if", better DSCP, shift mask and access ------------------------------------
+tcc | sed '/.*match /{s///;s/ classid .*//p;};d'
+#include "fields.tc"
+
+dsmark (indices 64) {
+    class (0) if ((ip_tos >> 2) & (0xfc >> 2)) == 0xa;
+}
+EOF
+u8 0x28 0xfc at 1
+# "if", DSCP using field ------------------------------------------------------
+tcc | sed '/.*match /{s///;s/ classid .*//p;};d'
+#include "fields.tc"
+
+field dscp = (ip_tos & 0xfc) >> 2;
+
+dsmark (indices 64) {
+    class (0) if dscp == 0xa;
+}
+EOF
+u8 0x28 0xfc at 1

@@ -1,0 +1,28 @@
+#
+# Makefile.klib - Build the kernel library
+#
+# Written 2001,2002 by Werner Almesberger
+# Copyright 2001 EPFL-ICA, Network Robots
+# Copyright 2002 Werner Almesberger
+#
+
+all:	klib.a
+
+include ../../Common.make
+
+OBJS=rtnetlink.o af_netlink.o rbtree.o \
+  cls_api.o cls_fw.o cls_rsvp.o cls_rsvp6.o cls_tcindex.o cls_u32.o \
+  estimator.o police.o sch_api.o sch_generic.o \
+  sch_cbq.o sch_dsmark.o sch_fifo.o sch_gred.o sch_prio.o sch_red.o sch_sfq.o \
+  sch_tbf.o sch_ingress.o sch_htb.o
+CFLAGS=-Wall $(CC_OPTS) -O -D__KERNEL__ -nostdinc -Iinclude \
+  -I`dirname \`gcc -print-libgcc-file-name\``/include -I.
+# -Ilinux/include \
+
+.PHONY:	clean
+
+klib.a:	$(OBJS)
+	$(LD) -r -o klib.o $(OBJS)
+
+clean:
+	rm -f klib.o $(OBJS)

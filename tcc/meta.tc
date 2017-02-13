@@ -1,0 +1,36 @@
+/*
+ * Meta-field definitions for tcng
+ *
+ * Written 2002 by Werner Almesberger
+ * Copyright 2002 Werner Almesberger
+ */
+
+#ifndef __INCLUDED_FROM_FIELDS_TC
+#warning meta.tc should only be included from fields.tc
+#endif
+
+#ifndef META_TC
+#define META_TC
+
+/*
+ * Numbering scheme:
+ *
+ * - different types of fields start at blocks beginning at distinct
+ *   multiples of 1024 bytes
+ * - individual fields start at distinct multiples of 32 bytes
+ *
+ * This numbering scheme ensures that tcc will not try to merge
+ * adjacent meta-fields into a single access.
+ *
+ * It is recommended that programs implementing meta fields use the field
+ * name as the primary key, and read this file to extract the offset and
+ * the field length. See meta.pl for an example.
+ * 
+ */
+
+field meta_protocol = __meta[0].ns;	/* protocol above link layer */
+
+field meta_nfmark = __meta[1024].nl;	/* firewall mark */
+field meta_tc_index = __meta[1056].ns;	/* traffic control index */
+
+#endif /* META_TC */

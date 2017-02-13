@@ -1,0 +1,223 @@
+# base-line: -Wexppostopt refuses != ------------------------------------------
+tcc -Wexppostopt -Wexperror -xif:err 2>&1 >/dev/null
+prio {
+    drop if raw.nl != 0;
+}
+EOF
+ERROR
+negation is an "expensive" operation
+# base-line: != result --------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if raw.nl != 0;
+}
+EOF
+block eth0 egress
+action 0 = drop
+action 1 = unspec
+match 0:0:32=0x00000000 action 1
+match action 0
+# != 0 (bit) ------------------------------------------------------------------
+tcc -One -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if raw.nl != 0;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = drop
+match 0:31:1=0x1 action 1
+match 0:30:1=0x1 action 1
+match 0:29:1=0x1 action 1
+match 0:28:1=0x1 action 1
+match 0:27:1=0x1 action 1
+match 0:26:1=0x1 action 1
+match 0:25:1=0x1 action 1
+match 0:24:1=0x1 action 1
+match 0:23:1=0x1 action 1
+match 0:22:1=0x1 action 1
+match 0:21:1=0x1 action 1
+match 0:20:1=0x1 action 1
+match 0:19:1=0x1 action 1
+match 0:18:1=0x1 action 1
+match 0:17:1=0x1 action 1
+match 0:16:1=0x1 action 1
+match 0:15:1=0x1 action 1
+match 0:14:1=0x1 action 1
+match 0:13:1=0x1 action 1
+match 0:12:1=0x1 action 1
+match 0:11:1=0x1 action 1
+match 0:10:1=0x1 action 1
+match 0:9:1=0x1 action 1
+match 0:8:1=0x1 action 1
+match 0:7:1=0x1 action 1
+match 0:6:1=0x1 action 1
+match 0:5:1=0x1 action 1
+match 0:4:1=0x1 action 1
+match 0:3:1=0x1 action 1
+match 0:2:1=0x1 action 1
+match 0:1:1=0x1 action 1
+match 0:0:1=0x1 action 1
+match action 0
+# != 1 (bit) ------------------------------------------------------------------
+tcc -One -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if raw.b != 1;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = drop
+match 0:7:1=0x0 action 1
+match 0:6:1=0x1 action 1
+match 0:5:1=0x1 action 1
+match 0:4:1=0x1 action 1
+match 0:3:1=0x1 action 1
+match 0:2:1=0x1 action 1
+match 0:1:1=0x1 action 1
+match 0:0:1=0x1 action 1
+match action 0
+# != 0xffffffff (bit) ---------------------------------------------------------
+tcc -One -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if raw.nl != 0xffffffff;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = drop
+match 0:31:1=0x0 action 1
+match 0:30:1=0x0 action 1
+match 0:29:1=0x0 action 1
+match 0:28:1=0x0 action 1
+match 0:27:1=0x0 action 1
+match 0:26:1=0x0 action 1
+match 0:25:1=0x0 action 1
+match 0:24:1=0x0 action 1
+match 0:23:1=0x0 action 1
+match 0:22:1=0x0 action 1
+match 0:21:1=0x0 action 1
+match 0:20:1=0x0 action 1
+match 0:19:1=0x0 action 1
+match 0:18:1=0x0 action 1
+match 0:17:1=0x0 action 1
+match 0:16:1=0x0 action 1
+match 0:15:1=0x0 action 1
+match 0:14:1=0x0 action 1
+match 0:13:1=0x0 action 1
+match 0:12:1=0x0 action 1
+match 0:11:1=0x0 action 1
+match 0:10:1=0x0 action 1
+match 0:9:1=0x0 action 1
+match 0:8:1=0x0 action 1
+match 0:7:1=0x0 action 1
+match 0:6:1=0x0 action 1
+match 0:5:1=0x0 action 1
+match 0:4:1=0x0 action 1
+match 0:3:1=0x0 action 1
+match 0:2:1=0x0 action 1
+match 0:1:1=0x0 action 1
+match 0:0:1=0x0 action 1
+match action 0
+# != 0 (prefix) ---------------------------------------------------------------
+tcc -One -Oprefix -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if raw.nl != 0;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = drop
+match 0:0:32=0x00000001 action 1
+match 0:0:31=0x00000001 action 1
+match 0:0:30=0x00000001 action 1
+match 0:0:29=0x00000001 action 1
+match 0:0:28=0x0000001 action 1
+match 0:0:27=0x0000001 action 1
+match 0:0:26=0x0000001 action 1
+match 0:0:25=0x0000001 action 1
+match 0:0:24=0x000001 action 1
+match 0:0:23=0x000001 action 1
+match 0:0:22=0x000001 action 1
+match 0:0:21=0x000001 action 1
+match 0:0:20=0x00001 action 1
+match 0:0:19=0x00001 action 1
+match 0:0:18=0x00001 action 1
+match 0:0:17=0x00001 action 1
+match 0:0:16=0x0001 action 1
+match 0:0:15=0x0001 action 1
+match 0:0:14=0x0001 action 1
+match 0:0:13=0x0001 action 1
+match 0:0:12=0x001 action 1
+match 0:0:11=0x001 action 1
+match 0:0:10=0x001 action 1
+match 0:0:9=0x001 action 1
+match 0:0:8=0x01 action 1
+match 0:0:7=0x01 action 1
+match 0:0:6=0x01 action 1
+match 0:0:5=0x01 action 1
+match 0:0:4=0x1 action 1
+match 0:0:3=0x1 action 1
+match 0:0:2=0x1 action 1
+match 0:0:1=0x1 action 1
+match action 0
+# != 2 (prefix) ---------------------------------------------------------------
+tcc -One -Oprefix -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if raw.b != 2;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = drop
+match 0:0:8=0x03 action 1
+match 0:0:7=0x00 action 1
+match 0:0:6=0x01 action 1
+match 0:0:5=0x01 action 1
+match 0:0:4=0x1 action 1
+match 0:0:3=0x1 action 1
+match 0:0:2=0x1 action 1
+match 0:0:1=0x1 action 1
+match action 0
+# != 0xffffffff (prefix) ------------------------------------------------------
+tcc -One -Oprefix -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if raw.nl != ~0;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = drop
+match 0:0:32=0xFFFFFFFE action 1
+match 0:0:31=0x7FFFFFFE action 1
+match 0:0:30=0x3FFFFFFE action 1
+match 0:0:29=0x1FFFFFFE action 1
+match 0:0:28=0xFFFFFFE action 1
+match 0:0:27=0x7FFFFFE action 1
+match 0:0:26=0x3FFFFFE action 1
+match 0:0:25=0x1FFFFFE action 1
+match 0:0:24=0xFFFFFE action 1
+match 0:0:23=0x7FFFFE action 1
+match 0:0:22=0x3FFFFE action 1
+match 0:0:21=0x1FFFFE action 1
+match 0:0:20=0xFFFFE action 1
+match 0:0:19=0x7FFFE action 1
+match 0:0:18=0x3FFFE action 1
+match 0:0:17=0x1FFFE action 1
+match 0:0:16=0xFFFE action 1
+match 0:0:15=0x7FFE action 1
+match 0:0:14=0x3FFE action 1
+match 0:0:13=0x1FFE action 1
+match 0:0:12=0xFFE action 1
+match 0:0:11=0x7FE action 1
+match 0:0:10=0x3FE action 1
+match 0:0:9=0x1FE action 1
+match 0:0:8=0xFE action 1
+match 0:0:7=0x7E action 1
+match 0:0:6=0x3E action 1
+match 0:0:5=0x1E action 1
+match 0:0:4=0xE action 1
+match 0:0:3=0x6 action 1
+match 0:0:2=0x2 action 1
+match 0:0:1=0x0 action 1
+match action 0

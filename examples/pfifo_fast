@@ -1,0 +1,16 @@
+/*
+ * pfifo_fast - What you get without using "tc"
+ *
+ * The most trivial configuration: just the default qdisc pfifo_fast.
+ */
+
+#define PORT_USER 0x1234
+
+#define PACKET	TCP_PCK($tcp_sport=PORT_USER $tcp_dport=PORT_HTTP)
+
+dev eth0 100000 /* 100 Mbps */
+
+send PACKET
+send PACKET
+
+end

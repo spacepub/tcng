@@ -1,0 +1,228 @@
+# CBQ creates root class ------------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 5Bps) if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = cbq
+class 0 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 rate 1250000
+class 1 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 parent 0 rate 5
+action 1 = class 1:1
+match action 1
+# CBQ uses existing root class ------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (0,rate 10Mbps) {
+	class (rate 5Bps) if 1;
+    }
+}
+EOF
+block eth0 egress
+qdisc 1 = cbq
+class 0 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 rate 1250000
+class 1 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 parent 0 rate 5
+action 1 = class 1:1
+match action 1
+# CBQ enforces that rate of root class equals bandwidth -----------------------
+tcc 2>&1
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (0,rate 1Mbps) {
+        class (rate 5Bps) if 1;
+    }
+}
+EOF
+ERROR
+<stdin>:4: "bandwidth" must equal "rate" at CBQ root class
+# CBQ combines root class with qdisc at tc interface --------------------------
+tcsim | sed '/\\(.* avpkt [^ ]*\\) .*/s//\\1/p;d'
+dev eth0 {
+    #include "tcngreg.def"
+
+    cbq (CBQ_PARAMS) {
+	class (0,rate 10Mbps,avpkt 2kB) {
+	    class (rate 5Bps,prio 1);
+	}
+    }
+}
+
+tc -d class show dev eth0
+EOF
+level 1 ewma 5 avpkt 2048b
+level 0 ewma 5 avpkt 2048b
+# Explicit CBQ root class can be selected (external) --------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (0,rate 10Mbps)
+	if raw[0] == 1
+      {
+	class (rate 5Bps)
+	    if raw[0] != 1;
+    }
+}
+EOF
+block eth0 egress
+qdisc 1 = cbq
+class 0 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 rate 1250000
+class 1 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 parent 0 rate 5
+action 1 = class 1:1
+action 0 = class 1:0
+match 0:0:8=0x01 action 0
+match action 1
+# Explicit CBQ root class can be selected (tc) --------------------------------
+tcsim | sed '/.*flowid /s///p;d'
+dev eth0 {
+    #include "tcngreg.def"
+
+    cbq (CBQ_PARAMS) {
+	class (0,rate 10Mbps,prio 1)
+	    if 1
+	{
+	    class (rate 5Bps,prio 1);
+	}
+    }
+}
+
+tc filter show dev eth0
+EOF
+1:ffff
+# CBQ root class creation is transparent at tc interface ----------------------
+tcc | sed 's/ bandwidth .*//;s/ prio .*//;/^tc/p;d'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 5Bps,prio 1) if 1;
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root cbq
+tc class add dev eth0 parent 1:0 classid 1:1 cbq
+tc filter add dev eth0 parent 1:0 protocol all
+# idem, verification with tcsim -----------------------------------------------
+tcsim | sed 's/10Mbit/1250000bps/;s/5bit/5bps/'
+dev eth0 {
+    #include "tcngreg.def"
+
+    cbq (CBQ_PARAMS) {
+	class (rate 5Bps,prio 1) if 1;
+    }
+}
+
+tc class show dev eth0
+EOF
+class cbq 1: root rate 1250000bps (bounded,isolated) prio no-transmit
+class cbq 1:1 parent 1: rate 5bps prio 1
+# Base test: without priomap, root class is selected --------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,prio 1) {
+	class (2,rate 1Mbps);
+	class (3,rate 2Mbps)
+	    if ip_tos == 1;
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+EOF
+OK (0) (1:0, 0x0)
+OK (0) (1:3, 0x0)
+# Priomap at CBQ qdisc applies to implicit root class -------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,prio 1,priomap $c) {
+	$c = class (2,rate 1Mbps);
+	class (3,rate 2Mbps)
+	    if ip_tos == 1;
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+EOF
+OK (0) (1:2, 0x0)
+OK (0) (1:3, 0x0)
+# Priomap at CBQ qdisc applies to explicit root class -------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,prio 1,priomap $c) {
+	class (0,rate 10Mbps) {
+	    $c = class (2,rate 1Mbps);
+	    class (3,rate 2Mbps)
+		if ip_tos == 1;
+	}
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+EOF
+OK (0) (1:2, 0x0)
+OK (0) (1:3, 0x0)
+# Priomap at explicit CBQ root class applies ----------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,prio 1) {
+	class (0,rate 10Mbps,priomap $c) {
+	    $c = class (2,rate 1Mbps);
+	    class (3,rate 2Mbps)
+		if ip_tos == 1;
+	}
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+EOF
+OK (0) (1:2, 0x0)
+OK (0) (1:3, 0x0)
+# Priomap at CBQ qdisc and at explicit root class is refused ------------------
+PATH=$PATH:tcc/ext tcc -xif:test -Xx,nounspec 2>&1
+#include "tcngreg.def"
+#include "fields.tc"
+
+cbq (CBQ_PARAMS,prio 1,priomap $c1) {
+    class (0,rate 10Mbps,priomap $c2) {
+	$c1 = class (2,rate 1Mbps);
+	$c2 = class (3,rate 2Mbps)
+	    if ip_tos == 1;
+    }
+}
+EOF
+ERROR
+<stdin>:5: "priomap" may not be present at both, CBQ qdisc and root class

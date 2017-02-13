@@ -1,0 +1,46 @@
+# qdisc can be extended -------------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep class
+dev "eth0" {
+    $q = prio {
+	class (1);
+    }
+    qdisc $q {
+	class (2);
+    }
+}
+EOF
+class 1 =
+class 2 =
+# classes can be extended -----------------------------------------------------
+tcc | sed 's/ cbq.*//'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    $c = class (1,rate 4Mbps) {
+	class (2,rate 1Mbps);
+    }
+    class $c {
+	class (3,rate 1Mbps);
+    }
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root
+tc class add dev eth0 parent 1:0 classid 1:1
+tc class add dev eth0 parent 1:1 classid 1:2
+tc class add dev eth0 parent 1:1 classid 1:3
+# filters can be extended -----------------------------------------------------
+tcc | sed '/fw/s/.*prio 1 //p;d'
+prio {
+    $f = fw {
+	class (1) on (10);
+    }
+    class (2) on $f(20);
+    filter $f {
+	class (3) on (30);
+    }
+}
+EOF
+fw
+handle 10 fw classid 1:1
+handle 20 fw classid 1:2
+handle 30 fw classid 1:3

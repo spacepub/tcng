@@ -1,0 +1,31 @@
+--- iproute2/tc/q_dsmark.c.orig	Tue Jun 12 19:34:19 2001
++++ iproute2/tc/q_dsmark.c	Tue Jun 12 19:35:28 2001
+@@ -33,11 +33,12 @@
+     struct nlmsghdr *n)
+ {
+ 	struct rtattr *tail;
+-	__u16 ind,dflt;
++	__u16 ind;
+ 	char *end;
+-	int set_tc_index;
++	int dflt,set_tc_index;
+ 
+-	ind = dflt = set_tc_index = 0;
++	ind = set_tc_index = 0;
++	dflt = -1;
+ 	while (argc > 0) {
+ 		if (!strcmp(*argv,"indices")) {
+ 			NEXT_ARG();
+@@ -73,7 +74,11 @@
+ 	tail = (struct rtattr *) (((void *) n)+NLMSG_ALIGN(n->nlmsg_len));
+ 	addattr_l(n,1024,TCA_OPTIONS,NULL,0);
+ 	addattr_l(n,1024,TCA_DSMARK_INDICES,&ind,sizeof(ind));
+-	if (dflt) addattr_l(n,1024,TCA_DSMARK_DEFAULT_INDEX,&dflt,sizeof(dflt));
++	if (dflt != -1) {
++	    __u16 tmp = dflt;
++
++	    addattr_l(n,1024,TCA_DSMARK_DEFAULT_INDEX,&tmp,sizeof(tmp));
++	}
+ 	if (set_tc_index) addattr_l(n,1024,TCA_DSMARK_SET_TC_INDEX,NULL,0);
+ 	tail->rta_len = (((void *) n)+n->nlmsg_len)-(void *) tail;
+ 	return 0;

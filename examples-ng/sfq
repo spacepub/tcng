@@ -1,0 +1,23 @@
+/*
+ * sfq - Exercise SFQ
+ *
+ * We have three flows, one of them is very bursty. FIFO or SFQ without
+ * perturbation simply kill the less bursty flows.
+ */
+
+#define FLOW(n) TCP_PCK($ip_src=10.0.0.9 $ip_dst=10.0.0.##n) \
+			0 x 960 /* 1000-header = 960 bytes */
+
+dev eth0 1000 /* 1 Mbps */ {
+    sfq (perturb 1s);
+}
+
+every 0.005s send FLOW(1)		/* 1.60 Mbps */
+every 0.003s send FLOW(2)		/* 2.67 Mbps */
+every 0.008s send FLOW(3)		/* 1.00 Mbps */
+every 0.008s send FLOW(3)		/* 1.00 Mbps */
+every 0.008s send FLOW(3)		/* 1.00 Mbps */
+every 0.008s send FLOW(3)		/* 1.00 Mbps */
+
+time 10s
+end

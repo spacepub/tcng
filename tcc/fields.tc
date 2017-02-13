@@ -1,0 +1,39 @@
+/*
+ * Field definitions for tcng
+ *
+ * Written 2001,2002 by Werner Almesberger
+ * Copyright 2001 EPFL-ICA, Network Robots
+ * Copyright 2002 Network Robots, Werner Almesberger
+ */
+
+/*
+ * Note: the field definition language is not sufficient for all constructs
+ * one may encounter in IP packets. In particular, it has no loops (e.g. for
+ * IP or TCP options, or for IPv6). There should be some useful ideas in the
+ * PAX PDL (http://www.research.solidum.com/papers/pax-pdl/pax-pdl-00.html)
+ * that could added to future versions of this part of tcng.
+ */
+
+
+#ifndef FIELDS_TC
+#define FIELDS_TC
+
+#define __INCLUDED_FROM_FIELDS_TC
+
+/*
+ * fields4.tc and fields6.tc use values defined in values.tc, so include it
+ * first
+ */
+#include "values.tc"
+
+#include "meta.tc"
+
+#include "fields4.tc"
+#include "fields6.tc"
+
+/* idiomatic.tc uses fields defined above, so include it last */
+#include "idiomatic.tc"
+
+#undef __INCLUDED_FROM_FIELDS_TC
+
+#endif /* FIELDS_TC */

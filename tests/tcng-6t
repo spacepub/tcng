@@ -1,0 +1,27 @@
+# duplicate qdisc in dsmark does not trigger assert in qdisc.c ----------------
+tcc -xif:err -Xx,fifos 2>&1
+dsmark {
+    fifo;
+    fifo;
+}
+EOF
+ERROR
+<stdin>:3: dsmark has only one inner qdisc
+# X+0 does verify type of X ---------------------------------------------------
+tcc -c -Wnounused 2>&1
+$x = "foo"+0;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "+" (string and integer) near ";"
+# X-0 does verify type of X ---------------------------------------------------
+tcc -c -Wnounused 2>&1
+$x = "foo"-0;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "-" (string and integer) near ";"
+# 0+X does verify type of X ---------------------------------------------------
+tcc -c -Wnounused 2>&1
+$x = 0+"foo";
+EOF
+ERROR
+<stdin>:1: invalid types for operator "+" (integer and string) near ";"

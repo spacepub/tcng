@@ -1,0 +1,28 @@
+# tcsim pretty-prints enqueue result on ingress -------------------------------
+tcsim -s 0 | grep -v ' E '
+dev eth0 {
+    egress {
+	drop if 1;
+    }
+}
+
+send 0
+EOF
+0.000000 * : 0x00000006 1 : eth0: enqueue returns POLICED (3)
+# tcsim pretty-prints enqueue result on ingress -------------------------------
+tcsim -s 0 | grep -v ' [EDI] '
+dev in 10Mbps
+
+host {
+    dev eth0 {
+	ingress {
+	    drop if 1;
+	}
+    }
+}
+connect in eth0
+
+send in 0
+end
+EOF
+0.000001 * : 0x00000006 1 : eth0: enqueue returns NF_DROP (0)

@@ -1,0 +1,11 @@
+# no warning for "milliseconds" -----------------------------------------------
+echo '$t = 5ms;' | tcc 2>&1
+EOF
+<stdin>:1: warning: unused variable t
+# accept device followed by assignment, then qdisc expression -----------------
+tcc >/dev/null
+eth0 {
+    $q = prio;
+    qdisc $q;
+}
+EOF

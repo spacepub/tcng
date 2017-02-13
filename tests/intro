@@ -1,0 +1,89 @@
+# intro example (tc) ----------------------------------------------------------
+tcc | sed 's/.*dev eth0 //' | sed 's/.*prio 1 //'
+#include "fields.tc"
+#include "ports.tc"
+
+dev "eth0" {
+    egress {
+	class (<$high>) if tcp_dport == PORT_HTTP;
+	class (<$low>) if 1;
+
+	prio {
+	    $high = class (1) {
+		fifo (limit 20kB);
+	    }
+	    $low = class (2) {
+		fifo (limit 100kB);
+	    }
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4 default_index 0
+handle 2:0 parent 1:0 prio
+handle 3:0 parent 2:1 bfifo limit 20480
+handle 4:0 parent 2:2 bfifo limit 102400
+tcindex mask 0x3 shift 0
+handle 2 tcindex classid 2:2
+handle 1 tcindex classid 2:1
+handle 1:0:0 u32 divisor 1
+u32 match u8 0x6 0xff at 9 offset at 0 mask 0f00 shift 6 eat link 1:0:0
+handle 1:0:1 u32 ht 1:0:0 match u16 0x50 0xffff at 2 classid 1:1
+u32 match u32 0x0 0x0 at 0 classid 1:2
+# intro example (C) -----------------------------------------------------------
+tcc -tc >/dev/null
+#include "fields.tc"
+#include "ports.tc"
+
+dev "eth0" {
+    egress {
+	class (<$high>) if tcp_dport == PORT_HTTP;
+	class (<$low>) if 1;
+
+	prio {
+	    $high = class (1) {
+		fifo (limit 20kB);
+	    }
+	    $low = class (2) {
+		fifo (limit 100kB);
+	    }
+	}
+    }
+}
+EOF
+# intro example (ext) ---------------------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+#include "fields.tc"
+#include "ports.tc"
+
+dev "eth0" {
+    egress {
+	class (<$high>) if tcp_dport == PORT_HTTP;
+	class (<$low>) if 1;
+
+	prio {
+	    $high = class (1) {
+		fifo (limit 20kB);
+	    }
+	    $low = class (2) {
+		fifo (limit 100kB);
+	    }
+	}
+    }
+}
+EOF
+offset 100 = 0+(0:4:4 << 5)
+block eth0 egress
+qdisc 3 = fifo limit 20480
+qdisc 4 = fifo limit 102400
+qdisc 2 = prio bands 3
+class 1 = qdisc 3
+class 2 = qdisc 4
+qdisc 1 = dsmark indices 4
+class 0 = qdisc 2
+class 1 =
+class 2 =
+action 2 = class 1:2,2:2
+action 1 = class 1:1,2:1
+match 0:72:8=0x06 100:16:16=0x0050 action 1
+match action 2

@@ -1,0 +1,46 @@
+# tcc: default file name is "<stdin>" (print_current_location) ----------------
+tcc -n -Xp,-P 2>&1
+error
+EOF
+ERROR
+<stdin>:2: syntax error near ""
+# tcc: default file name is "<stdin>" (current_location) ----------------------
+tcc -n -Xp,-P 2>&1
+prio {
+    class (17);
+}
+EOF
+ERROR
+<stdin>:2: prio class number must be in the range 1..16
+# tcc: use "<stdin>" instead of empty file name -------------------------------
+{ echo '# 1 ""'; echo error; } | tcc 2>&1
+EOF
+ERROR
+<stdin>:2: syntax error near ""
+# tcc: no change if file name is present and non-empty  -----------------------
+{ echo '# 1 "test"'; echo error; } | tcc 2>&1
+EOF
+ERROR
+test:2: syntax error near ""
+# tcsim: default file name is "<stdin>" ---------------------------------------
+tcsim -n -XP,-P 2>&1 
+error
+EOF
+ERROR
+<stdin>:1: syntax error near "error"
+# tcsim: default file name passed to tcc is "<stdin>" -------------------------
+tcsim -n -XP,-P 2>&1
+dev eth0 { error }
+EOF
+ERROR
+<stdin>:2: syntax error near ""
+# tcsim: base line - can pass file names to tcc -------------------------------
+{ echo 'dev xyz {'; echo '# 1 "blah"'; echo 'error}'; } | tcsim 2>&1
+EOF
+ERROR
+blah:2: syntax error near ""
+# tcsim: empty file name passed to tcc does end up as "<stdin>" ---------------
+{ echo 'dev xyz {'; echo '# 1 ""'; echo 'error}'; } | tcsim 2>&1
+EOF
+ERROR
+<stdin>:2: syntax error near ""

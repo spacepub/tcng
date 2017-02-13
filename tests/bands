@@ -1,0 +1,71 @@
+# prio: "bands" is automatically raised if necessary (1) ----------------------
+tcc | sed '/.*bands/s//bands/p;d'
+prio {
+    class (8);
+}
+EOF
+bands 8
+# prio: "bands" is automatically raised if necessary (2) ----------------------
+tcc -xif:err -Xx,all 2>&1 | sed '/.*bands/s//bands/p;d'
+prio {
+    class {}
+    class {}
+    class {}
+    class {}
+    class {}
+}
+EOF
+bands 5
+# prio: "bands" can be raised to 16 -------------------------------------------
+tcc | sed '/.*bands/s//bands/p;d'
+prio {
+    class {} class {} class {} class {}
+    class {} class {} class {} class {}
+    class {} class {} class {} class {}
+    class {} class {} class {} class {}
+}
+EOF
+bands 16
+# prio: "bands" cannot be raised above 16 -------------------------------------
+tcc 2>&1
+prio {
+    class {} class {} class {} class {}
+    class {} class {} class {} class {}
+    class {} class {} class {} class {}
+    class {} class {} class {} class {}
+    class {}
+}
+EOF
+ERROR
+<stdin>:6: prio class number must be in the range 1..16
+# prio: "bands" does not drop below default -----------------------------------
+tcc -xif:err -Xx,all 2>&1 | sed '/.*bands/s//bands/p;d'
+prio {
+    class {}
+}
+EOF
+bands 3
+# prio: "bands" does not drop below explicit value ----------------------------
+tcc | sed '/.*bands/s//bands/p;d'
+prio (bands 4) {
+    class {}
+}
+EOF
+bands 4
+# prio: "bands" can be raised to explicit value -------------------------------
+tcc -xif:err -Xx,all 2>&1 | sed '/.*bands/s//bands/p;d'
+prio (bands 5) {
+    class {} class {} class {} class {}
+    class {}
+}
+EOF
+bands 5
+# prio: "bands" cannot be raised above explicit value -------------------------
+tcc 2>&1
+prio (bands 5) {
+    class {} class {} class {} class {}
+    class {} class {}
+}
+EOF
+ERROR
+<stdin>:3: prio class number must be in the range 1..5

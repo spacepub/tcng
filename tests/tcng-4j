@@ -1,0 +1,9 @@
+# "drop" did not cancel ANCHOR ------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -c match
+field foo = raw[0];
+
+prio {
+    drop if 1;
+}
+EOF
+1

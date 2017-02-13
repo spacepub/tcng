@@ -1,0 +1,99 @@
+# protocol support in u32: unspecified ----------------------------------------
+tcsim -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+#include "packet.def" /* for values.tc */
+
+dev eth0 {
+    egress {
+	class (<>) if raw[0] == 0;
+	drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 0
+send 1
+EOF
+00
+00
+01
+enqueue returns POLICED (3)
+# protocol support in u32: ip4 only -------------------------------------------
+tcsim -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+#include "packet.def" /* for values.tc */
+
+dev eth0 {
+    egress {
+	class (<>) if ip_hdr[0] == 0;
+	drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 0
+send 1
+EOF
+00
+00
+enqueue returns POLICED (3)
+01
+enqueue returns POLICED (3)
+# protocol support in u32: ip6 only -------------------------------------------
+tcsim -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+#include "packet.def" /* for values.tc */
+
+dev eth0 {
+    egress {
+	class (<>) if ip6_hdr[0] == 0;
+	drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 0
+send 1
+EOF
+00
+enqueue returns POLICED (3)
+00
+01
+enqueue returns POLICED (3)
+# protocol support in u32: ip4 && ip6 -----------------------------------------
+tcsim -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+#include "packet.def" /* for values.tc */
+
+dev eth0 {
+    egress {
+	class (<>) if ip_hdr[0] == 0 && ip6_hdr[0] == 0;
+	drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 0
+send 1
+EOF
+00
+enqueue returns POLICED (3)
+00
+enqueue returns POLICED (3)
+01
+enqueue returns POLICED (3)
+# protocol support in u32: ip4 || ip6 -----------------------------------------
+tcsim -Xc,-DUSE_META_PROTOCOL | sed 's/.*eth0: //'
+#include "packet.def" /* for values.tc */
+
+dev eth0 {
+    egress {
+	class (<>) if ip_hdr == 0 || ip6_hdr[0] == 1;
+	drop if 1;
+    }
+}
+
+send protocol=ETH_P_IP 0
+send protocol=ETH_P_IPV6 1
+send 1
+EOF
+00
+01
+01
+enqueue returns POLICED (3)

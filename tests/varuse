@@ -1,0 +1,96 @@
+# variable use list: scalar values --------------------------------------------
+tcc -w -u stderr 2>&1
+$foo = 7*6;
+$bar = (1 << 10) bps;
+EOF
+$foo = 42
+$bar = 1024 bps
+# variable use list: traffic control elements  --------------------------------
+tcc -c -w -u stderr 2>&1
+$p = police(666,rate 0bps,burst 0b);
+
+eth0 {
+    $q = prio {
+        $c1 = class (1);
+        $c2 = class (2);
+        $c1_copy = $c1;
+
+        class $c1
+            if conform $p;
+        class $c2
+            if 1;
+    }
+    qdisc $q;
+}
+EOF
+$p = police 666
+{ device eth0
+{ qdisc eth0:1
+$c1 = class eth0:1:1
+$c2 = class eth0:1:2
+$c1_copy = class eth0:1:1
+}
+$q = qdisc eth0:1
+}
+# variable use list: naming conflicts are no problem --------------------------
+tcc -w -c -u stderr 2>&1
+prio {
+    $foo = 1;
+}
+ingress {
+    $foo = 2;
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+$foo = 1
+}
+{ qdisc eth0:ingress
+$foo = 2
+}
+}
+# variable use list: forward-declared variables take scope of assignment ------
+tcc -c -u stderr 2>&1
+dsmark {
+    class (<$c>) if 1;
+    prio {
+	$c = class();
+    }
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+{ class eth0:1:0
+{ qdisc eth0:2
+$c = class eth0:2:1
+}
+}
+}
+}
+# variable use list: tunnel scope ---------------------------------------------
+tcc -c -w -u stderr 2>&1
+$a = 17;
+prio {
+    $b = 9;
+    rsvp (src 1.2.3.4) {
+	$c = 19;
+	tunnel (skip 8B)
+	    on (ah 7,dst 5.6.7.8)
+	{
+	    $d = 91;
+	}
+    }
+}
+EOF
+$a = 17
+{ device eth0
+{ qdisc eth0:1
+$b = 9
+{ filter eth0:1::1
+$c = 19
+{ tunnel eth0:1::1:1
+$d = 91
+}
+}
+}
+}

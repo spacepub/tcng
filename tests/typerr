@@ -1,0 +1,113 @@
+# type conversion error: data_convert (1) -------------------------------------
+tcc -c 2>&1
+fifo (1kbps);
+EOF
+ERROR
+<stdin>:1: invalid type conversion (expected integer instead of rate) near ")"
+# type conversion error: data_convert (2) -------------------------------------
+tcc -c 2>&1
+cbq (bandwidth 1Mbps,priomap $c,maxburst 1kB,avpkt 1kB,allot 2kB);
+EOF
+ERROR
+<stdin>:1: invalid type conversion (expected size in packets instead of size in bytes) near ","
+# type conversion error: data_add_unit ----------------------------------------
+tcc -c 2>&1
+$n = 5 sec;
+fifo (limit $n bps);
+EOF
+ERROR
+<stdin>:2: invalid type conversion (expected number instead of time) near "bps"
+# type conversion error: + ----------------------------------------------------
+tcc -c 2>&1
+$x = 5+1kbps;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "+" (integer and rate) near ";"
+# type conversion error: - ----------------------------------------------------
+tcc -c 2>&1
+$x = drop-5p;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "-" (decision and size in packets) near ";"
+# type conversion error: * ----------------------------------------------------
+tcc -c 2>&1
+$x = 1 kB*7sec;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "*" (size in bytes and time) near ";"
+# type conversion error: / ----------------------------------------------------
+tcc -c 2>&1
+$x = 1 kbps/4sec;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "/" (rate and time) near ";"
+# type conversion error: unary unum (!) ---------------------------------------
+tcc -c 2>&1
+$x = !drop;
+EOF
+ERROR
+<stdin>:1: invalid type for operator "!" (decision) near ";"
+# type conversion error: binary unum (<<) -------------------------------------
+tcc -c 2>&1
+$x = 3.14159 << 1pps;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "<<" (floating-point number and packet rate) near ";"
+# type conversion error: relational, a numeric (==) ---------------------------
+tcc -c 2>&1
+$x = 7p == 5;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "==" (size in packets and integer) near ";"
+# type conversion error: relational, a non-numeric (>) ------------------------
+tcc -c 2>&1
+$x = drop > drop;
+EOF
+ERROR
+<stdin>:1: invalid types for operator ">" (decision and decision) near ";"
+# type conversion error: : : --------------------------------------------------
+tcc -c 2>&1
+$x = 5:1:2B;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "mask (::)" (integer, integer, and size in bytes) near "B"
+# type conversion error: conform ----------------------------------------------
+tcc -c 2>&1
+$x = 1 kbps;
+$x = conform $x;
+EOF
+ERROR
+<stdin>:2: invalid type conversion (expected policer instead of rate) near ";"
+# type conversion error: count ------------------------------------------------
+tcc -c 2>&1
+$x = 0x0815;
+$x = count $x;
+EOF
+ERROR
+<stdin>:2: invalid type conversion (expected policer instead of integer) near ";"
+# type conversion error: class selection path ---------------------------------
+tcc -c 2>&1
+dsmark {
+    class (<$c>) if 1;
+    $c = fifo;
+    fifo;
+}
+EOF
+ERROR
+<stdin>:2: invalid type in class selection path (expected class, not queuing discipline)
+# type conversion error: priomap in PRIO --------------------------------------
+tcc -c 2>&1
+prio (priomap $c) {
+    $c = fw;
+}
+EOF
+ERROR
+<stdin>:1: invalid type in 1st entry of "priomap" (expected class, not filter)
+# type conversion error: priomap in CBQ ---------------------------------------
+tcc -c 2>&1
+cbq (bandwidth 1Mbps,priomap $c,maxburst 5p,avpkt 1kB,allot 2kB) {
+    $c = police(rate 1kbps,burst 2kB);
+}
+EOF
+ERROR
+<stdin>:1: invalid type in 1st entry of "priomap" (expected class, not policer)

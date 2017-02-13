@@ -1,0 +1,198 @@
+# relop: < 7 ------------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] < 7;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+00 01 02 03 04 05 06
+# relop: < 8 ------------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] < 8;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+00 01 02 03 04 05 06 07
+# relop: > 7 ------------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] > 7;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+# relop: > 8 ------------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] > 8;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+09 0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+# relop: < 10 -----------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] < 10;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+00 01 02 03 04 05 06 07 08 09
+# relop: >= 10 ----------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] >= 10;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+# relop: <= 5 -----------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] <= 5;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+00 01 02 03 04 05
+# relop: < 0 ------------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] < 0;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+
+# relop: >= 0 -----------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr -d '\\012'; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] >= 0;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+# relop: > 255 ----------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr '\\012' ' '; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] > 255;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+
+# relop: < 256 ----------------------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test | \
+  sed '/.* D :.* /s///p;d' | tr -d '\\012'; echo
+dev eth0 1000000 {
+    dsmark {
+	class (0) if raw[20] < 256;
+	drop if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+end
+EOF
+000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f

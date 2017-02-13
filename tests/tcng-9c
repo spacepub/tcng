@@ -1,0 +1,18 @@
+# tcc detects bad digits in octal numbers -------------------------------------
+tcc -u stderr 2>&1 >/dev/null
+$a = 0123456789;
+EOF
+ERROR
+<stdin>:1: invalid digit in number near "0123456789"
+# tcsim detects bad digits in octal numbers -----------------------------------
+tcsim 2>&1 >/dev/null
+$a = 0123456789;
+EOF
+ERROR
+<stdin>:1: invalid digit in number near "0123456789"
+# tcsim: EOF in tcng part is an error -----------------------------------------
+tcsim 2>&1
+dev eth0 {
+EOF
+ERROR
+<stdin>:2: EOF in tcng specification near ""

@@ -1,0 +1,63 @@
+# "if" optimizes (value << shift) & mask --------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+        class if ((raw[0].b << 2) & 0xf0) == 16;
+    }
+}
+EOF
+u8 0x4 0x3c at 0
+# "if" optimizes ((value & mask) << shift -------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+        class if (raw[0].b & 0xf0) << 2 == 0x80;
+    }
+}
+EOF
+u8 0x20 0xf0 at 0
+# "if" optimizes (value >> shift) & mask --------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+        class if ((raw[0].b >> 4) & 7) == 0x4;
+    }
+}
+EOF
+u8 0x40 0x70 at 0
+# "if" optimizes ((value & mask) >> shift -------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+        class if (raw[0].b & 0xf0) >> 3 == 2;
+    }
+}
+EOF
+u8 0x10 0xf0 at 0
+# "if" optimizes ((value & mask1) << shift) & mask2 ---------------------------
+tcsim -v 2>&1 | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+        class if (((raw[0].b & 0xf) << 2) & 0xf) == 4;
+    }
+}
+EOF
+u8 0x1 0x3 at 0
+# "if" optimizes (value >> shift) << shift ------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+        class if (raw[0].b >> 4) << 4 == 0x10;
+    }
+}
+EOF
+u8 0x10 0xf0 at 0
+# "if" optimizes (value << shift) >> shift ------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    prio {
+        class if (raw[0].b << 4) >> 4 == 3;
+    }
+}
+EOF
+u8 0x3 0xff at 0

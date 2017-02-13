@@ -1,0 +1,141 @@
+# u32 SLB: class/unspec -------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 10Mbps {
+    #include "meters.tc"
+
+    $p = SLB(cir 1kbps,cbs 200B);
+    prio {
+	class if SLB_ok($p);
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+UNSPEC (-1)
+# u32 SLB: class/drop ---------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 1kbps {
+    #include "meters.tc"
+
+    $p = SLB(cir 1kbps,cbs 200B);
+    prio {
+	class if SLB_ok($p);
+	drop if 1;
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+SHOT (2)
+# u32 SLB: class/class --------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 5 Mbps {
+    #include "meters.tc"
+
+    $p = SLB(cir 1kbps,cbs 200B);
+    prio {
+	class if SLB_ok($p);
+	class if 1;
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+OK (0) (1:2, 0x2)
+# u32 SLB: drop/unspec --------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 5 Mbps {
+    #include "meters.tc"
+
+    $p = SLB(cir 1kbps,cbs 200B);
+    prio {
+	drop if SLB_ok($p);
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+end
+EOF
+SHOT (2)
+SHOT (2)
+UNSPEC (-1)
+# u32 SLB: drop/class ---------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 8kbps {
+    #include "meters.tc"
+
+    $p = SLB(cir 1kbps,cbs 200B);
+    prio {
+	drop if SLB_ok($p);
+	class if 1;
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+end
+EOF
+SHOT (2)
+SHOT (2)
+OK (0) (1:1, 0x1)
+# u32 SLB: else_drop ----------------------------------------------------------
+tcsim -v | sed '/u32/s/.*returns //p;d'
+#include "packet.def"
+
+dev eth0 3Gbps {
+    #include "meters.tc"
+
+    $p = SLB(cir 1kbps,cbs 200B);
+    prio {
+	class if SLB_else_drop($p);
+    }
+}
+
+#define NOTHING
+
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+send TCP_PCK(NOTHING) 0 x 60	/* 100 bytes */
+end
+EOF
+OK (0) (1:1, 0x1)
+OK (0) (1:1, 0x1)
+SHOT (2)

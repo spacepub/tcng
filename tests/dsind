@@ -1,0 +1,46 @@
+# dsmark allows classes with no-op changes above "indices" (1/2) --------------
+tcc -c
+dsmark (indices 2) {
+    class (1) if raw[0] == 1;
+    class (2,mask 0xff) if 1;
+}
+EOF
+# dsmark allows classes with no-op changes above "indices" (2/2) --------------
+tcc -c
+dsmark (indices 2) {
+    class (1) if raw[0] == 1;
+    class (2,value 0) if 1;
+}
+EOF
+# check: dsmark still refuses non-no-op changes (1/2) -------------------------
+tcc -c 2>&1
+dsmark (indices 2) {
+    class (1) if raw[0] == 1;
+    class (2,mask 0xfe) if 1;
+}
+EOF
+ERROR
+<stdin>:3: dsmark class number (2) must be < indices (2) if using parameters
+# check: dsmark still refuses non-no-op changes (2/2) -------------------------
+tcc -c 2>&1
+dsmark (indices 2) {
+    class (1) if raw[0] == 1;
+    class (2,value 1) if 1;
+}
+EOF
+ERROR
+<stdin>:3: dsmark class number (2) must be < indices (2) if using parameters
+# dsmark generates indices (tc) -----------------------------------------------
+tcc | sed '/.* dsmark /s///p;d'
+dsmark {
+   class (4) if 1;
+}
+EOF
+indices 8
+# dsmark generates indices (ext) ----------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep dsmark
+dsmark {
+    class (3) if 1;
+}
+EOF
+qdisc 1 = dsmark indices 4

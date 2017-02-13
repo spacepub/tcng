@@ -1,0 +1,83 @@
+%
+% tcng.tex - tcng reference manual
+%
+% Written 2001-2004 by Werner Almesberger
+% Copyright 2001 EPFL-ICA
+% Copyright 2001,2002 Bivio Networks, Network Robots
+% Copyright 2002-2004 Werner Almesberger
+%
+
+%%beginskip
+\documentclass{book}
+\usepackage{url,epsfig,ifthen}
+
+\begin{document}
+
+\title{Traffic Control -- Next Generation \\
+  ~\\
+  Reference Manual}
+\author{Werner Almesberger}
+\date{September 28, 2004}
+
+%%endskip
+%%def%:=
+% fool removal of initial blanks
+%:\begin{description}
+%:    \item[]
+%:\end{description}
+%:\begin{verbatim}
+%:
+%:                   Traffic Control - Next Generation
+%:                           Reference Manual
+%:
+%:                          Werner Almesberger
+%:
+%:                          September 28, 2004
+%:
+%:\end{verbatim}
+
+\input preamble.inc
+
+
+\chapter{Introduction}
+\label{chpintro}
+
+\input intro.inc
+
+\chapter{The \prog{tcng} language}
+\label{chptcng}
+
+\input tcng.inc
+
+\chapter{Traffic control compiler}
+\label{chptcc}
+
+\input tcc.inc
+
+\chapter{Traffic control simulator}
+\label{chptcsim}
+
+\input tcsim.inc
+
+\chapter{The external interface}
+\label{chpext}
+
+\input external.inc
+
+\appendix
+\chapter{Parameter reference}
+\label{appparam}
+
+\input param.inc
+
+% Bibliography
+
+\begin{thebibliography}{RFC2698}
+%%beginskip
+\let\mybibitem=\bibitem
+\def\bibitem#1{\mybibitem[#1]{#1}}
+%%endskip
+\input bib.inc
+\end{thebibliography}
+
+\end{document}

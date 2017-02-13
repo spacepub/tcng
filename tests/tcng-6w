@@ -1,0 +1,41 @@
+# unum_only prints source code location ---------------------------------------
+tcc 2>&1
+prio {
+    class if 5.0;
+}
+EOF
+ERROR
+<stdin>:2: only integer expressions allowed in if
+# -Xx,all refuses non-tcindex at non-root qdisc -------------------------------
+tcc -xif:err -Xx,all 2>&1
+dsmark {
+    prio {
+        class if 1;
+    }
+}
+EOF
+ERROR
+<stdin>:2: dump_all: only filter allowed at non-root qdisc is "tcindex"
+# -Xx,all refuses non-tcindex at class of non-root qdisc ----------------------
+tcc -xif:err -Xx,all 2>&1
+#include "tcngreg.def"
+
+dsmark {
+    cbq (CBQ_PARAMS) {
+        class (rate 1Mbps) {
+            class (rate 1kbps)
+		on fw element (1);
+        }
+    }
+}
+EOF
+ERROR
+<stdin>:7: dump_all: only filter allowed at classes of non-root qdisc is "tcindex"
+# -Xx,all adds empty classifier if root has none ------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+prio;
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3
+action 0 = unspec
+match action 0

@@ -1,0 +1,23 @@
+# extra semicolons after semicolon --------------------------------------------
+tcc -c
+warn "nounused";;;
+$x = 5;;
+prio {
+    class ();;
+    fifo;;
+}
+EOF
+# extra semicolons after closing curly braces ---------------------------------
+tcc -c
+eth0 {
+    prio {
+	fw {
+	    class
+		on (1)
+	    {
+		fifo {};
+	    };
+	};
+    };
+};
+EOF

@@ -1,0 +1,90 @@
+# fields: combine preconditions on access -------------------------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field first = raw[1] if raw[0] == 1;
+field second = first[1] if raw[1] == 2;
+
+prio {
+    class if second == 3;
+}
+EOF
+0:0:24=0x010203
+# fields: combine precondition on precondition --------------------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field first = raw[1] if raw[0] == 1;
+field second = raw[2] if first == 2;
+
+prio {
+    class if second == 3;
+}
+EOF
+0:0:24=0x010203
+# fields: combine preconditions everywhere ------------------------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field first = raw[2] if raw[0] == 1;
+field second = raw[2] if raw[1] == 2;
+field third = second[1] if first == 3;
+
+prio {
+    class if third == 4;
+}
+EOF
+0:0:32=0x01020304
+# fields: verify that tcc does not reorder offset groups ----------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field first = raw[raw[10]];
+field second = raw[raw[11]];
+field third = raw[raw[12]];
+
+prio {
+    class if first == 1 && third == 3 && second == 2;
+}
+EOF
+100:0:8=0x01 101:0:8=0x03 102:0:8=0x02
+# fields: order of evaluation with precondition on access ---------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field first = raw[raw[10]] if raw[raw[11]] == 1;
+field second = first[1] if raw[raw[12]] == 2;
+
+prio {
+    class if second == 3;
+}
+EOF
+100:0:8=0x01 101:0:8=0x02 102:8:8=0x03
+# fields: order of evaluation with precondition on precondition ---------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field first = raw[raw[11]] if raw[raw[12]] == 1;
+field second = raw[raw[13]] if first == 2;
+
+prio {
+    class if second == 3;
+}
+EOF
+100:0:8=0x01 101:0:8=0x02 102:0:8=0x03
+# fields: order of evaluation with preconditions everywhere -------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field first = raw[raw[10]] if raw[raw[11]] == 1;
+field second = raw[raw[10]] if raw[raw[12]] == 2;
+field third = second[1] if first == 3;
+
+prio {
+    class if third == 4;
+}
+EOF
+100:0:8=0x02 101:0:8=0x01 102:0:16=0x0304
+# fields: concatenation of null-accesses works --------------------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+field one = raw;
+field two = one;
+field three = two;
+
+prio (bands 4) {
+    class if raw == 1;
+    class if one == 2;
+    class if two == 3;
+    class if three == 4;
+}
+EOF
+0:0:8=0x01
+0:0:8=0x02
+0:0:8=0x03
+0:0:8=0x04

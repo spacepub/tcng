@@ -1,0 +1,249 @@
+THIS FILE IS OBSOLETE !
+
+Please use the more up to date and heavily improved documentation in ../doc
+Will be removed as soon as the plain text generated from the LaTeX document
+is "perfect".
+
+-------------------------------------------------------------------------------
+
+TC Compiler
+===========
+
+Written 2001 by Werner Almesberger
+Testing and tcng language design also by Milena Mondini, U. of Napoli
+
+Copyright 2001 EPFL-ICA, Werner Almesberger, and Network Robots
+
+
+New versions of tcng can be found in http://tcng.sourceforge.net/
+
+This package is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+See the file COPYING.GPL for details.
+
+The files tcc/ext/tccext.h, tcc/ext/tccext.c, tcc/ext/echoh.h, and
+tcc/ext/echoh.c are distributed under the GNU Lesser General Public
+License. See the file COPYING.LGPL for details.
+
+
+Overview
+--------
+
+tcc translates the new configuration language to other formats, e.g. the
+old "tc" syntax.
+
+The main features of the new configuration language are:
+
+ - complete traffic control configuration of one or multiple interfaces is
+   specified at once
+ - syntax similar to programming languages like C or Perl
+ - implicit propagation of object addresses (e.g. class IDs)
+ - supports arithmetic, bit, and logical expressions
+ - abstract specification of classification rules
+
+New configurations are translated back to the old syntax and the "tc"
+utility from iproute2 is then used to control the kernel components. The
+translation process allows for better consistency checking, more and
+better defaults, and optimization of certain patterns.
+
+
+Status
+------
+
+The language design covers most requirements. tcc can convert selected
+configurations, but does not yet support enough components for real-life
+use.
+
+Development status of various components:
+
+  bfifo	    fully supported except for default (syntax: "fifo (limit Nb)")
+  cbq	    fully supported
+  dsmark    fully supported
+  ingress   fully supported
+  pfifo	    fully supported (syntax: "fifo (limit Np)")
+  prio	    fully supported
+  red	    complete, note that type of "burst" parameter is Bytes, not
+	    packets (error checking not complete yet)
+  gred      complete, see red
+  sfq	    fully supported
+  tbf	    fully supported
+
+  fw	    support untested
+  route	    support untested
+  rsvp	    partial support
+  rsvpv6    -
+  tcindex   fully supported
+  u32	    supported via "if" construct (not using hashes yet)
+
+  policing  fully supported
+
+
+Invocation
+----------
+
+See ./tcc -h
+
+Example: ./tcc example
+
+
+Configuration language
+----------------------
+
+See separate file LANGUAGE.
+
+There are several examples with tcng code in the directory tcng/examples-ng
+Note that the tcng code is only the part in the curly braces after the "dev"
+instruction (plus any CPP macros that may be defined before). The rest of
+the files contains directives only understood by tcsim.
+
+
+Bugs and restrictions
+---------------------
+
+Many.
+
+grep @@@ `ls -1 *.[ch] | sed '/\..*\./d'` *.[yl]
+
+lists the ones we know of.
+
+
+RSVP classifier restrictions
+- - - - - - - - - - - - - -
+
+ - no IPv6 (i.e. no IPv6 addresses or flowlabel)
+ - no u8/u16/u32 GPI
+ - only single GPI supported (so the priorities hack doesn't work)
+ - AH and ESP force use of corresponding protocol
+
+
+CBQ qdisc restrictions/differences
+- - - - - - - - - - - - - - - - -
+
+ - as usual, we don't support "cell"
+ - like in GRED, "bandwidth" can only be set at the qdisc, not at a class
+ - parameters "avpkt", "mpu", "maxburst", "minburst", "ewma", "allot",
+   "weight", and "prio" can be set at qdisc, and then become default for
+   classes
+ - likewise, if a class sets or changes any of the default parameters, its
+   child classes inherit the new value
+ - "avpkt" and "alloc" are required (they're in principle optional in tc,
+    but they almost always end up being required anyway)
+ - no support for classification returning priority numbers (0:prio), because
+   one can as well use a class explicitly in this case
+ - "split" and "defmap" have been replaced by "defmap" which is a list of
+   classes to split to. So tcng has "goto" while tc has "come from" ;-)
+   (See http://www.jargon.net/jargonfile/c/COMEFROM.html)
+
+Open issue: whatever happened to "estimator" ?
+
+
+Location map
+------------
+
+When invoked with the option  -l location_file  tcc writes the source
+code locations of traffic control elements to the specified file.
+
+The file format is as follows:
+
+<type> <identifier> <tag> <file name> <line number>
+
+<type> is the type of the element, <identifier> a string that uniquely
+identifies it, <tag> is a user-provided identifier ("-" if none was
+provided), <file name> is the name of the source file containing the
+definition of the element ("-" if none is available; note that tcc uses
+the name "<stdin>" for standard input), and <line number> the
+approximate line number.
+
+The format of the identifier depends on the type of element:
+
+Type name  Identifier string
+-----------------------------------------------------------------------
+device	  <interface>
+qdisc	  <interface>:<qdisc>
+class	  <interface>:<qdisc>:<class number>
+filter	  <interface>:<qdisc>:<class number>:<priority>
+tunnel	  <interface>:<qdisc>:<class number>:<priority>:<tunnel number>
+element	  <interface>:<qdisc>:<class number>:<priority>:<element index>
+police	  <bucket number>
+
+<qdisc> is the queuing discipline number for egress, or "ingress" for
+at ingress.
+
+For "filter" and "element", <class number> is an empty string if the
+filter is rooted at the queuing discipline. <element index> is the
+zero-based number of the element on that filter.
+
+Programs reading location maps should not make any assumption about
+the order in which entries are written.
+
+Future versions of tcc may add more fields to a map line, so any
+programs reading location maps should not assume that a line ends
+after the line number.
+
+
+Variable use list
+-----------------
+
+When invoked with the option  -u variable_use_file  tcc writes the
+names of all variables and their content to the specified file.
+
+Each line is in one of the following formats:
+
+{ <type> <identifier>
+}
+$<name> = <number>
+$<name> = <number> <unit>
+$<name> = expression
+$<name> = <type> <identifier>
+
+<name> is the variable name. <number> is an integer or a floating-point
+number. <unit> is the unit of measurement, without prefix. Units are
+described in the file LANGUAGE.
+
+For variables containing non-constant expressions, simply the word
+"expression" is output as the value. Future versions of tcc may add
+further information after this keyword.
+
+For variables containing traffic control elements, the format is
+identical to the first two fields in the location map entry of that
+element. Note that only queuing disciplines, classes, filters, and
+policers can be assigned to variables.
+
+The beginning of a scope is indicated with an opening curly brace
+followed by the identifier of the element that started the scope.
+Scopes created by nesting a block directly within another block have
+no element identifying the scope and are denoted by a line containing
+only the opening curly brace. Likewise, the end of a scope is
+indicated with a closing curly brace.
+
+Example:
+
+    prio {
+	$foo = 42
+    }
+
+yields the following variable use list:
+
+{ device eth0
+{ qdisc eth0:1
+$foo = 42
+}
+}
+
+Note that the scope for the default device is automatically generated.
+
+Programs reading a variable use list file should not make any
+assumption about the order in which entries within the same scope are
+written. Variables with the same name will appear once per distinct
+variable, within the respective scope.
+
+Note that forward-declared variables are placed in the scope of their
+assignment, and not the scope of their declaration.
+
+Future versions of tcc may include whitespace before dollar signs
+and curly braces. Furthermore, the syntax
+$<name> = forward
+is reserved for possible future use.

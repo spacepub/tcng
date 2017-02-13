@@ -1,0 +1,22 @@
+/*
+ * priority - Prio using skb->priority
+ *
+ * Like prio+rsvp, but using skb->priority
+ */
+
+#define TC_PRIO_BESTEFFORT 0
+#define TC_PRIO_CONTROL	   7
+
+#define NOTHING
+#define HIGH	TCP_PCK(NOTHING)
+#define LOW	TCP_PCK(NOTHING)
+
+dev eth0 100000 /* 100 Mbps */ {
+    prio;
+}
+
+send priority=TC_PRIO_BESTEFFORT LOW
+send priority=TC_PRIO_BESTEFFORT LOW
+send priority=TC_PRIO_CONTROL HIGH
+
+end

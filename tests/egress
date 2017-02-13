@@ -1,0 +1,90 @@
+# egress qdisc can be used instead of top-level dsmark (tc) -------------------
+tcc | sed 's/.* 1:0 //'
+egress {
+    class (2) if 1;
+}
+EOF
+root dsmark indices 4 default_index 0
+protocol all prio 1 u32 match u32 0x0 0x0 at 0 classid 1:2
+# egress qdisc can be used instead of top-level dsmark (ext) ------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+egress {
+    class (2) if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 4
+class 2 =
+action 2 = class 1:2
+match action 2
+# using egress qdisc as inner qdisc yields a warning --------------------------
+tcc -c 2>&1
+prio {
+    class {
+	egress {
+	    class (1) if 1;
+	}
+    }
+}
+EOF
+<stdin>:3: warning: egress qdisc should be at top level
+# warning says "egress", not "dsmark" -----------------------------------------
+tcc -c -Wnoexplicit 2>&1
+egress {
+    class (1) {
+	fifo;
+    }
+   
+}
+EOF
+<stdin>:2: warning: suggest unnumbered and parameter-less class for inner qdisc of egress
+# error says "egress", not "dsmark" (1) ---------------------------------------
+tcc -c 2>&1
+egress {
+    class { fifo; }
+    class { fifo; }
+}
+EOF
+ERROR
+<stdin>:3: egress has only one inner qdisc
+# error says "egress", not "dsmark" (2) ---------------------------------------
+tcc -c 2>&1
+egress {
+    class;
+    class;
+}
+EOF
+ERROR
+<stdin>:2: egress does not auto-assign class numbers
+# error says "egress", not "dsmark" (3) ---------------------------------------
+tcc -c 2>&1
+egress (indices 4) {
+    class (10,value 1) if 1;
+}
+EOF
+ERROR
+<stdin>:2: egress class number (10) must be < indices (4) if using parameters
+# for default classif., "egress" adds default index 0 if absent ---------------
+tcc -xif:err -Xx,all -Xx,nounspec 2>&1 | grep -v '^#'
+egress;
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 1
+class 0 =
+action 0 = class 1:0
+match action 0
+# "egress" does not alter non-zero default index ------------------------------
+tcc -xif:err -Xx,all -Xx,nounspec 2>&1 | grep -v '^#'
+egress (default_index 13);
+EOF
+block eth0 egress
+qdisc 1 = dsmark default_index 13 indices 16
+class 13 =
+action 13 = class 1:13
+match action 13
+# "dsmark" does not default default index -------------------------------------
+tcc -xif:err -Xx,all -Xx,nounspec 2>&1
+dsmark;
+EOF
+ERROR
+<stdin>:1: dsmark_default_class: need "default_index" or "set_tc_index"

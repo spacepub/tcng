@@ -1,0 +1,58 @@
+#!/bin/sh -e
+#
+# tcc-ext-test - Build test modules for external targets
+#
+# Written 2001,2002,2004 by Werner Almesberger
+# Copyright 2001,2002 Network Robots
+# Copyright 2004 Werner Almesberger
+#
+# This script is modified by the Makefile to include TOPDIR
+
+usage()
+{
+    echo "usage: $0 config [nounspec] [nocombine]" 1>&2
+    echo "       $0 check unique_name ..." 1>&2
+    echo "       $0 build unique_name ..." 1>&2
+    exit 1
+}
+
+[ -z "$1" ] && usage
+
+mode=$1
+shift
+case "$mode" in
+    config)	for n in "$@"; do
+		    [ "$n" != "nounspec" -a "$n" != "nocombine" ] && usage
+		    echo $n
+		done
+		echo nocontinue
+		exit 0;;
+    check)      exit 0;;
+    build)      ;;
+    *)          echo "$0: unrecognized mode $mode" 1>&2
+                exit 1;;
+esac
+
+[ -z "$1" ] && usage
+id=m$1
+cat >__$id.out
+
+topdir=$TOPDIR
+[ -z "$TCNG_TOPDIR" ] || topdir=$TCNG_TOPDIR
+
+CFLAGS="-g -Wall"
+KMOD_CFLAGS="-D__KERNEL__ -DMODULE -O -fomit-frame-pointer -fno-strict-aliasing"
+KINCDIR=$topdir/lib/tcng/include/klib/include
+TCMOD_CFLAGS="-shared"
+
+$topdir/lib/tcng/bin/kmod_cc -c -r $CFLAGS $KMOD_CFLAGS \
+  -I$KINCDIR -o cet_$id.o -DNAME=$id \
+  $topdir/lib/tcng/tests/tcc/ext/cls_ext_test.c
+${CC:-cc} $CFLAGS -fPIC -c -o match_$id.o -DNAME=$id \
+  -I$topdir/lib/tcng/include $topdir/lib/tcng/tests/tcc/ext/match.c
+$topdir/lib/tcng/bin/kmod_cc -o cls_$id.o cet_$id.o match_$id.o \
+  -L $topdir/lib/tcng/lib -ltccext
+rm -f cet_$id.o match_$id.o
+$topdir/lib/tcng/bin/tcmod_cc $CFLAGS $TCMOD_CFLAGS -o f_$id.so \
+  -DNAME=$id $topdir/lib/tcng/tests/tcc/ext/f_ext_test.c
+echo filter $id

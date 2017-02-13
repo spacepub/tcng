@@ -1,0 +1,237 @@
+# conditional tests: pass one on success --------------------------------------
+runtests
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# Test
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Test: PASSED
+Passed the test
+# conditional tests: pass two on success --------------------------------------
+runtests
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# First
+|true
+|EOF
+|# Second
+|true
+|EOF
+|END CONDITIONAL
+EOF
+First: PASSED
+Second: PASSED
+Passed all 2 tests
+# conditional tests: skip one on failure --------------------------------------
+runtests
+|BEGIN CONDITIONAL
+|false
+|EOF
+|# Skip this
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Passed all 0 tests (1 conditional test skipped)
+# conditional tests: skip two on failure --------------------------------------
+runtests
+|BEGIN CONDITIONAL
+|false
+|EOF
+|# Skip this
+|true
+|EOF
+|# Skip this too
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Passed all 0 tests (2 conditional tests skipped)
+# conditional tests: pass on failure ------------------------------------------
+runtests
+|BEGIN CONDITIONAL
+|false
+|EOF
+|ERROR
+|# Test
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Test: PASSED
+Passed the test
+# conditional tests: skip on success ------------------------------------------
+runtests
+|BEGIN CONDITIONAL
+|true
+|EOF
+|ERROR
+|# Skip this
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Passed all 0 tests (1 conditional test skipped)
+# conditional tests: skip on bad output ---------------------------------------
+runtests
+|BEGIN CONDITIONAL
+|true
+|EOF
+|blah
+|# Skip this
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Passed all 0 tests (1 conditional test skipped)
+# conditional tests: pass on failure with warning -----------------------------
+runtests | sed 's/^ *//'
+|BEGIN CONDITIONAL
+|false
+|EOF
+|ERROR
+|blah
+|# Test
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Warning: output differs in condition
+Standard output:
+Reference output:
+| blah
+Test: PASSED
+Passed the test (1 warning)
+# conditional tests: illegal nesting ------------------------------------------
+runtests 2>&1 >/dev/null
+|BEGIN CONDITIONAL
+|true
+|EOF
+|BEGIN CONDITIONAL
+EOF
+ERROR
+BEGIN CONDITIONAL in conditional block
+# conditional tests: spurious end (1) -----------------------------------------
+runtests 2>&1 >/dev/null
+|END CONDITIONAL
+EOF
+ERROR
+END CONDITIONAL without condition
+# conditional tests: spurious end (2) -----------------------------------------
+runtests 2>&1 >/dev/null
+|# Some test
+|true
+|EOF
+|END CONDITIONAL
+EOF
+ERROR
+END CONDITIONAL without condition
+# conditional tests: EOF in condition -----------------------------------------
+runtests 2>&1 >/dev/null
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# Something
+|true
+|EOF
+EOF
+ERROR
+EOF in conditional block
+# conditional tests: neither warn nor skip ------------------------------------
+runtests | tail -n 1
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# Test
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Passed the test
+# conditional tests: warn only ------------------------------------------------
+runtests | tail -n 1
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# Test
+|false
+|EOF
+|ERROR
+|blah
+|END CONDITIONAL
+EOF
+Passed the test (1 warning)
+# conditional tests: warn and skip --------------------------------------------
+runtests | tail -n 1
+|BEGIN CONDITIONAL
+|false
+|EOF
+|# One
+|true
+|EOF
+|END CONDITIONAL
+|# Two
+|false
+|EOF
+|ERROR
+|blah
+EOF
+Passed the test (1 warning, 1 conditional test skipped)
+# conditional tests: parser is not confused by leading FILE directive ---------
+runtests
+|FILE foobar
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# Test
+|true
+|EOF
+|END CONDITIONAL
+EOF
+Test: PASSED
+Passed the test
+# END CONDITIONAL followed by BEGIN CONDITIONAL -------------------------------
+runtests
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# One
+|true
+|EOF
+|END CONDITIONAL
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# Two
+|true
+|EOF
+|END CONDITIONAL
+EOF
+One: PASSED
+Two: PASSED
+Passed all 2 tests
+# END CONDITIONAL followed by FILE and BEGIN CONDITIONAL ----------------------
+runtests
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# One
+|true
+|EOF
+|END CONDITIONAL
+|FILE foo
+|BEGIN CONDITIONAL
+|true
+|EOF
+|# Two
+|true
+|EOF
+|END CONDITIONAL
+EOF
+One: PASSED
+Two: PASSED
+Passed all 2 tests

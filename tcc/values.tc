@@ -1,0 +1,111 @@
+/*
+ * TCP/IP packet field value definitions for tcng
+ *
+ * Written 2001,2002 by Werner Almesberger
+ * Copyright 2001 EPFL-ICA, Network Robots
+ * Copyright 2002 Network Robots, Werner Almesberger
+ */
+
+/*
+ * Note: the definitions in this file used to be contained in fields.tc
+ * They have been moved to their own file to allow separate inclusion in a
+ * non-tcng context, e.g. by packet.tc
+ *
+ * The field names given in section comments correspond to the definitions in
+ * fields.tc
+ */
+
+#ifndef __INCLUDED_FROM_FIELDS_TC
+#warning values.tc should only be included from fields.tc
+#endif
+
+#ifndef VALUES_TC
+#define VALUES_TC
+
+
+/* ----- meta_protocol ----------------------------------------------------- */
+
+
+/* Selected protocol IDs from include/linux/if_ether.h */
+
+#define ETH_P_IP		0x0800	/* Internet Protocol packet */
+#define ETH_P_ARP		0x0806	/* Address Resolution packet */
+#define ETH_P_IPX		0x8137	/* IPX over DIX */
+#define ETH_P_IPV6		0x86DD	/* IPv6 over bluebook */
+#define ETH_P_PPP_DISC		0x8863	/* PPPoE discovery messages */
+#define ETH_P_PPP_SES		0x8864	/* PPPoE session messages */
+
+#define	ETH_P_ALL		0x0003	/* Every packet */
+
+
+/* ----- ip_proto ---------------------------------------------------------- */
+
+
+#define IPPROTO_ICMP		  1	/* Internet Control Message Protocol */
+#define IPPROTO_IGMP		  2	/* Internet Group Management Protocol */
+#define IPPROTO_IPIP		  4	/* IPIP tunnels */
+#define IPPROTO_TCP		  6	/* Transmission Control Protocol */
+#define IPPROTO_EGP		  8	/* Exterior Gateway Protocol */
+#define IPPROTO_UDP		 17	/* User Datagram Protocol */
+#define IPPROTO_IPV6		 41	/* IPv6 header */
+#define IPPROTO_IPV6_ROUTING	 43	/* IPv6 routing header */
+#define IPPROTO_IPV6_FRAGMENT	 44	/* IPv6 fragmentation header */
+#define IPPROTO_RSVP		 46	/* Reservation Protocol */
+#define IPPROTO_GRE		 47	/* General Routing Encapsulation */
+#define IPPROTO_ESP		 50	/* Encapsulating Security Payload */
+#define IPPROTO_AH		 51	/* Authentication Header */
+#define IPPROTO_ICMPV6		 58	/* ICMPv6 */
+#define IPPROTO_NONE		 59	/* IPv6 no next header */
+#define IPPROTO_DSTOPTS		 60	/* IPv6 destination options */
+#define IPPROTO_PIM		103	/* Protocol Independent Multicast */
+
+
+/* ----- TCP option kind (no field definition in fields.tc) ---------------- */
+
+
+#define TCPOPT_EOL		0	/* End of option list */
+#define TCPOPT_NOP		1	/* No operation */
+#define TCPOPT_MAXSEG		2	/* Maximum segment size */
+#define TCPOPT_WINDOW		3	/* Window scale factor */
+#define TCPOPT_TIMESTAMP	8	/* Timestamp */
+
+
+/* ----- icmp_type --------------------------------------------------------- */
+
+
+#define ICMP_ECHOREPLY		 0	/* Echo Reply */
+#define ICMP_UNREACH		 3	/* Destination Unreachable */
+#define ICMP_SOURCEQUENCH	 4	/* Source Quench */
+#define ICMP_REDIRECT		 5	/* Redirect (change route) */
+#define ICMP_ECHO		 8	/* Echo Request */
+#define ICMP_TIMXCEED		11	/* Time Exceeded */
+
+
+/* ----- icmp_code --------------------------------------------------------- */
+
+
+/* Codes for ICMP_DEST_UNREACH */
+#define ICMP_UNREACH_NET	 0	/* Network Unreachable */
+#define ICMP_UNREACH_HOST	 1	/* Host Unreachable */
+#define ICMP_UNREACH_PROTOCOL	 2	/* Protocol Unreachable */
+#define ICMP_UNREACH_PORT	 3	/* Port Unreachable */
+#define ICMP_UNREACH_NEEDFRAG	 4	/* Fragmentation Needed/DF set */
+
+/* Codes for ICMP_REDIRECT */
+#define ICMP_REDIRECT_NET	 0	/* Redirect Net */
+#define ICMP_REDIRECT_HOST	 1	/* Redirect Host */
+
+/* Codes for ICMP_TIME_EXCEEDED */
+#define ICMP_TIMXCEED_INTRANS	 0	/* TTL count exceeded */
+#define ICMP_TIMXCEED_REASS	 1	/* Fragment Reassembly time exceeded */
+
+
+/* ----- igmp_type --------------------------------------------------------- */
+
+
+#define IGMP_MEMBERSHIP_QUERY		0x11
+#define IGMP_V1_MEMBERSHIP_REPORT	0x12
+#define IGMP_V2_MEMBERSHIP_REPORT	0x16
+#define IGMP_V2_LEAVE_GROUP		0x17
+
+#endif /* VALUES_TC */

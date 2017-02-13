@@ -1,0 +1,65 @@
+# new syntax requires interface sections to be in curly braces (1) ------------
+tcc -c 2>&1
+eth0
+    prio;
+EOF
+ERROR
+<stdin>:2: syntax error near "prio"
+# new syntax requires interface sections to be in curly braces (2) ------------
+tcc -c
+eth0 {
+    prio;
+}
+EOF
+# new syntax no longer permits filter spec in selector with block -------------
+tcc -c 2>&1
+prio {
+    class (1)
+	on fw {			/* charming, isn't it ? */
+	    class (2)
+		on (1);
+	}
+	  element (3)
+    {
+	fifo;
+    }
+}
+EOF
+ERROR
+<stdin>:3: syntax error near "{"
+# equivalent construct with new syntax ----------------------------------------
+tcc -c
+prio {
+    $fw = fw {		/* perhaps not a beauty either, but less chaotic */
+	class (2)
+	    on (1);
+    }
+    class (1)
+	on $fw(3)
+    {
+	fifo;
+    }
+}
+EOF
+# no semicolon requires after filter specification in selector ----------------
+tcc -c
+prio {
+    class on fw element (1);
+}
+EOF
+# no semicolon allowed after filter specification in selector -----------------
+tcc -c 2>&1
+prio {
+    class on fw; element (1);
+}
+EOF
+ERROR
+<stdin>:2: syntax error near ";"
+# no block allowed after filter specification in selector ---------------------
+tcc -c 2>&1
+prio {
+    class on fw {} element (1);
+}
+EOF
+ERROR
+<stdin>:2: syntax error near "{"

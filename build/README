@@ -1,0 +1,38 @@
+If you think what we're doing to tweak topdir is weird, be assured that
+we're at least in good company:
+http://mailman.cs.uchicago.edu/pipermail/swig/2000-August/001736.html
+
+The problem is as follows: RPM really wants to use directories in
+/usr/src/redhat/, which means that the build would probably require
+privileges and exclusive access to this part of the machine. This is
+more or less exactly was one would consider a bad idea.
+
+In order to redirect topdir to a local directory, one can simply
+change the spec file to contain  %define _topdir /local/directory
+
+This works great and everything, but it has the nasty little drawback
+that any SRPM generated with this spec file will also expect to find
+things in general, and the TAR file with the source in particular, at
+this location. Since, in our case, the location is created after
+unpacking the TAR bundle, we have a neat catch-22 problem.
+
+So the backup solution is to override _topdir outside of the spec
+file. "Maximum RPM" claims that it is sufficient to put a line saying
+topdir: /local/directory  into a new rpmrc file to and use this rpmrc
+file, e.g. with --rcfile. Unfortunately, recent versions of RPM don't
+seem to support this option anymore.
+
+So this work-around uses a macro definitions file instead. This file
+can override topdir (the internal variable is called "_topdir"), and
+it can in turn be sourced from an rpmrc using the macrofiles
+directive.
+
+The only thing left to do is to make sure that all other macro files
+are also sourced (they contain several vital macros), because
+"macrofiles" resets the list of macro files on each use.
+
+Since there is no construct like  foo=$foo:newstuff  for rpmrc files,
+we have to grab the original definition and insert it into our own
+rpmrc file.
+
+Carpe diem.

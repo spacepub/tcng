@@ -1,0 +1,25 @@
+# baseline: gcc -E without -std=c99 or -$ allows $ in identifiers -------------
+gcc -E - | grep -v '^#' | grep -v '^$'
+#define foo bar
+$foo
+EOF
+$foo
+# baseline: gcc -E with -std=c99 or -$ doesn't allow $ in identifiers ---------
+gcc `if $DOLLAR; then echo '' '-$'; else echo '' -std=c99; fi` \
+  -E - 2>/dev/null | grep -v '^#' | grep -v '^$'
+#define foo bar
+$foo
+EOF
+$bar
+# tcc invokes cpp with -std=c99 or -$ -----------------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+#define foo bar
+$foo = 1;
+EOF
+$bar = 1
+# tcsim invokes cpp with -std=c99 or -$ ---------------------------------------
+tcsim
+#define foo bar
+$foo = 42 echo $bar
+EOF
+0.000000 * : 42

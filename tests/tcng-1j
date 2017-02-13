@@ -1,0 +1,8 @@
+# TCNG: partial propmap may still cause failure with two bands ----------------
+tcc 2>&1
+prio (bands 2,priomap $c $c $c $c $c) {
+    $c = class ();
+}
+EOF
+ERROR
+<stdin>:1: "priomap" too short to cover default entries exceeding allowed bands

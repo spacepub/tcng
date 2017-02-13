@@ -1,0 +1,93 @@
+# preferred action number assignment can cross initial allocation (8) ---------
+tcc -xif:err 2>&1 | grep '^action'
+dsmark {
+    class (0) if raw[0] == 0;
+    class (1) if raw[0] == 1;
+    class (2) if raw[0] == 2;
+    class (3) if raw[0] == 3;
+    class (4) if raw[0] == 4;
+    class (5) if raw[0] == 5;
+    class (6) if raw[0] == 6;
+    class (7) if raw[0] == 7;
+    class (8) if raw[0] == 8;
+    class (9) if raw[0] == 9;
+}
+EOF
+action 10 = unspec
+action 9 = class 1:9
+action 8 = class 1:8
+action 7 = class 1:7
+action 6 = class 1:6
+action 5 = class 1:5
+action 4 = class 1:4
+action 3 = class 1:3
+action 2 = class 1:2
+action 1 = class 1:1
+action 0 = class 1:0
+# preferred action number assignment fills "holes" ----------------------------
+tcc -xif:err 2>&1 | grep '^action'
+$p = bucket(burst 1kB,rate 10kbps);
+$q = bucket(burst 1kB,rate 10kbps);
+
+dsmark {
+    class (0) if conform $p;
+    class (3) if conform $q;
+}
+EOF
+action 1 = unspec
+action 3 = class 1:3
+action 2 = conform 2 action 3 action 1
+action 0 = class 1:0
+action 4 = conform 1 action 0 action 2
+# preferred action number assignment can start with available number ----------
+tcc -xif:err 2>&1 | grep '^action'
+dsmark {
+    class (1) if 1;
+}
+EOF
+action 1 = class 1:1
+# preferred action number assignment can start with unavailable number --------
+tcc -xif:err 2>&1 | grep '^action'
+$p = bucket(burst 1kB,rate 10kbps);
+
+dsmark {
+    class (1) if conform $p;
+}
+EOF
+action 0 = unspec
+action 1 = class 1:1
+action 2 = conform 1 action 1 action 0
+# preferred action number assignment can end with available number ------------
+tcc -xif:err 2>&1 | grep '^action'
+$p = bucket(burst 1kB,rate 10kbps);
+
+dsmark {
+    class (2) if conform $p;
+}
+EOF
+action 0 = unspec
+action 2 = class 1:2
+action 1 = conform 1 action 2 action 0
+# preferred action number assignment can end with unavailable number ----------
+tcc -xif:err 2>&1 | grep '^action'
+$p = bucket(burst 1kB,rate 10kbps);
+
+dsmark {
+    class (1) if conform $p;
+}
+EOF
+action 0 = unspec
+action 1 = class 1:1
+action 2 = conform 1 action 1 action 0
+# preferred action number assignment arbitrates in case of clashes ------------
+tcc -xif:err 2>&1 | grep '^action'
+dsmark {
+    class (0x005) if raw[0] == 0;
+    class (0x105) if raw[1] == 1;
+    class (0x205) if raw[1] == 2;
+}
+EOF
+action 0 = unspec
+action 5 = class 1:517
+action 1 = class 1:261
+action 2 = class 1:5

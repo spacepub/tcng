@@ -1,0 +1,59 @@
+/*
+ * Various useful IP definitions
+ *
+ * Written 2001 by Werner Almesberger
+ * Copyright 2001 EPFL-ICA, Network Robots
+ */
+
+#define ICMP  1 /* IPPROTO_ICMP */
+#define TCP   6 /* IPPROTO_TCP */
+#define UDP  17 /* IPPROTO_UDP */
+
+#define IP_HDR(params) \
+  $tos=0 params \
+  0x45	$tos   0 0	/* VeLe TOS  Length    */ \
+  0     0      0 0	/* Ident____ Fragment_ */ \
+  1     $ipproto 0 0	/* TTL_ Prot Checksum_ */ \
+  nl: $src 		/* Source_IP_address__ */ \
+  nl: $dst		/* Destination_IP_addr */
+
+#define TCP_FIN	  1
+#define TCP_SYN	  2
+#define TCP_RST   4
+#define TCP_PSH   8
+#define TCP_ACK  16
+#define TCP_URG  32
+
+#define TCP_HDR(params) \
+  $flag=TCP_ACK params \
+  ns: $sport ns: $dport	/* Src_port_ Dst_port_ */ \
+  nl: 1			/* Sequence_number____ */ \
+  nl: 2			/* Acknowledgement_num */ \
+  0x50 $flag ns: 0xffff	/* LeRs Flag Window_sz */ \
+  ns: 0      ns: 0	/* Checksum_ Urgent_pt */
+
+#define TCP_PCK(params) \
+  IP_HDR(params $ipproto=TCP) \
+  TCP_HDR(params)
+
+#define UDP_HDR(params) \
+  params \
+  ns: $sport ns: $dport	/* Src_port_ Dst_port_ */ \
+  ns: 0      ns: 0	/* Length___ Checksum_ */
+
+#define UDP_PCK(params) \
+  IP_HDR(params $ipproto=UDP) \
+  UDP_HDR(params)
+
+#include "ports.tc"		/* get all "standard" port definitions */
+
+#define PORT_USER	0x1234	/* something ... */
+
+#define DEFAULT		/* no parameter */
+
+/*
+ * @@@
+ * Ought to improve packet construction capabilities in the language.
+ * That way, one could have optional parameters and explicit means for
+ * specifying checksums and such.
+ */

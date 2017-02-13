@@ -1,0 +1,24 @@
+# unary minus: unum constant --------------------------------------------------
+tcc | sed 's/.*pfifo //'
+$a = -1;
+fifo (limit ($a+5)p);
+EOF
+limit 4
+# unary minus: fnum constant --------------------------------------------------
+tcc | sed 's/.*bfifo //'
+$a = -1.5;
+fifo (limit ($a+5)*10 B);
+EOF
+limit 35
+# unary minus: packet constant ------------------------------------------------
+tcc | sed 's/.*pfifo //'
+$a = -1p;
+fifo (limit $a+5p);
+EOF
+limit 4
+# unary minus: fnum variable --------------------------------------------------
+tcc | sed 's/.*pfifo //'
+$a = 1.5;
+fifo (limit (-$a+5)*10 p);
+EOF
+limit 35

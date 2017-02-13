@@ -1,0 +1,229 @@
+# tcsim: attribute setting baseline -------------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+    }
+}
+
+#define NOTHING
+
+send IP_PCK(NOTHING)
+send tc_index=0 IP_PCK(NOTHING)
+send tc_index=1 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:0a 20 0x00000009
+0.000000 D:0a 20 0x0000000a
+0.000000 D:14 20 0x0000000b
+# tcsim: normal overrides normal ----------------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+    }
+}
+
+#define NOTHING
+
+send tc_index=0 tc_index=1 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:14 20 0x00000009
+# tcsim: normal overrides default ---------------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+    }
+}
+
+#define NOTHING
+
+send default tc_index=0 tc_index=1 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:14 20 0x00000009
+# tcsim: default overrides default --------------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+    }
+}
+
+#define NOTHING
+
+send default tc_index=0 default tc_index=1 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:14 20 0x00000009
+# tcsim: default doesn't override normal --------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+    }
+}
+
+#define NOTHING
+
+send tc_index=0 default tc_index=1 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:0a 20 0x00000009
+# tcsim: global default can be changed ----------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute default tc_index=1
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+    }
+}
+
+#define NOTHING
+
+send IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:14 20 0x00000009
+# tcsim: global normal overrides global default -------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute default tc_index=1
+attribute tc_index=2
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+	class (2,value 30);
+    }
+}
+
+#define NOTHING
+
+send IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:1e 20 0x0000000c
+# tcsim: global default doesn't override global normal ------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute tc_index=1 default tc_index=2
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+	class (2,value 30);
+    }
+}
+
+#define NOTHING
+
+send IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:14 20 0x0000000c
+# tcsim: default overrides global default -------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute default tc_index=1
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+	class (2,value 30);
+    }
+}
+
+#define NOTHING
+
+send default tc_index=2 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:1e 20 0x0000000c
+# tcsim: default doesn't override global normal -------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute tc_index=1
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+	class (2,value 30);
+    }
+}
+
+#define NOTHING
+
+send default tc_index=2 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:14 20 0x0000000c
+# tcsim: normal overrides global default --------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute default tc_index=1
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+	class (2,value 30);
+    }
+}
+
+#define NOTHING
+
+send tc_index=2 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:1e 20 0x0000000c
+# tcsim: normal overrides global normal ---------------------------------------
+tcsim | tcsim_filter -d tos
+#include "packet.def"
+
+attribute tc_index=1
+
+dev eth0 10 Gbps {
+    dsmark (mask 0) {
+	class (0,value 10);
+	class (1,value 20);
+	class (2,value 30);
+    }
+}
+
+#define NOTHING
+
+send tc_index=2 IP_PCK(NOTHING)
+end
+EOF
+0.000000 D:1e 20 0x0000000c

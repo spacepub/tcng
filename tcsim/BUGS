@@ -1,0 +1,23 @@
+Urgent:
+ - need to verify that static and external variables in iproute2 aren't
+   messed up when using tc repeatedly.
+ - code is a mess, e.g. there are still too many "extern"s and other
+   "private" declarations in the glue code, there's no consistent policy
+   on what goes into klink.c and what goes into ksvc.c, etc.
+ - filter.pl doesn't take IP options into account
+
+Soon:
+ - the timing model should allow for better control over quantization
+ - tcsim also sets the (incorrect) length in fragments (need new keyword or
+   modifier)
+ - should also compute IP, TCP, UDP checksum
+ - should compute UDP length
+ - should detect IPv6 header and set protocol, etc. accordingly
+
+General:
+ - changes to iproute2 are way too instrusive (should gently adapt iproute2)
+ - change to sch_generic is too intrusive (should gently adapt sch_generic)
+ - header files don't quite reflect a nice structure (should fix most glaring
+   mis-uses)
+ - non-work-conserving qdiscs that don't set timers won't be served properly
+   (this may be considered a feature)

@@ -1,0 +1,83 @@
+# block location is reported --------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 | grep -v '^#'
+eth1 (pragma "force_failure") {
+    fifo;
+}
+EOF
+<stdin>:1: forced failure
+external program "echoh" exited with status 1 when building
+# bucket location is reported -------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 | grep -v '^#'
+$p = police (rate 0bps,burst 0B,pragma "force_failure");
+
+prio {
+    class if conform $p;
+}
+EOF
+<stdin>:1: forced failure
+external program "echoh" exited with status 1 when building
+# qdisc location is reported --------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 | grep -v '^#'
+fifo (pragma "force_failure");
+EOF
+eth0 egress
+<stdin>:1: forced failure
+external program "echoh" exited with status 1 when building
+# class location is reported --------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 | sed '/^#/d;s/ *//'
+prio {
+    class (pragma "force_failure");
+}
+EOF
+eth0 egress
+  qdisc 1 prio
+<stdin>:2: forced failure
+external program "echoh" exited with status 1 when building
+# child qdisc location is reported --------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 | sed '/^#/d;s/ *//'
+prio {
+    fifo (pragma "force_failure");
+}
+EOF
+eth0 egress
+  qdisc 1 prio
+    class 1
+<stdin>:2: forced failure
+external program "echoh" exited with status 1 when building
+# nested class location is reported -------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 | sed '/^#/d;s/ *//;s/cbq.*/cbq/'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 2Mbps) {
+	class (rate 1Mbps,pragma "force_failure");
+	class (rate 1Mbps);
+    }
+}
+EOF
+eth0 egress
+  qdisc 1 cbq
+    class 0
+      class 1
+<stdin>:5: forced failure
+external program "echoh" exited with status 1 when building
+# nested class location is reported -------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echoh -Xx,all 2>&1 | sed '/^#/d;s/ *//;s/cbq.*/cbq/'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 2Mbps) {
+	class (rate 1Mbps) {
+	    fifo (pragma "force_failure");
+	}
+	class (rate 1Mbps);
+    }
+}
+EOF
+eth0 egress
+  qdisc 1 cbq
+    class 0
+      class 1
+      class 2
+<stdin>:6: forced failure
+external program "echoh" exited with status 1 when building

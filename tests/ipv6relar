@@ -1,0 +1,167 @@
+# rel_math: access+unum rel unum ----------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0]+1 == 10;
+}
+EOF
+match 0:0:8=0x09 action 1
+# rel_math: access+unum rel u128 ----------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0]+1 == ::a;
+}
+EOF
+match 0:0:8=0x09 action 1
+# rel_math: access+u128 rel u128 ----------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0]+::2 == ::a;
+}
+EOF
+match 0:0:8=0x08 action 1
+# rel_math: access-unum rel u128 ----------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0]-1 == ::;
+}
+EOF
+match 0:0:8=0x01 action 1
+# rel_math: u128-access rel u128 ----------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if ::a-raw[0] == ::;
+}
+EOF
+match 0:0:8=0x0A action 1
+# rel_math: u128 rel access-unum ----------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if :: == raw[0]-4;
+}
+EOF
+match 0:0:8=0x04 action 1
+# rel_to_eq: < 4 becomes == ---------------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0] < 4;
+}
+EOF
+match 0:0:6=0x00 action 1
+# rel_to_eq: < ::4 becomes == -------------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0] < ::4;
+}
+EOF
+match 0:0:6=0x00 action 1
+# rel_to_eq: < ::3 is not changed ---------------------------------------------
+tcc -xif:err 2>&1 | grep -c 'match .* action'
+prio {
+    drop if raw[0] < ::3;
+}
+EOF
+2
+# rel_to_eq: < 1|2^32 is not changed ------------------------------------------
+tcc -xif:err 2>&1 | grep -c 'match .* action'
+prio {
+    drop if raw[0].ipv6 < ::1:1;
+}
+EOF
+2
+# rel_to_eq: < 2^32|2^127 is not changed --------------------------------------
+tcc -xif:err 2>&1 | grep -c 'match .* action'
+prio {
+    drop if raw[0].ipv6 < 8000::1:0:0;
+}
+EOF
+2
+# rel_to_eq: <= ::7 is changed ------------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0] <= ::7;
+}
+EOF
+match 0:0:5=0x00 action 1
+# preparation: verify that ~:: is FFFF:...:FFFF -------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$x = ~::;
+EOF
+$x = FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF
+# rel_to_eq: <= ~:: is changed ------------------------------------------------
+tcc -xif:err 2>&1 | grep action
+prio {
+    drop if raw[0] <= ~::;
+}
+EOF
+action 0 = drop
+match action 0
+# rel_to_eq: > ::7 is changed -------------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0] > ::7;
+}
+EOF
+match 0:0:5=0x00 action 1
+# rel_to_eq: >= ::8 is changed -------------------------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if raw[0] >= ::8;
+}
+EOF
+match 0:0:5=0x00 action 1
+# rel_eq_or: access ^ unum1 == unum2 -> access == unum1 ^ unum2 ---------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if (raw[0] ^ 2) == 1;
+}
+EOF
+match 0:0:8=0x03 action 1
+# rel_eq_or: access ^ u128_1 == unum2 -> access == u128_1 ^ unum2 -------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if (raw[0] ^ ::2) == 1;
+}
+EOF
+match 0:0:8=0x03 action 1
+# rel_eq_or: access ^ unum1 == u128_2 -> access == unum1 ^ u128_2 -------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if (raw[0].ipv6 ^ 2) == ::1:0;
+}
+EOF
+match 0:0:128=0x00000000000000000000000000010002 action 1
+# rel_eq_or: access ^ u128_1 == u128_2 -> access == u128_1 ^ u128_2 -----------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if (raw[0].ipv6 ^ ::1) == ::2;
+}
+EOF
+match 0:0:128=0x00000000000000000000000000000003 action 1
+# rel_eq_or: access | unum1 == unum2 -> 0 -------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    drop if (raw[0] | 3) == 5;
+}
+EOF
+match action 0
+# rel_eq_or: access | unum1 == unum2 -> 0 (not) -------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if (raw[0] | 3) == 7;
+}
+EOF
+match 0:0:6=0x01 action 1
+# rel_eq_or: access | u128_1 == unum2 -> 0 ------------------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    drop if (raw[0] | ::3) == 5;
+}
+EOF
+match action 0
+# rel_eq_or: access | unum1 == u128_2 -> 0 (not) ------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+prio {
+    drop if (raw[0] | 3) == ::f;
+}
+EOF
+match 0:0:6=0x03 action 1

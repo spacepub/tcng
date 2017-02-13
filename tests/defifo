@@ -1,0 +1,62 @@
+# number of qdiscs without "fifos" for plain prio -----------------------------
+echo 'dev eth0 { prio; }' | tcsim -v | grep -c qdisc
+1
+# number of qdiscs with "fifos" for plain prio --------------------------------
+echo 'prio;' | tcc -xif:err -Xx,fifos 2>&1 | grep -c qdisc
+2
+# number of qdiscs without "fifos" for unpopulated CBQ ------------------------
+tcsim -v 2>/dev/null | grep -c qdisc
+#include "tcngreg.def"
+
+dev tom {
+    cbq (CBQ_PARAMS,prio 1) {
+	class (rate 5Mbps) {
+	    class (rate 2Mbps);
+	    class (rate 3Mbps);
+	}
+    }
+}
+EOF
+1
+# number of qdiscs with "fifos" for unpopulated CBQ ---------------------------
+tcc -xif:err -Xx,fifos 2>&1 | grep -c qdisc
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS,prio 1) {
+    class (rate 5Mbps) {
+	class (rate 2Mbps);
+	class (rate 3Mbps);
+    }
+}
+EOF
+4
+# number of qdiscs without "fifos" for partially populated CBQ ----------------
+tcsim -v | grep -c qdisc
+#include "tcngreg.def"
+
+dev jerry {
+    cbq (CBQ_PARAMS,prio 1) {
+	class (rate 5Mbps) {
+	    class (rate 2Mbps) {
+		red (RED_PARAMS);
+	    }
+	    class (rate 3Mbps);
+	}
+    }
+}
+EOF
+2
+# number of qdiscs with "fifos" for partially populated CBQ -------------------
+tcc -xif:err -Xx,fifos 2>&1 | grep -c qdisc
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS,prio 1) {
+    class (rate 5Mbps) {
+	class (rate 2Mbps) {
+	    red (RED_PARAMS);
+	}
+	class (rate 3Mbps);
+    }
+}
+EOF
+4

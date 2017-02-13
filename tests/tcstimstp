@@ -1,0 +1,53 @@
+# tcsim stops SFQ timer at end ------------------------------------------------
+tcsim >/dev/null
+dev eth0 10Mbps {
+    sfq(perturb 5s);
+}
+
+send 0 x 20
+end
+EOF
+# tcsim detects stalled devices -----------------------------------------------
+tcsim 2>&1 >/dev/null
+dev eth0 {
+    sfq(perturb 5s);
+}
+
+send 0 x 20
+end
+EOF
+ERROR
+device "eth0" is stopped but has unsent packets
+BEGIN CONDITIONAL
+tcsim
+dev eth0
+tc qdisc add dev eth0 root htb
+EOF
+# tcsim stops HTB timer at end ------------------------------------------------
+tcsim -k 3 >/dev/null
+dev eth0 10Mbps {
+    htb;
+}
+
+send 0
+end
+EOF
+# HTB timer doesn't stop before queue is empty --------------------------------
+tcsim -k 3 | tcsim_filter -c -d
+dev eth0 1Mbps {
+    htb (rate 1Mbps) {
+        class (rate 1kbps,burst 125B) if 1;
+    }
+}
+
+send 0 x 125
+send 0 x 125
+send 0 x 125
+send 0 x 125
+send 0 x 125
+send 0 x 125
+send 0 x 125
+end
+EOF
+D 7
+END CONDITIONAL

@@ -1,0 +1,14 @@
+# field roots are equivalent to fields (1) ------------------------------------
+tcc -xif:err 2>&1 | grep 'match [0-9]'
+prio {
+    class if field_root(10)[2] == 1;
+}
+EOF
+match 10:16:8=0x01 action 1
+# field roots are equivalent to fields (2) ------------------------------------
+tcc -xif:err 2>&1 | grep 'match [0-9]'
+prio {
+    class if field_root(10)[2].nl == 1;
+}
+EOF
+match 10:16:32=0x00000001 action 1

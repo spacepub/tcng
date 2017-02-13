@@ -1,0 +1,29 @@
+# tcsim: relative time in seconds ---------------------------------------------
+tcsim
+time 1s
+echo "one"
+time +1500ms
+echo "two"
+EOF
+1.000000 * : one
+2.500000 * : two
+# tcsim: relative time in jiffies ---------------------------------------------
+tcsim
+time 1s
+echo "one"
+time +150j
+echo "two"
+EOF
+1.000000 * : one
+2.500000 * : two
+# tcsim: relative end time in seconds -----------------------------------------
+tcsim
+time 2s
+every 100ms until +499ms echo "."
+time 10s
+EOF
+2.000000 * : .
+2.100000 * : .
+2.200000 * : .
+2.300000 * : .
+2.400000 * : .

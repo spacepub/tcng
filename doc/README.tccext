@@ -1,0 +1,117 @@
+External protocol rules (draft)
+===============================
+
+There are up to three modes of invocations of an external program. Each
+program has to support all of them. The invocation is one of the
+following:
+
+tcc-ext-<name> config <argument> ...
+tcc-ext-<name> check <identifier> <argument> ...
+tcc-ext-<name> build <identifier> <argument> ...
+
+Where <name> is the name of the external program (e.g. "err").
+
+<argument> ... is a possibly empty list of user-provided arguments.
+
+If the program encounters a fatal error, it should print a message on
+standard error, and exit with non-zero exit status. Warnings can be
+issued by writing to standard error, without affecting the exit status.
+
+The external program returns data to tcc via standard output. Each line
+contains one output record, without leading or trailing whitespace.
+Comments or blank lines are not supported. Each line, including the last
+one, must end with a newline character (\n). The maximum line length is
+10000 characters, excluding the trailing newline.
+
+
+Configuration query
+-------------------
+
+Asks the external program for general capabilities and requirements.
+The program prints a list of key phrases, one per line, on standard
+output and exits with exit status zero. There is no data on standard
+input.
+
+The following key phrases are recognized:
+
+bits		program prefers classifiers in the form of a finite
+		state machine with single-bit decisions instead of an
+		ACL-style list of pattern matches
+
+all		external program handles complete traffic control
+		subystem configuration
+
+fifos		when 
+
+nounspec	external program does not handle "unspec" classification
+		result in queuing disciplines, so tcc needs to generate
+		rules to implement default actions of queuing disciplines
+
+nocontinue	once an action is selected, no further pattern matching
+		can be attempted for this packet.
+
+		Note that this changes the meaning of "unspec": with
+		"nocontinue", "unspec" is a final classification result,
+		while in the absence of "nocontinue", "unspec" means that
+		the classifier has to return to pattern matching, and only
+		in the event of no further match, "unspec" becomes the
+		classification result.
+
+debug_target	target only has debugging functions and does not generate
+		any elements
+
+Implementation status:
+ - "bits" is not implemented
+ - "nocontinue" is always assumed
+ - the magic transformation of "unspec" by "nocontinue" is ugly. Worse
+   yes, since "nounspec" may imply "nocontinue", this is likely to
+   cause problems. Need to reconsider this issue.
+ - we need a lot more options ...
+
+
+Support check
+-------------
+
+Not used yet. External program should return with zero exit status and
+not write to standard output.
+
+
+Building traffic control elements
+---------------------------------
+
+The external program generates and compiles code for the configuration
+provided on standard input, and returns a list of elements created on
+standard output.
+
+tcc provides an alphanumeric identfier of four characters that is at least
+unique for this tcc run. The length of four characters allows the external
+program to easily construct unique traffic control element names from this
+identifier. Note that this identifier may begin with a decimal number, and
+must therefore be prefixed with a letter or an underscore when used as
+identifier in a C program.
+
+The list of elements created has the following syntax:
+
+qdisc <name> <argument> ...
+filter <name> <argument> ...
+
+For a queuing discipline, the external program create a kernel module
+called sch_<name>.o, and a module for iproute2/tc called q_<name>.so
+tcc will then issue the command
+tc qdisc add ... <name> <argument> ...
+
+Likewise, for a filter, the files cls_<name>.o and f_<name>.o must be
+created, and tcc issues the command
+tc filter add ... <name> <argument> ...
+
+The elements must be issued in the order in which they are loaded and
+configured using "tc". The locations of the modules must be included
+in the respective search paths.
+
+An external program that has returned the "all" flag in the
+configuration query may choose not to generate any modules.
+
+Implementation status:
+ - the list may only contain zero or one element
+ - this design does not address the issue of properly connecting
+   multiple elements

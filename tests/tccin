@@ -1,0 +1,11 @@
+# tcc -E only runs cpp --------------------------------------------------------
+tcc -E >/dev/null
+syntax error
+EOF
+# tcc -f reads from specified file (1) ----------------------------------------
+tcc -f /dev/null doesnotexist
+EOF
+# tcc -f reads from specified file (2) ----------------------------------------
+tcc -f doesnotexist /dev/null
+EOF
+ERROR

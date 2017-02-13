@@ -1,0 +1,59 @@
+# class selection path: GRED alone --------------------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //;s/ limit .*//'
+#include "tcngreg.def"
+
+dev eth0 {
+    dsmark {
+        class (<$x>) if raw[0] == 1;
+        class (<$y>) if 1;
+        gred (RED_PARAMS) {
+            $x = class (2,default);
+	    $y = class (3);
+        }
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+handle 2:0 parent 1:0 gred setup DPs 4 default 2
+handle 2:0 parent 1:0 gred DP 2
+handle 2:0 parent 1:0 gred DP 3
+parent 1:0 prio 1 u32 match u8 0x1 0xff at 0 classid 1:2
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:3
+# class selection path: GRED in PRIO ------------------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //;s/ limit .*//'
+#include "tcngreg.def"
+
+dev eth0 {
+    dsmark {
+        class (<$a>) if raw[0] == 1;
+        class (<$b>) if raw[0] == 2;
+        class (<$c>) if raw[0] == 3;
+        class (<$d>) if 1;
+	prio {
+	    gred (RED_PARAMS) {
+		$a = class (1,default);
+		$b = class (2);
+	    }
+	    gred (RED_PARAMS) {
+		$d = class (3,default);
+		$c = class (4);
+	    }
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 64
+handle 2:0 parent 1:0 prio
+handle 3:0 parent 2:1 gred setup DPs 3 default 1
+handle 3:0 parent 2:1 gred DP 1
+handle 3:0 parent 2:1 gred DP 2
+handle 4:0 parent 2:2 gred setup DPs 5 default 3
+handle 4:0 parent 2:2 gred DP 3
+handle 4:0 parent 2:2 gred DP 4
+parent 2:0 prio 1 tcindex mask 0x30 shift 4
+parent 2:0 prio 1 handle 2 tcindex classid 2:2
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u8 0x1 0xff at 0 classid 1:11
+parent 1:0 prio 1 u32 match u8 0x2 0xff at 0 classid 1:12
+parent 1:0 prio 1 u32 match u8 0x3 0xff at 0 classid 1:24
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:23

@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# run-all-tests
+#
+# Written 2001 by Werner Almesberger
+# Copyright 2001 Network Robots
+#
+
+for n in tests/[abcdefghijklmnopqrstuvwxyz]*; do
+    if [ -f $n ]; then
+	echo FILE $n
+	cat $n
+    fi
+done | scripts/runtests.sh "$@"

@@ -1,0 +1,27 @@
+# can include fields.tc -------------------------------------------------------
+tcc -c
+#include "fields.tc"
+EOF
+# can include meters.tc -------------------------------------------------------
+tcc -c
+#include "meters.tc"
+EOF
+# can include ports.tc --------------------------------------------------------
+tcc -c
+#include "ports.tc"
+EOF
+# values.tc issues warning if included directly -------------------------------
+tcc -c 2>&1 | sed '/.*: /s///p;d'
+#include "values.tc"
+EOF
+#warning values.tc should only be included from fields.tc
+# idiomatic.tc issues warning if included directly ----------------------------
+tcc -c 2>&1 | sed '/.*: /s///p;d'
+#include "fields.tc"
+#include "idiomatic.tc"
+EOF
+#warning idiomatic.tc should only be included from fields.tc
+# can include packet.def ------------------------------------------------------
+tcsim -c
+#include "packet.def"
+EOF

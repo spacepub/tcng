@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# tcc-ext-abort - Commit suicide with SIGABRT
+#
+# Written 2001 by Werner Almesberger
+# Copyright 2001 Network Robots
+#
+
+kill -ABRT $$

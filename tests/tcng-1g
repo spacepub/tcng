@@ -1,0 +1,43 @@
+# TCNG: GRED does not have filters --------------------------------------------
+tcsim 2>&1
+#include "tcngreg.def"
+
+dev eth0 {
+    prio {
+	gred (RED_PARAMS) {
+	    class (probability 0.1,default)
+		on fw element (1);
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:7: qdisc "gred" does not have filters near "fw"
+# TCNG: CBQ does check child qdiscs -------------------------------------------
+tcsim 2>&1
+#include "tcngreg.def"
+
+dev eth0 {
+    cbq (CBQ_PARAMS) {
+	class (rate 5Mbps) {
+	    gred (RED_PARAMS) {
+		class (probability 0.1,default)
+		    on fw element (1);
+	    }
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:8: qdisc "gred" does not have filters near "fw"
+# TCNG: can set GRED DP 0 -----------------------------------------------------
+tcsim
+#include "tcngreg.def"
+
+dev eth0 {
+    gred (RED_PARAMS) {
+	class (0,probability 0.1);
+	class (1,probability 0.2,default);
+    }
+}
+EOF

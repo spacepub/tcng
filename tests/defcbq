@@ -1,0 +1,146 @@
+# CBQ without -C (base for following tests) -----------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,weight 1Mbps) {
+        class (rate 5Mbps)
+	    if (ip_tos & 2) == 0
+	  {
+	    class (rate 2Mbps)	// looks funny ? well, the rule is that each
+		if ip_tos == 2;	// "if" selects the final class, so the "inner"
+	    class (rate 2Mbps)	// ifs must not overlap with the "outer" if,
+		if ip_tos == 3;	// because the latter, being first, takes
+	}			// precedence
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+send IP_HDR($tos=2)
+send IP_HDR($tos=3)
+EOF
+OK (0) (1:1, 0x0)
+OK (0) (1:1, 0x0)
+OK (0) (1:2, 0x0)
+OK (0) (1:3, 0x0)
+# CBQ with -C, no priomap -----------------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,weight 1Mbps) {
+        class (1,rate 5Mbps)
+	    if 0 /* dummy */
+	  {
+	    class (2,rate 2Mbps);
+	    class (3,rate 2Mbps);
+	}
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+send IP_HDR($tos=2)
+EOF
+OK (0) (1:0, 0x0)
+OK (0) (1:0, 0x0)
+OK (0) (1:0, 0x0)
+# CBQ with -C and priomap: basic ----------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,weight 1Mbps) {
+        class (1,rate 5Mbps,priomap $c0 $c1)
+	    if 1
+	  {
+	    $c0 = class (2,rate 2Mbps);
+	    $c1 = class (3,rate 2Mbps);
+	}
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+send IP_HDR($tos=2)
+send IP_HDR($tos=3)
+send IP_HDR($tos=4)
+EOF
+OK (0) (1:2, 0x0)
+OK (0) (1:2, 0x0)
+OK (0) (1:3, 0x0)
+OK (0) (1:3, 0x0)
+OK (0) (1:2, 0x0)
+# CBQ with -C and priomap: with local selector --------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -n -Xc,-xif:test -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,weight 1Mbps,priomap $c0 $c1) {
+	$c0 = class (1,rate 2Mbps)
+	  if ip_tos == 3;
+	$c1 = class (2,rate 2Mbps);
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+send IP_HDR($tos=2)
+send IP_HDR($tos=3)
+send IP_HDR($tos=4)
+EOF
+OK (0) (1:1, 0x0)
+OK (0) (1:1, 0x0)
+OK (0) (1:2, 0x0)
+OK (0) (1:1, 0x0)
+OK (0) (1:1, 0x0)
+# CBQ with -C and priomap: cascaded -------------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -n -Xc,-xif:test -Xc,-B -Xx,nounspec -v | \
+  sed '/.* c .*returns /s///p;d'
+#include "ip.def"
+
+dev eth0 10000 {
+    #include "tcngreg.def"
+    #include "fields.tc"
+
+    cbq (CBQ_PARAMS,weight 1Mbps,priomap $c0 $c1) {
+	$c0 = class (2,rate 2Mbps,priomap $c2) {
+	    $c2 = class(4,rate 1Mbps);
+	}
+	$c1 = class (3,rate 2Mbps)
+	    if 0;
+    }
+}
+
+$ipproto=TCP $src=1.2.3.4 $dst=5.6.7.8
+send IP_HDR($tos=0)
+send IP_HDR($tos=1)
+send IP_HDR($tos=2)
+send IP_HDR($tos=3)
+EOF
+OK (0) (1:4, 0x0)
+OK (0) (1:4, 0x0)
+OK (0) (1:3, 0x0)
+OK (0) (1:3, 0x0)

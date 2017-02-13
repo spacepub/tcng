@@ -1,0 +1,54 @@
+# empty class selection path is accepted --------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+dsmark {
+    class (<>);
+    fifo;
+}
+EOF
+block eth0 egress
+qdisc 2 = fifo
+qdisc 1 = dsmark indices 1
+class 0 = qdisc 2
+action 0 = unspec
+match action 0
+# baseline: class selection paths usually require inner qdisc -----------------
+tcc -xif:err -Xx,all 2>&1
+dsmark {
+    class (<$x>) if 1;
+    $x = class;
+}
+EOF
+ERROR
+<stdin>:2: without an inner qdisc, there is scarcely anything to select
+# empty class selection path does not require inner qdisc ---------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+dsmark {
+    class (<>) if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 1
+class 0 =
+action 0 = class 1:0
+match action 0
+# tcc assigns consecutive numbers to empty class selection paths --------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+dsmark {
+    class (<>) if raw[0] == 1;
+    class (<>) if raw[0] == 2;
+    class (<>) if raw[0] == 3;
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 4
+class 0 =
+class 1 =
+class 2 =
+action 3 = unspec
+action 2 = class 1:2
+action 1 = class 1:1
+action 0 = class 1:0
+match 0:0:8=0x01 action 0
+match 0:0:8=0x02 action 1
+match 0:0:8=0x03 action 2
+match action 3

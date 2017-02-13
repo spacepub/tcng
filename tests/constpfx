@@ -1,0 +1,27 @@
+# 1.2.3.4/24 does not yield warning -------------------------------------------
+tcc -c -Wnounused 2>&1
+$x = 1.2.3.4/24;
+EOF
+# 1.2.3.4/24 does yield warning with -Wconstpfx -------------------------------
+tcc -c -Wnounused -Wconstpfx 2>&1
+$x = 1.2.3.4/24;
+EOF
+<stdin>:1: warning: taking prefix of constant (and not field) near ";"
+# ::/24 does yield warning with -Wconstpfx ------------------------------------
+tcc -c -Wnounused 2>&1
+warn "constpfx";
+$x = ::/24;
+EOF
+<stdin>:2: warning: taking prefix of constant (and not field) near ";"
+# ip_src/24 does not yield warning --------------------------------------------
+tcc -c -Wconstpfx 2>&1
+prio {
+    drop if ip_src/24;
+}
+EOF
+# 1.2.3.4/5.6.7.8 yields error, no warning ------------------------------------
+tcc -c -Wconstpfx 2>&1
+$x = 1.2.3.4/5.6.7.8;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "/" (IPv4 address and IPv4 address) near ";"

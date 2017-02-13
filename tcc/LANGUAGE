@@ -1,0 +1,1001 @@
+THIS FILE IS OBSOLETE !
+
+Please use the more up to date and heavily improved documentation in ../doc
+Will be removed as soon as the plain text generated from the LaTeX document
+is "perfect".
+
+-------------------------------------------------------------------------------
+
+tcng configuration language
+===========================
+
+Note: the language has recently undergone a transition. tcng requires
+statements to be terminated with semicolons or blocks ({...}), like
+in many programming languages. The old syntax used semicolons to begin
+comments.
+
+In versions 6k to 6o, tcc provided a mechanism to assist transitions.
+You may want to check tcc/LANGUAGE in these versions if you need to
+convert complex scripts and/or a large number of them.
+
+This document already describes the new syntax. While it is usually easy
+to change scripts to the new syntax, the following case may be confusing:
+
+Selectors or "if" are considered part of the "class" or "tunnel" construct
+and are therefore not indivudually terminated with semicolons. Instead, a
+single semicolon (or block) is put at the end of the "class" or "tunnel"
+construct. Example:
+
+    class
+	if something
+	if something_else;
+
+or
+
+    class (...)
+	if something
+	if something_else
+    {
+	...
+    }
+
+but not
+
+    class (...)
+	if something;     /* WRONG ! */
+	if something_else;
+
+Other changes introduced with the new syntax:
+ - interface sections must now be enclosed by curly braces
+ - filter specifications in selectors are no longer allowed to have
+   their own blocks (this was never a documented feature anyway)
+
+
+Basic syntax
+------------
+
+The configuration is passed through cpp for file inclusion and macro
+substitution. C or C++ comments are removed by cpp.
+
+Examples:
+
+    // so is this
+    /* and, of
+       course, this
+       too */
+
+Language tokens can be separated by whitespace, which may include
+newlines, i.e. the usual formatting rules of C or Perl apply.
+
+In all cases where a string is expected (e.g. the "tcp" in "ipproto tcp"),
+one can use a string in double quotes or a string variable.
+
+Examples:
+
+  host "localhost"		/* quoted string is always possible */
+  host "ftp.kernel.org"		/* must use quoted string here */
+  host $var			/* variable */
+
+
+Interfaces
+----------
+
+Each configuration file contains the traffic control configuration of one
+or more network interfaces. Each interface section begins with the name
+of the interface, with or without double quotes. If the interface name is
+omitted, the default interface eth0 (defined in config.h) or the default
+set with the command-line option -i is used.
+
+Example:
+
+    eth0 ...
+
+The remainder of the interface section can optionally be enclosed in
+curly braces. This is highly recommended in order to avoid confusing
+ambiguities in variable and field definition scoping.
+
+Example:
+
+    eth0 {
+	...
+    }
+
+Interface names can also be prefixed with the keyword "dev". In this
+case, any string expression can be used for the interface name.
+
+Example:
+
+    $number = "0";
+    dev "eth"+$number {
+	...
+    }
+
+
+Queuing disciplines
+-------------------
+
+An interface section contains queuing discipline specifications, which
+consist of the name of the queuing discipline, an optional list of
+parameters, separated by commas and in parentheses, and an optional list
+of elements attached to this qdisc, in curly braces.
+
+In each interface section, one egress and one ingress qdisc can be defined.
+
+Examples:
+
+    prio {
+	class (1) ...;
+	class (2) ...;
+    }
+
+    dsmark(indices 64, set_tc_index) {
+	...
+    }
+
+    ingress {
+	...
+    }
+
+The number of a qdisc is usually automatically assigned. It can be
+explicitly set by including it among the parameters, e.g.
+
+    prio (2) {
+	...
+    }
+
+The list of elements can contain filters (if the qdisc supports them),
+classes (if the qdisc has classes), and further qdiscs.
+
+The latter creates an unnumbered, parameterless class for the qdisc,
+and is mainly used for qdiscs like dsmark, which have a "central" inner
+qdisc, but no qdiscs attached to classes. Example:
+
+    dsmark (indices 32) {
+	red ...;
+    }
+
+is equivalent to
+
+    dsmark (indices 32) {
+	class { red ... }
+    }
+
+
+Classes
+-------
+
+A class specification begins with the keyword "class", followed by an
+optional list of parameters, in parentheses, zero or more selectors, and
+an optional list of elements attached to the class, in curly braces.
+
+Examples:
+
+    // clear TOS byte of all packets with EF and no ECN bits set
+    dsmark(indices 256, set_tc_index) {
+	class (0x2e << 2, mask 0);
+    }
+
+    prio {
+	rsvp (ipproto "tcp") {
+	    class (1)
+		on (dst 10.0.0.1);
+	    class (2) 
+		on (dst 10.0.0.2);
+	}
+    }
+
+The number of a class is usually automatically assigned. It can be
+explicitly set by including it among the parameters, e.g.
+
+    class (1) ...;
+
+
+Filters
+-------
+
+A filter consists of the filter and of its elements, just like a qdisc
+consists of the qdisc and its classes. Some filters don't have to have
+elements.
+
+A filter specification begins with the filter name, followed by an
+optional parameter list (in parentheses), and the optional filter body, in
+curly braces. The filter body contains classes.
+
+Examples: see the previous section.
+
+The priority of a filter is usually automatically assigned in the order in
+which filter specifications appear in the configuration. It can be
+explicitly set by including the number among the parameters. Automatic
+assignment takes manually assigned priorities into account and continues
+with the next available number. Priority numbers must always increase.
+Example:
+
+    ... tcindex(3) ...
+
+
+Selectors
+---------
+
+Classes are selected by filter elements or by "if" expressions. Selectors
+are placed between the parameters of a class and its body. Filter elements
+begin with the keyword "on", followed by the optional list of filter
+element parameters, in parentheses.
+
+Example:
+
+    class
+	on (dst 209.10.41.242)
+	on (dst 199.183.24.194);
+
+This is actually a shortcut notation of
+
+    on element <params>
+
+Also, the filter can be specified along with the element.
+
+Example:
+
+    class
+	on tcindex(mask 0) element (0);
+
+is equivalent to
+
+    tcindex(mask 0) {
+	class
+	    on element(0);
+    }
+
+The number of a filter element can be explicitly set by including it
+among the parameters. (Note: most filter elements require numbers to
+be set this way. The only exception is "route", which does not use
+element numbers at all.)
+
+Example:
+
+    on (0x2e)
+
+
+Tunnels
+-------
+
+The RSVP filter supports tunnels. They are specified by the keyword
+"tunnel", followed by the parameter list (in parentheses), a list of
+selectors, and the tunnel body. All selectors inside the tunnel body
+use the corresponding tunnel ID.
+
+Example:
+
+    prio {
+	class ();
+	rsvp {
+	    tunnel (skip 2B)
+		on (ah 17, dst 10.0.0.1)
+	    {
+		class
+		    on (ipproto "tcp", dst 10.0.0.3);
+	    }
+	}
+    }
+
+Note: the selector must not include an explicit filter reference.
+Also, if an explicit filter reference is used on a class inside a
+tunnel body, the tunnel has no effect on that class.
+
+
+Policing
+--------
+
+If a selector matches a given packet, a rate-based policing decision can
+be made in addition to this. The construct that describes an average
+rate limit or a double leaky bucket, begins with the keyword "police",
+followed by parameters, and optionally the action to take if the packet
+is found to exceed the constraints, and optionally the keyword "else" and
+the action to take in the opposite case.
+
+The following actions are possible:
+  pass		accept the packet (default in non-exceed case)
+  reclassify	put the packet in an inferior class (default in exceed case)
+  drop		drop the packet
+  continue	ignore this match and continue with the next selector
+
+Examples:
+
+  on (0x2e)
+    police (rate 100kbps, burst 2kB, mtu 1.5kB);
+
+  on (0x2e)
+    police (rate 100kbps, burst 2kB, mtu 1.5kB) drop else continue;
+
+
+Parameters
+----------
+
+A parameter consist of the parameter name, followed by the parameter
+value. Parameters are separated by commas. A parameter may only appear
+once in the same parameter list.
+
+Example:
+
+    police (rate 100kbps, burst 2*1kB, mtu $mtu);
+
+
+Expressions
+-----------
+
+Almost at any place where a value is expected, one can use an expression.
+All operators known from C are available, with the following exceptions:
+
+ - assignment is a statement, not an operator 
+ - no comma operator
+ - no ? : operator
+ - no cast or sizeof operator
+ - no pointer-related operators ([], &, ->, etc.)
+
+The following new operators have been added:
+
+ - host <name>  or  host <dotted_quad)  returns an IPv4 address
+ - the mask operator <value>:[<left>][:[<right>]]
+     <value>:<left>         zeroes all bits but the upper <left>
+     <value>::<right>       zeroes all bits but the lower <right>
+     <value:<left>:<right>  zeroes all bits but the next <right> after
+			    skipping the upper <left>
+ - unit qualifiers (see below)
+ - relational operators and plus also work on strings
+
+Operator precedence is exactly as in C. In order to leave the precedence
+of C operators undisturbed, the mask operator and unit qualifiers have been
+given the the highest precedence.
+
+Numbers can be unsigned integers or floating-point numbers. Arithmetic
+operators use integers arithmetic unless one of their arguments is a
+floating-point numbers. Unlike in C, it is not possible to perform bit or
+logical operations on floating-point numbers.
+
+Numbers representing physical quantities must have their unit explicitly
+specified. This is done by using a unit qualifier. The following units are
+recognized:
+
+  bps	bits per second
+  Bps	bytes per second
+  b	bits (aliases: bit, bits)
+  B	bytes (aliases: Byte, Bytes)
+  p	packets (aliases: pck, pcks)
+  pps	packets per second
+  s	seconds (aliases: sec, secs)
+
+Unit qualifier can be prefixed with m (milli), k (kilo), M (Mega), or G
+(Giga). Note that tcc prints a warning if using the "m" prefix for
+anything but seconds. The prefixes are usually powers of 1000, except
+when applied to bytes and bits, where they become powers of 1024.
+
+Arithmetic operators check and adjust units. Numbers with units cannot be
+used with logical or bit operators.
+
+Examples:
+
+  1Mbps		are 1000000 bits per second
+  2kB		are 2048 bytes
+  10.0e6b/1sec	are 10 Mbps
+
+Strings can be concatenated with +, and compared with the relational
+operators. Note that, unlike Perl, tcng does not try to convert
+strings to numbers in this case.
+
+Examples:
+
+  "local"+"host"   yields "localhost"
+  "010" == "10"    is false
+
+
+Variables
+---------
+
+Values and expressions can be stored in variables. Variable assignments
+can be placed anywhere where a queuing discipline, class, or filter could
+be specified.
+
+Scoping is similar to C: variables defined within curly braces are not
+visible beyond the closing brace. It is an error to try to access an
+undefined variable. Note that it is not possible to change the value of
+a variable defined at an outer scope - instead, a new variable at the
+inner scope is created.
+
+Like in Perl, variable names begin with a dollar sign, followed by a
+letter or an underscore, optionally followed by more letters, digits, or
+underscores.
+
+Also like in Perl, variables can contain strings.
+
+Examples:
+
+    $five = 5;
+    $answer = ($five << 3)+2;
+    $rate = 135.5 Mbps;
+    $host = "www.foo.edu";
+
+If an expression stored in a variable is not constant, it is inserted
+"as is" wherever the variable is referenced. Note that any references
+to fields or other variables are resolved at the time of assignment.
+
+Example:
+
+    $cond = ip_src == 1.2.3.4 && tcp_sport == 80;
+    ...
+        class (1) if $cond;
+
+Like in C or Perl, blocks can be created inside other blocks, which is
+mainly useful when writing macros.
+
+Example:
+
+    prio {
+	{
+	    $x = 1;
+	    class ($x);
+	}
+	{
+	    $x = 2;
+	    class ($x);
+	}
+    }
+
+
+Parents
+-------
+
+Traffic control elements are attached to certain points in the hierarchy
+dangling off an interface. We call such a point of attachment the "parent"
+of an element. The parent is usually given by the nesting of elements.
+
+Example:
+
+    eth0				# ID		# Parent
+    cbq (1,...) {			1:0		root
+	class (1,...) {			1:1		1:0
+	    class (3,...) {		1:3		1:1
+	    }
+	    prio (2) {			2:0		1:1
+		class (1) ...		2:1		2:0
+	    }
+	}
+	class (2,...) {			1:2		1:0
+	    tcindex (1,...) {		prio 1 at 1:2	1:2
+		class (4,...)		1:4		1:2
+		    on (...);		?		prio 1 at 1:2
+	    }
+	}
+    }
+
+Sometimes, this is not sufficient to obtain the desired structure. In such
+cases, variables can be used to specify elements at other locations.
+Qdiscs, classes, and filters can be assigned to variables by putting a
+variable assignment in front of their specification, e.g
+
+  $q = prio;
+
+The parent of this element is then determined by the location of its
+specification, not the location of its actual use. To access such an
+element, use the keyword "qdisc", "class", or "filter", followed by the
+variable name.
+
+Similarly, a policer may be used at several places, and can therefore
+also be stored in a variable.
+
+Examples:
+
+    // Single qdisc shared by multiple classes
+    // Note: in the case of "prio", this is actually pointless.
+    prio {
+	$q = tbf ...;
+	class (1) {
+	    qdisc $q;
+	}
+	class (2) {
+	    qdisc $q;
+	}
+    }
+
+    // Top-level filter directly selects classes deeper in the tree
+    cbq ... {
+	$f = rsvp ...;
+	class ...
+	    on filter $f element (...)
+	{
+		class ...
+		    on filter $f element (...);
+		class ...
+		    on filter $f element (...);
+	}
+    }
+
+    Note: "on filter $f element (...)" can be abbreviated to "on $f(...)".
+
+    ; Different filters select the same class
+    $c = class ...
+    tcindex (...) {
+	class $c
+	    on ...;
+    }
+    rsvp ... {
+	class $c
+	    on ...;
+    }
+
+    ; Policer used for multiple flows
+    $p = police ...;
+    prio ... {
+	class ...
+	    ... police $p;
+	class ...
+	    ... police $p;
+	class ...
+    }
+
+When using a policer variable in an if expression, the "police" keyword
+can be omitted, e.g. "conform police $p" is equivalent to "conform $p".
+
+
+The "if" construct
+------------------
+
+Instead of "on", one can use the construct called "if" to build a
+classifier. "if" is still under construction.
+
+The "if" construct consists of the the keyword "if", followed by a
+boolean expression, using the normal expression syntax. tcng converts
+this to an equivalent configuration of the "u32" classifier, or one of
+a set of possible alternative mechanisms (so-called "targets"), such as
+a custom-made kernel module.
+
+It is currently not possible to combine "if" and "on". Also, all "if"
+constructs of a queueing discipline and its classes are treated as
+part of a single filter.
+
+
+Data access
+- - - - - -
+
+Packet data can be accessed with the expression  raw[offset].size
+where "offset" is the integer offset of the field, in bytes, and "size"
+is an optional size qualifier. The following qualifiers are supported:
+
+  .b   Byte (default)
+  .ns  "Network short", two bytes in network byte order
+  .nl  "Network long", four bytes in network byte order
+
+If the offset is zero, the square brackets and the offset expression
+can be omitted.
+
+Example:
+
+   /* select IPv4 packets without IP options */
+   class ...
+       if raw[0] == 0x45;
+
+   /* select IPv4 packets with the "don't fragment" bit set */
+   class ...
+       if (raw & 0xf0) == 0x40 && (raw[6].b & 4) == 4;
+
+The choice of expressions is limited by what tcng knows to translate,
+and by what the respective targets support. The restrictions include:
+
+ - boolean expressions must be of the general form  field == value  or
+   field != value  , which can be combined with basic arithmetic and
+   bit operations (exception: constants are valid boolean values, so
+   "if 0" and "if 1" work as expected)
+ - combining arithmetic and bit operations does not always work
+ - boolean expressions can only be combined with &&, ||, and !
+
+
+Fields
+- - -
+
+Fields in a packet can be declared using the "field" construct.
+which consists of the keyword "field", the field name (which must not
+be the same as any other keyword of the tcng language), an equal sign,
+an expression, and optionally a precondition consisting of the keyword
+"if" followed by a boolean expression.
+
+If a precondition is specified, the field and all fields derived from
+it only exist if the precondition is true. Note that  field == value
+and  field != value  are always false if the preconditions of the field
+are not met !
+
+If a field expression consists only of a field, an index, and possibly
+a size qualifier, this expression can in turn be used as the basis for
+an index operation.
+
+Examples:
+
+    field ip = raw;
+    field ip_hl = ip[0] & 0xf;
+    field ip_nexthdr = ip[ip_hl << 2];
+    field tcp = ip_nexthdr if ip_proto == IPPROTO_TCP;
+    field tcp_SYN = (tcp[13].b & 2) == 2;
+
+Several fields commonly used with IPv4 are defined in
+{/usr,tcng}/lib/tcng/include/fields.tc
+
+Fields can be redefined, e.g. one may simplify the header structure by
+assuming that packets contain no IP options (e.g. if such packets have
+been eliminated before reaching traffic control) as follows:
+
+    #include "fields.tc"
+
+    field ip_nexthdr = ip[20];
+
+Note that, when redefining a field, only the fields that were known at
+the time of the original definition, are available. It is therefore not
+possible to construct recursive field definitions.
+
+Fields definitions and redefinitions can appear anywhere where variable
+definitions are allowed. They follow the same scoping rules as variables,
+e.g. in
+
+    field port = tcp_sport;
+    prio {
+	field port = tcp_dport;
+	class if port == 80;
+    }
+
+"port" is the TCP destination port in the PRIO queuing discipline, but
+becomes the source port again afterwards.
+
+
+Field roots
+- - - - - -
+
+To access information that is not contained in packet data, e.g.
+meta-information generated by the kernel, other roots than "raw" can
+be used with the "field_root" construct:
+
+field meta_data = field_root(10);
+field foo = meta_data[10].ns;
+
+Field roots are numbered, and each number corresponds to a
+separate address space, in which fields can be defined by offset.
+Field root numbers below ten are reserved for internal or future use
+by tcng and cannot be accessed with the "field_root" construct.
+
+Implementation note: non-zero field roots are currently only supported
+at the "external: interface. Field root numbers correspond to offset
+group numbers. Note that tcc auto-assigns offset group number starting
+with 100, so user-defined field roots should be in the range 10 to 99.
+
+
+The "precond" function
+- - - - - - - - - - -
+
+In some cases, it may be desirable to have more control over how
+preconditons are used. For example, in a firewall, one may wish to
+ignore expressions entirely if they access any unavailable fields,
+independent of how these fields are used in the expression.
+
+The "precond" function allows to do this: it returns the combined
+preconditions of all accesses of its argument. Note that
+preconditions encountered in preconditions are evaluated in the
+normal way.
+
+Example:
+
+    drop if !precond(ip_src != 1.2.3.4 || tcp_sport != 80);
+    drop if ip_src != 1.2.3.4 || tcp_sport != 80;
+
+drops non-TCP packets in the first rule even if their source IP
+address is 1.2.3.4.
+
+
+Policing
+- - - -
+
+In an "if" construct, policing can be expressed in two ways: by
+appending the policing construct described above after the expression,
+or by including policing primitives in the if expression. The latter
+approach gives much more flexibility. (And the first approach is
+actually not yet supported.)
+
+The following policing primitives are available:
+
+  conform <policer>	if the token bucket described by the policer
+			contains enough tokens for the current packet,
+			"conform" returns 1, otherwise it returns 0.
+
+  count <policer>	subtracts tokens for the current packet from
+			the specified token bucket. If not enough
+			tokens are available, "count" sets the bucket
+			size to zero. "count" always returns 1.
+
+  drop			indicates to the queuing discipline that the
+			the packet be dropped and terminates further
+			evaluation of the if expression
+
+  reclassify		accepts the packet, but indicates to the
+			queuing discipline that the packet be
+			reclassified.
+
+The policing primitives can be used like any boolean expression.
+
+Examples:
+
+    // Typical two-rate meter
+    $p1 = police(rate 1Mbps,burst 20kB);
+    $p2 = police(rate 2Mbps,burst 2kB);
+
+    prio {
+	class if conform $p1 && conform $p2 && count $p1 && count $p2;
+	class if conform $p2 && count $p2;
+	class if 1;
+    }
+
+
+    // Rate limiter
+    $p = police(rate 50kbps,burst 3kB,mpu 200B);
+
+    ingress {
+	class (1) if conform $p && count $p;
+	class (2) if drop;
+    }
+
+
+    // The same rate limiter, without using a dummy class
+    $p = police(rate 50kbps,burst 3kB,mpu 200B);
+
+    ingress {
+	class (1) if (conform $p && count $p) || drop;
+    }
+
+There are currently the following restrictions on the use of policing
+primitives:
+
+ - they are only available for the targets "C" and "external", not "tc"
+ - due to limitations of the expression manipulation functions in tcc,
+   only comparably simple expressions can be processed (tcc may run out
+   of memory when trying to process complex expressions)
+ - new tokens are only added when encountering "conform"
+ - token buckets used with policing primitives can only have the
+   parameters "rate", "burst", and "mpu", but not "peak", and "mtu" is
+   silently ignored
+
+
+The "drop" construct
+--------------------
+
+A classifier can also be used to drop packets, just like a firewall does.
+Using "if", this could be implemented as follows:
+
+    dsmark (indices 1) {
+	class (1) if (ip_src:8 == 10.0.0.0) && drop;
+    }
+
+This is not very intuitive, and unnecessarily requires the presence (or
+even creation) of a class. The "drop" construct allows this to be
+expressed as:
+
+    dsmark (indices 1) {
+	drop if ip_src:8 == 10.0.0.0;
+    }
+
+Note that "drop" can currently only be combined with "if", not with "on".
+
+
+Class selection paths
+---------------------
+
+Linux Traffic Control supports the creation of configurations where all
+classification and metering is done once, but the result is used several
+times, e.g. to select classes in subsequent queuing disciplines.
+
+This is done using the "dsmark" queuing discipline and the "tcindex"
+filter. Since their use can be fairly complicated, the tcng language
+provides a construct that substantially simplifies building of such
+configurations.
+
+This construct is called a "class selection path". Such a path describes
+the classes that are selected by a given dsmark class. Class selection
+paths are used instead of dsmark class numbers, and consist of a
+space-separated list of variable names in angle brackets. The classes to
+select are later on assigned to these variables. Example:
+
+    dsmark {
+	class (<$c1>) ...;
+	...
+	class (<$c2>) ...;
+	...
+    }
+
+Note that specifying a single class is normally sufficient to uniquely
+define the set of classes to use. If more classes along the path are
+specified, they are ignored. (Note that only one class per queuing
+discipline can be selected in a path, so parent classes in a CBQ
+hierarchy must not be specified.)
+
+The classes to select are simply assigned to the corresponding
+variables, as shown in the example below:
+
+    dsmark {
+	class (<$c1>)
+	    if ...;
+	class (<$c2>)
+	    if ...;
+	...
+	prio {
+	    $c1 = class {}
+	    $c2 = class {}
+	}
+    }
+
+In this example, a tcindex filter is automatically added to the prio
+queuing discipline, one filter element is created for each prio class,
+and the dsmark class numbers are set accordingly. It is equivalent to
+the following configuration:
+
+    dsmark {
+	class (1)
+	    if ...;
+	class (2)
+	    if ...;
+	...
+	prio {
+	    tcindex (mask 3) {
+		$c1 = class
+		    on (1);
+		$c2 = class
+		    on (2);
+	    }
+	}
+    }
+
+A more interesting example:
+
+    dsmark {
+	class (<$c1>)
+	    if ...;
+	class (<$c2>)
+	    if ...;
+	class (<$c3>)
+	    if ...;
+	...
+	prio {
+	    prio {
+		$c1 = class {}
+		$c2 = class {}
+	    }
+	    $c3 = class {}
+	}
+    }
+
+And the equivalent configuration without using class selection paths:
+
+    dsmark {
+	class (5)
+	    if ...;
+	class (6)
+	    if ...;
+	class (8)
+	    if ...;
+	...
+	prio {
+	    tcindex (mask 0xc0,shift 2) {
+		class
+		    on (1)
+		{
+		    prio {
+			tcindex (mask 3) {
+			    class
+				on (1);
+			    class
+				on (2);
+			}
+		    }
+		}
+		class
+		    on (2);
+	    }
+	}
+    }
+
+Implementation note: If multiple levels of queuing disciplines need to be
+traversed, tcc tries to use a certain set of bits in the tcindex value at
+each queuing discipline. If the number of available bits is exceeded, tcc
+falls back to assigning a distinct value for each path. This may affect
+space and time efficiency of the resulting configuration.
+
+Also note that class selection paths cannot be nested, e.g.
+
+    dsmark {
+        class (<$x>) if ...;
+	...
+            dsmark {
+                $y = class (<$x>);
+		...
+		    $y = class ...;
+		...
+	    }
+	...
+    }
+
+Is not supported.
+
+
+Processing directives
+---------------------
+
+A tcng configuration file can contain instructions that affect the
+processing of the file. These instructions can appear wherever
+variables or fields are allowed. Unlike variables and fields, they
+always affect the global state of the processor.
+
+Currently, one such construct is defined: warnings can be enabled or
+disabled using the "warn" construct, which consists of the keyword
+"warn", followed by a comma-separated list of warning switch names,
+like used with the -W option.
+
+Example:
+
+    warn "nounused","truncate";
+
+corresponds to an invocation of tcc with -Wnounused -Wtruncate
+
+Unrecognized warning switches yield a warning.
+
+Implementation note: warning switches on the command line take
+precedence over warning switches in the configuration file.
+
+
+Pragmas
+-------
+
+The tcng language allows implementation-specific extensions via the
+"pragma" construct or parameter.
+
+Pragmas can be added with the "pragma" parameter to devices, queuing
+disciplines, classes, filters, tunnels, filter elements, and policers.
+The "pragma" parameter is followed by a space-separated list of
+strings, each containing one or more non-blank printable characters.
+
+Examples:
+
+    fifo (pragma "head-drop");
+
+    eth0 (pragma "rate=2Mbps" "mode=duplex")
+
+Furthermore, a global pragma can be specified before the first
+device or queuing discipline with the "pragma" construct:
+
+Example:
+
+    pragma ("debug=all");
+
+The tcng language does not define the semantics of pragmas. An
+implementation may choose to ignore or refuse unrecognized pragmas,
+or pragmas in general, or it may fail in obscure ways in the
+presence of pragmas.
+
+
+Naming conventions
+------------------
+
+Names of variables, fields, and macros beginning with two underscores
+are reserved for internal use by tcng macros. Users should never
+generate such items.
+
+In rare cases, items with such names are part of a published interface
+(e.g. the macro __trTCM_green), and may be used with due caution.
+
+In order to avoid conflicts with parameter names or other reserved
+words of the tcng language, field names should be composed of the
+protocol name, an underscore, and the field name, e.g. ip_proto or
+tcp_sport.
+
+
+Header files
+------------
+
+The following header files contain macros that are considered to be
+standard extensions of the tcng language:
+
+fields.tc	definitions of common TCP/IP header structures
+values.tc	definitions of common values used in TCP/IP headers
+meters.tc  	macros for implementing traffic meters
+ports.tc	defines IANA-assigned port numbers in the form PORT_<name>,
+		where the protocol name is in upper case, e.g. PORT_SMTP

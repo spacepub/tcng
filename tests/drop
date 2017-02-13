@@ -1,0 +1,55 @@
+# "police drop" is parsed as "police drop", not "police", "drop" --------------
+tcc | sed '/.* \\(action\\|conform-exceed\\) /s///p;d'
+dsmark (indices 2) {
+    class (1)
+      on fw element (1)
+	police (rate 1Gbps,burst 2kB,mtu 1500B) drop;
+}
+EOF
+drop/pass
+# sanity check: policer defaults to reclassify --------------------------------
+tcc | sed '/.* \\(action\\|conform-exceed\\) /s///p;d'
+dsmark (indices 2) {
+    class (1)
+      on fw element (1)
+	police (rate 1Gbps,burst 2kB,mtu 1500B);
+}
+EOF
+reclassify/pass
+# "police drop drop if" is parsed as "police drop", "drop if" -----------------
+tcc 2>&1
+dsmark (indices 2) {
+    class (1)
+      on fw element (1)
+	police (rate 1Gbps,burst 2kB,mtu 1500B) drop;
+    drop if 1;
+}
+EOF
+ERROR
+<stdin>:7: cannot combine if with other filters (yet) near ""
+# "drop if" does drop ---------------------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    drop if 1;
+}
+EOF
+block eth0 egress
+action 0 = drop
+match action 0
+# "drop if" preserves order with respect to classes ---------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class (1) if raw[0] == 1;
+    drop if raw[0] == 0;
+    class (2) if raw[0] == 2;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 2 = class 1:2
+action 3 = drop
+action 1 = class 1:1
+match 0:0:8=0x01 action 1
+match 0:0:8=0x00 action 3
+match 0:0:8=0x02 action 2
+match action 0

@@ -1,0 +1,35 @@
+# sub-byte fields: field with mask --------------------------------------------
+tcc -xif:err 2>&1 >/dev/null | sed 's/match \\(.*\\) action.*/\\1/p;d'
+#include "fields.tc"
+
+prio {
+    class if ip_hl == 5;
+}
+EOF
+0:4:4=0x5
+# sub-byte fields: field with mask and comparison -----------------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+#include "fields.tc"
+
+prio {
+    class if ip_MF;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = class 1:1
+match 0:50:1=0x1 action 1
+match action 0
+# sub-byte fields: field with mask and comparison, negated --------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+#include "fields.tc"
+
+prio {
+    class if !ip_MF;
+}
+EOF
+block eth0 egress
+action 0 = unspec
+action 1 = class 1:1
+match 0:50:1=0x0 action 1
+match action 0

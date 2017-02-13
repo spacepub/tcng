@@ -1,0 +1,28 @@
+# tcc -Wexppostopt accepts > --------------------------------------------------
+tcc -c -Wexppostopt -Wexperror
+prio {
+    class if raw > 4;
+}
+EOF
+# check: tcc -Wexpensive still refuses > --------------------------------------
+tcc -c -Wexpensive -Wexperror 2>&1
+prio {
+    class if raw > 4;
+}
+EOF
+ERROR
+<stdin>:2: ">" is an "expensive" operation
+# tcc -Wexppostopt accepts >= -------------------------------------------------
+tcc -c -Wexppostopt -Wexperror
+prio {
+    class if raw >= 4;
+}
+EOF
+# check: tcc -Wexpensive still refuses >= -------------------------------------
+tcc -c -Wexpensive -Wexperror 2>&1
+prio {
+    class if raw >= 4;
+}
+EOF
+ERROR
+<stdin>:2: ">=" is an "expensive" operation

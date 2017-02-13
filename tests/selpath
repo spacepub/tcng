@@ -1,0 +1,536 @@
+# class selection path: 1x1 case ----------------------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$x>) if 1;
+	prio {
+	    $x = class {}
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 2
+handle 2:0 parent 1:0 prio
+parent 2:0 prio 1 tcindex mask 0x1 shift 0
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:1
+# class selection path: 1x2 case (one more bit) -------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$x>) if raw[0] == 10;
+	class (<$y>) if 1;
+	prio {
+	    $x = class {}
+	    $y = class {}
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+handle 2:0 parent 1:0 prio
+parent 2:0 prio 1 tcindex mask 0x3 shift 0
+parent 2:0 prio 1 handle 2 tcindex classid 2:2
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u8 0xa 0xff at 0 classid 1:1
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:2
+# class selection path: 1x3 case ----------------------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$x>) if raw[0] == 10;
+	class (<$y>) if raw[0] == 20;
+	class (<$z>) if 1;
+	prio {
+	    $x = class {}
+	    $y = class {}
+	    $z = class {}
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+handle 2:0 parent 1:0 prio
+parent 2:0 prio 1 tcindex mask 0x3 shift 0
+parent 2:0 prio 1 handle 3 tcindex classid 2:3
+parent 2:0 prio 1 handle 2 tcindex classid 2:2
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u8 0xa 0xff at 0 classid 1:1
+parent 1:0 prio 1 u32 match u8 0x14 0xff at 0 classid 1:2
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:3
+# class selection path: 1x4 case (one more bit) -------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$w>) if raw[0] == 10;
+	class (<$x>) if raw[0] == 20;
+	class (<$y>) if raw[0] == 30;
+	class (<$z>) if 1;
+	prio (bands 4) {
+	    $w = class {}
+	    $x = class {}
+	    $y = class {}
+	    $z = class {}
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 8
+handle 2:0 parent 1:0 prio bands 4
+parent 2:0 prio 1 tcindex mask 0x7 shift 0
+parent 2:0 prio 1 handle 4 tcindex classid 2:4
+parent 2:0 prio 1 handle 3 tcindex classid 2:3
+parent 2:0 prio 1 handle 2 tcindex classid 2:2
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u8 0xa 0xff at 0 classid 1:1
+parent 1:0 prio 1 u32 match u8 0x14 0xff at 0 classid 1:2
+parent 1:0 prio 1 u32 match u8 0x1e 0xff at 0 classid 1:3
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:4
+# class selection path: 1+2 case ----------------------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$y>) if raw[0] == 1;
+	class (<$x>) if 1;
+	prio {
+	    prio {
+		$x = class {}
+	    }
+	    prio {
+		$y = class {}
+	    }
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 8
+handle 2:0 parent 1:0 prio
+handle 3:0 parent 2:1 prio
+parent 3:0 prio 1 tcindex mask 0x1 shift 0
+parent 3:0 prio 1 handle 1 tcindex classid 3:1
+handle 4:0 parent 2:2 prio
+parent 4:0 prio 1 tcindex mask 0x1 shift 0
+parent 4:0 prio 1 handle 1 tcindex classid 4:1
+parent 2:0 prio 1 tcindex mask 0x6 shift 1
+parent 2:0 prio 1 handle 2 tcindex classid 2:1
+parent 2:0 prio 1 handle 1 tcindex classid 2:2
+parent 1:0 prio 1 u32 match u8 0x1 0xff at 0 classid 1:3
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:5
+# class selection path: 1+2+3 case --------------------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$y>) if raw[0] == 1;
+	class (<$z>) if raw[0] == 20;
+	class (<$x>) if 1;
+	prio {
+	    class (1) {
+		prio {
+		    prio {
+			$x = class {}
+		    }
+		    prio {
+			$y = class {}
+		    }
+		}
+	    }
+	    class (2) {
+		prio {
+		    prio {
+			$z = class {}
+		    }
+		}
+	    }
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 32
+handle 2:0 parent 1:0 prio
+handle 3:0 parent 2:1 prio
+handle 4:0 parent 3:1 prio
+parent 4:0 prio 1 tcindex mask 0x1 shift 0
+parent 4:0 prio 1 handle 1 tcindex classid 4:1
+handle 5:0 parent 3:2 prio
+parent 5:0 prio 1 tcindex mask 0x1 shift 0
+parent 5:0 prio 1 handle 1 tcindex classid 5:1
+parent 3:0 prio 1 tcindex mask 0x6 shift 1
+parent 3:0 prio 1 handle 2 tcindex classid 3:1
+parent 3:0 prio 1 handle 1 tcindex classid 3:2
+handle 6:0 parent 2:2 prio
+handle 7:0 parent 6:1 prio
+parent 7:0 prio 1 tcindex mask 0x1 shift 0
+parent 7:0 prio 1 handle 1 tcindex classid 7:1
+parent 6:0 prio 1 tcindex mask 0x2 shift 1
+parent 6:0 prio 1 handle 1 tcindex classid 6:1
+parent 2:0 prio 1 tcindex mask 0x18 shift 3
+parent 2:0 prio 1 handle 2 tcindex classid 2:2
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u8 0x1 0xff at 0 classid 1:b
+parent 1:0 prio 1 u32 match u8 0x14 0xff at 0 classid 1:13
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:d
+# class selection path: combination with filters (forbidden) ------------------
+tcc 2>&1
+dsmark {
+    class (<$x>) if 1;
+    prio {
+        $x = class
+	    on tcindex element(0);
+    }
+}
+EOF
+ERROR
+<stdin>:3: qdisc must not have filters when using class selection path
+# class selection path: combination with if (forbidden) -----------------------
+tcc 2>&1
+dsmark {
+    class (<$x>) if 1;
+    prio {
+        $x = class
+	    if 1;
+    }
+}
+EOF
+ERROR
+<stdin>:3: qdisc must not have filters when using class selection path
+# class selection path: fully qualified path ----------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$x $y>) if 1;
+	prio {
+	    $x = class {
+		prio {
+		    $y = class {}
+		}
+	    }
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+handle 2:0 parent 1:0 prio
+handle 3:0 parent 2:1 prio
+parent 3:0 prio 1 tcindex mask 0x1 shift 0
+parent 3:0 prio 1 handle 1 tcindex classid 3:1
+parent 2:0 prio 1 tcindex mask 0x2 shift 1
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:3
+# class selection path: fully qualified path (reversed) -----------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+    dsmark {
+	class (<$y $x>) if 1;
+	prio {
+	    $x = class {
+		prio {
+		    $y = class {}
+		}
+	    }
+	}
+    }
+}
+EOF
+handle 1:0 root dsmark indices 4
+handle 2:0 parent 1:0 prio
+handle 3:0 parent 2:1 prio
+parent 3:0 prio 1 tcindex mask 0x1 shift 0
+parent 3:0 prio 1 handle 1 tcindex classid 3:1
+parent 2:0 prio 1 tcindex mask 0x2 shift 1
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 1:3
+# class selection path: impossible path (1) -----------------------------------
+tcc 2>&1
+dsmark {
+    class (<$x $z>) if 1;
+    prio {
+	$x = class {
+	    prio {
+		$y = class {}
+	    }
+	}
+	prio {
+	    $z = class {}
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:6: warning: unused variable y
+<stdin>:2: unfinished class selection path reaches leaf
+# class selection path: impossible path (2) -----------------------------------
+tcc 2>&1
+dsmark {
+    class (<$y $z>) if 1;
+    prio {
+	$x = class {
+	    prio {
+		$y = class {}
+	    }
+	}
+	prio {
+	    $z = class {}
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:4: warning: unused variable x
+<stdin>:2: unfinished class selection path reaches leaf
+# class selection path: use all index bits ------------------------------------
+tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'
+dev eth0 {
+  dsmark {
+    class (<$x>) if 1;
+    prio (1) {
+      prio (2) {
+	prio (3) {
+	  prio (4) {
+	    prio (5) {
+	      prio (6) {
+		prio (7) {
+		  prio (8) {
+		    prio (9) {
+		      prio (10) {
+			prio (11) {
+			  prio (12) {
+			    prio (13) {
+			      prio (14) {
+				prio (15) {
+				  $x = class {}
+} } } } } } } } } } } } } } } } }
+EOF
+handle 10:0 root dsmark indices 32768
+handle 1:0 parent 10:0 prio
+handle 2:0 parent 1:1 prio
+handle 3:0 parent 2:1 prio
+handle 4:0 parent 3:1 prio
+handle 5:0 parent 4:1 prio
+handle 6:0 parent 5:1 prio
+handle 7:0 parent 6:1 prio
+handle 8:0 parent 7:1 prio
+handle 9:0 parent 8:1 prio
+handle a:0 parent 9:1 prio
+handle b:0 parent a:1 prio
+handle c:0 parent b:1 prio
+handle d:0 parent c:1 prio
+handle e:0 parent d:1 prio
+handle f:0 parent e:1 prio
+parent f:0 prio 1 tcindex mask 0x1 shift 0
+parent f:0 prio 1 handle 1 tcindex classid f:1
+parent e:0 prio 1 tcindex mask 0x2 shift 1
+parent e:0 prio 1 handle 1 tcindex classid e:1
+parent d:0 prio 1 tcindex mask 0x4 shift 2
+parent d:0 prio 1 handle 1 tcindex classid d:1
+parent c:0 prio 1 tcindex mask 0x8 shift 3
+parent c:0 prio 1 handle 1 tcindex classid c:1
+parent b:0 prio 1 tcindex mask 0x10 shift 4
+parent b:0 prio 1 handle 1 tcindex classid b:1
+parent a:0 prio 1 tcindex mask 0x20 shift 5
+parent a:0 prio 1 handle 1 tcindex classid a:1
+parent 9:0 prio 1 tcindex mask 0x40 shift 6
+parent 9:0 prio 1 handle 1 tcindex classid 9:1
+parent 8:0 prio 1 tcindex mask 0x80 shift 7
+parent 8:0 prio 1 handle 1 tcindex classid 8:1
+parent 7:0 prio 1 tcindex mask 0x100 shift 8
+parent 7:0 prio 1 handle 1 tcindex classid 7:1
+parent 6:0 prio 1 tcindex mask 0x200 shift 9
+parent 6:0 prio 1 handle 1 tcindex classid 6:1
+parent 5:0 prio 1 tcindex mask 0x400 shift 10
+parent 5:0 prio 1 handle 1 tcindex classid 5:1
+parent 4:0 prio 1 tcindex mask 0x800 shift 11
+parent 4:0 prio 1 handle 1 tcindex classid 4:1
+parent 3:0 prio 1 tcindex mask 0x1000 shift 12
+parent 3:0 prio 1 handle 1 tcindex classid 3:1
+parent 2:0 prio 1 tcindex mask 0x2000 shift 13
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 tcindex mask 0x4000 shift 14
+parent 1:0 prio 1 handle 1 tcindex classid 1:1
+parent 10:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 10:7fff
+# class selection path: exceed number of index bits ---------------------------
+( tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'; ) 2>&1
+dev eth0 {
+  dsmark {
+    class (<$x>) if 1;
+    prio (1) {
+      prio (2) {
+	prio (3) {
+	  prio (4) {
+	    prio (5) {
+	      prio (6) {
+		prio (7) {
+		  prio (8) {
+		    prio (9) {
+		      prio (10) {
+			prio (11) {
+			  prio (12) {
+			    prio (13) {
+			      prio (14) {
+				prio (15) {
+				  prio (16) {
+				    $x = class {}
+} } } } } } } } } } } } } } } } } }
+EOF
+<stdin>:4: warning: number of index bits required for path exceeds 15
+handle 11:0 root dsmark indices 2
+handle 1:0 parent 11:0 prio
+handle 2:0 parent 1:1 prio
+handle 3:0 parent 2:1 prio
+handle 4:0 parent 3:1 prio
+handle 5:0 parent 4:1 prio
+handle 6:0 parent 5:1 prio
+handle 7:0 parent 6:1 prio
+handle 8:0 parent 7:1 prio
+handle 9:0 parent 8:1 prio
+handle a:0 parent 9:1 prio
+handle b:0 parent a:1 prio
+handle c:0 parent b:1 prio
+handle d:0 parent c:1 prio
+handle e:0 parent d:1 prio
+handle f:0 parent e:1 prio
+handle 10:0 parent f:1 prio
+parent 10:0 prio 1 tcindex mask 0x7fff shift 0
+parent 10:0 prio 1 handle 1 tcindex classid 10:1
+parent f:0 prio 1 tcindex mask 0x7fff shift 0
+parent f:0 prio 1 handle 1 tcindex classid f:1
+parent e:0 prio 1 tcindex mask 0x7fff shift 0
+parent e:0 prio 1 handle 1 tcindex classid e:1
+parent d:0 prio 1 tcindex mask 0x7fff shift 0
+parent d:0 prio 1 handle 1 tcindex classid d:1
+parent c:0 prio 1 tcindex mask 0x7fff shift 0
+parent c:0 prio 1 handle 1 tcindex classid c:1
+parent b:0 prio 1 tcindex mask 0x7fff shift 0
+parent b:0 prio 1 handle 1 tcindex classid b:1
+parent a:0 prio 1 tcindex mask 0x7fff shift 0
+parent a:0 prio 1 handle 1 tcindex classid a:1
+parent 9:0 prio 1 tcindex mask 0x7fff shift 0
+parent 9:0 prio 1 handle 1 tcindex classid 9:1
+parent 8:0 prio 1 tcindex mask 0x7fff shift 0
+parent 8:0 prio 1 handle 1 tcindex classid 8:1
+parent 7:0 prio 1 tcindex mask 0x7fff shift 0
+parent 7:0 prio 1 handle 1 tcindex classid 7:1
+parent 6:0 prio 1 tcindex mask 0x7fff shift 0
+parent 6:0 prio 1 handle 1 tcindex classid 6:1
+parent 5:0 prio 1 tcindex mask 0x7fff shift 0
+parent 5:0 prio 1 handle 1 tcindex classid 5:1
+parent 4:0 prio 1 tcindex mask 0x7fff shift 0
+parent 4:0 prio 1 handle 1 tcindex classid 4:1
+parent 3:0 prio 1 tcindex mask 0x7fff shift 0
+parent 3:0 prio 1 handle 1 tcindex classid 3:1
+parent 2:0 prio 1 tcindex mask 0x7fff shift 0
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 1:0 prio 1 tcindex mask 0x7fff shift 0
+parent 1:0 prio 1 handle 1 tcindex classid 1:1
+parent 11:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 11:1
+# class selection path: multiple selections past 16 bits ----------------------
+( tcsim -v | sed '/.*eth0 /s///p;d' | sed 's/protocol all //'; ) 2>&1
+dev eth0 {
+  dsmark {
+    class (<$x>) if raw[0] == 13;
+    class (<$y>) if raw[0] == 42;
+    class (<$z>) if 1;
+    prio (1) {
+      prio (2) {
+	prio (3) {
+	  prio (4) {
+	    prio (5) {
+	      prio (6) {
+		prio (7) {
+		  prio (8) {
+		    prio (9) {
+		      prio (10) {
+			prio (11) {
+			  prio (12) {
+			    prio (13) {
+			      prio (14) {
+				prio (15) {
+				  prio (16) {
+				    $x = class {}
+				    $y = class {}
+				} }
+				$z = class {}
+} } } } } } } } } } } } } } } }
+EOF
+<stdin>:6: warning: number of index bits required for path exceeds 15
+handle 11:0 root dsmark indices 4
+handle 1:0 parent 11:0 prio
+handle 2:0 parent 1:1 prio
+handle 3:0 parent 2:1 prio
+handle 4:0 parent 3:1 prio
+handle 5:0 parent 4:1 prio
+handle 6:0 parent 5:1 prio
+handle 7:0 parent 6:1 prio
+handle 8:0 parent 7:1 prio
+handle 9:0 parent 8:1 prio
+handle a:0 parent 9:1 prio
+handle b:0 parent a:1 prio
+handle c:0 parent b:1 prio
+handle d:0 parent c:1 prio
+handle e:0 parent d:1 prio
+handle f:0 parent e:1 prio
+handle 10:0 parent f:1 prio
+parent 10:0 prio 1 tcindex mask 0x7fff shift 0
+parent 10:0 prio 1 handle 2 tcindex classid 10:2
+parent 10:0 prio 1 handle 3 tcindex classid 10:1
+parent f:0 prio 1 tcindex mask 0x7fff shift 0
+parent f:0 prio 1 handle 2 tcindex classid f:1
+parent f:0 prio 1 handle 3 tcindex classid f:1
+parent e:0 prio 1 tcindex mask 0x7fff shift 0
+parent e:0 prio 1 handle 1 tcindex classid e:2
+parent e:0 prio 1 handle 2 tcindex classid e:1
+parent e:0 prio 1 handle 3 tcindex classid e:1
+parent d:0 prio 1 tcindex mask 0x7fff shift 0
+parent d:0 prio 1 handle 1 tcindex classid d:1
+parent d:0 prio 1 handle 2 tcindex classid d:1
+parent d:0 prio 1 handle 3 tcindex classid d:1
+parent c:0 prio 1 tcindex mask 0x7fff shift 0
+parent c:0 prio 1 handle 1 tcindex classid c:1
+parent c:0 prio 1 handle 2 tcindex classid c:1
+parent c:0 prio 1 handle 3 tcindex classid c:1
+parent b:0 prio 1 tcindex mask 0x7fff shift 0
+parent b:0 prio 1 handle 1 tcindex classid b:1
+parent b:0 prio 1 handle 2 tcindex classid b:1
+parent b:0 prio 1 handle 3 tcindex classid b:1
+parent a:0 prio 1 tcindex mask 0x7fff shift 0
+parent a:0 prio 1 handle 1 tcindex classid a:1
+parent a:0 prio 1 handle 2 tcindex classid a:1
+parent a:0 prio 1 handle 3 tcindex classid a:1
+parent 9:0 prio 1 tcindex mask 0x7fff shift 0
+parent 9:0 prio 1 handle 1 tcindex classid 9:1
+parent 9:0 prio 1 handle 2 tcindex classid 9:1
+parent 9:0 prio 1 handle 3 tcindex classid 9:1
+parent 8:0 prio 1 tcindex mask 0x7fff shift 0
+parent 8:0 prio 1 handle 1 tcindex classid 8:1
+parent 8:0 prio 1 handle 2 tcindex classid 8:1
+parent 8:0 prio 1 handle 3 tcindex classid 8:1
+parent 7:0 prio 1 tcindex mask 0x7fff shift 0
+parent 7:0 prio 1 handle 1 tcindex classid 7:1
+parent 7:0 prio 1 handle 2 tcindex classid 7:1
+parent 7:0 prio 1 handle 3 tcindex classid 7:1
+parent 6:0 prio 1 tcindex mask 0x7fff shift 0
+parent 6:0 prio 1 handle 1 tcindex classid 6:1
+parent 6:0 prio 1 handle 2 tcindex classid 6:1
+parent 6:0 prio 1 handle 3 tcindex classid 6:1
+parent 5:0 prio 1 tcindex mask 0x7fff shift 0
+parent 5:0 prio 1 handle 1 tcindex classid 5:1
+parent 5:0 prio 1 handle 2 tcindex classid 5:1
+parent 5:0 prio 1 handle 3 tcindex classid 5:1
+parent 4:0 prio 1 tcindex mask 0x7fff shift 0
+parent 4:0 prio 1 handle 1 tcindex classid 4:1
+parent 4:0 prio 1 handle 2 tcindex classid 4:1
+parent 4:0 prio 1 handle 3 tcindex classid 4:1
+parent 3:0 prio 1 tcindex mask 0x7fff shift 0
+parent 3:0 prio 1 handle 1 tcindex classid 3:1
+parent 3:0 prio 1 handle 2 tcindex classid 3:1
+parent 3:0 prio 1 handle 3 tcindex classid 3:1
+parent 2:0 prio 1 tcindex mask 0x7fff shift 0
+parent 2:0 prio 1 handle 1 tcindex classid 2:1
+parent 2:0 prio 1 handle 2 tcindex classid 2:1
+parent 2:0 prio 1 handle 3 tcindex classid 2:1
+parent 1:0 prio 1 tcindex mask 0x7fff shift 0
+parent 1:0 prio 1 handle 1 tcindex classid 1:1
+parent 1:0 prio 1 handle 2 tcindex classid 1:1
+parent 1:0 prio 1 handle 3 tcindex classid 1:1
+parent 11:0 prio 1 u32 match u8 0xd 0xff at 0 classid 11:3
+parent 11:0 prio 1 u32 match u8 0x2a 0xff at 0 classid 11:2
+parent 11:0 prio 1 u32 match u32 0x0 0x0 at 0 classid 11:1

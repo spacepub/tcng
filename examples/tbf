@@ -1,0 +1,27 @@
+/*
+ * tbf - Single TBF shaper
+ *
+ */
+
+#define RATE 1Mbit	/* be very sure not to use Mbps here ... */
+#define BURST  3kB
+#define LIMIT 20kB
+
+#define NOTHING
+#define PACKET		/* 100-sizeof(iphdr) = 80 bytes. */ \
+  IP_PCK(NOTHING) \
+  0 x 80
+
+dev eth0 10000 /* 10 Mbps */
+
+tc qdisc add dev eth0 root handle 1:0 tbf limit LIMIT rate RATE burst BURST
+
+every 0.0005s send PACKET		/* 1.6 Mbps */
+
+; Excess: 600 kbps, so we will fill the burst after 24ms, and start
+; losing packets 267ms later. We should lose about 532 packets (of
+; 2001) or 53200 bytes. Actual numbers vary slightly due to 1024 vs.
+; 1000 issues.
+
+time 1s
+end 

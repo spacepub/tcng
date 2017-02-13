@@ -1,0 +1,14 @@
+# tcsim_plot refers to tcsim_filter as such -----------------------------------
+tcsim_plot 2>&1
+0.0 E : 0 1 : eth0: 00
+EOF
+ERROR
+unrecognized input - did you rember to use tcsim_filter ?
+# "egress" classes become "dsmark" when using tc output -----------------------
+tcc
+egress {
+    class (0,value 1);
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root dsmark indices 1 default_index 0
+tc class change dev eth0 classid 1:0 dsmark value 0x1

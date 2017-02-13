@@ -1,0 +1,23 @@
+/*
+ * ingress - Test ingress qdisc invocation
+ */
+
+dev a_eth0 10000 /* 10 Mbps */
+
+host {
+    dev b_eth0 10000
+    dev b_eth1 10000
+    route 10.0.0.0 netmask 255.0.0.0 b_eth1
+}
+
+connect a_eth0 b_eth0
+
+#define PACKET		/* 100-sizeof(iphdr) = 80 bytes. */ \
+  IP_PCK($ip_src=10.0.0.1 $ip_dst=10.0.0.2) \
+  0 x 80
+
+tc qdisc add dev b_eth0 ingress
+
+send a_eth0 PACKET
+
+end 

@@ -1,0 +1,14 @@
+# we can redefine policer variables -------------------------------------------
+tcc >/dev/null 2>/dev/null
+$p = police(rate 1Mbps,burst 5kB);
+prio {
+    $p = 5;
+}
+EOF
+# we can use parentheses around filter expressions ----------------------------
+tcc -xif:err >/dev/null 2>/dev/null
+$p = police(rate 1Mbps,burst 5kB);
+prio {
+    class if conform($p);
+}
+EOF

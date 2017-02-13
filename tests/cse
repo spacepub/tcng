@@ -1,0 +1,28 @@
+# base line: without -Onocse, common subexpressions are eliminated ------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    drop if raw.ns == 1;
+    drop if raw.ns == 1;
+}
+EOF
+match 0:0:16=0x0001 action 1
+match action 0
+# with -Onocse, common subexpressions are not eliminated ----------------------
+tcc -Onocse -xif:err 2>&1 | grep match
+prio {
+    drop if raw.ns == 1;
+    drop if raw.ns == 1;
+}
+EOF
+match 0:0:16=0x0001 action 1
+match 0:0:16=0x0001 action 1
+match action 0
+# with -Ocse, common subexpressions are eliminated ----------------------------
+tcc -xif:err 2>&1 | grep match
+prio {
+    drop if raw.ns == 1;
+    drop if raw.ns == 1;
+}
+EOF
+match 0:0:16=0x0001 action 1
+match action 0

@@ -1,0 +1,145 @@
+Summary: Linux Traffic Control - Next Generation
+Name: tcng
+Version: $VERSION
+Release: 1
+Copyright: GPL, LGPL
+Group: System Environment/Base
+URL: http://tcng.sourceforge.net/
+Packager: Werner Almesberger
+Source0: http://tcng.sourceforge.net/dist/tcng-$VERSION.tar.gz
+Source1: $SUGGESTED_KERNEL
+Source2: $SUGGESTED_IPROUTE
+BuildRoot: %{_tmppath}/%{name}-root
+Prefix: /usr
+
+#
+# Warning: do not try to build an SRPM from this spec file !
+#
+# This spec file pulls in the whole kernel source tree, plus the source
+# of iproute2. Generating a monstrous package. Unfortunately, there doesn't
+# seem to be a portable way for sharing the content of other SRPMS, or to
+# express any suitable build dependency.
+#
+
+%description
+TCNG is a package containing the Traffic Control compiler "tcng" and
+the event-driven Traffic Control simulation environment "tcsim".
+
+%package -n tcsim
+Summary: Linux Traffic Control simulator
+Group: Applications/Emulators
+
+%description -n tcsim
+tcsim combines the original traffic control code from the Linux kernel
+with the user-space code of the configuration utility tc, and adds the
+framework for communication among the two, plus an event-driven simulation
+engine.  
+
+The resulting program runs entirely in user space, but executes almost
+exactly the same code as a "real" system.
+
+tcsim is also used to test-drive tcng, if available.
+
+%package -n tcsim-devel
+Summary: Cross-compilers and header files for building tcsim modules
+Group: Development/Tools
+
+%description -n tcsim-devel
+The "cross-compilers" kmod_cc and tcmod_cc compile kernel and tc
+modules such that they can be used with tcsim.
+
+This package also includes all header files necessary for
+generating the tcsim environment.
+
+%package -n tcng-tests
+Summary: Regression test suite for tcng
+Group: Development/Tools
+Requires: tcng = $VERSION, tcng-devel = $VERSION, tcsim = $VERSION
+Requires: tcsim-devel = $VERSION
+
+%description -n tcng-tests
+The "cross-compilers" kmod_cc and tcmod_cc compile kernel and tc
+modules such that they can be used with tcsim.
+
+This package also includes all header files necessary for
+generating the tcsim environment.
+
+%prep
+%setup -n tcng
+cd $RPM_BUILD_DIR/tcng/tcsim
+eval `PATH=..:$PATH ../build/findsrc -k -x $RPM_SOURCE_DIR` -v \
+  linux\*/Makefile linux\*/net/sched linux\*/net/core linux\*/net/netlink \
+  linux\*/include/linux linux\*/include/net linux\*/include/asm-i386/errno.h
+cd $RPM_BUILD_DIR/tcng/tcsim
+eval `PATH=..:$PATH ../build/findsrc -i -x $RPM_SOURCE_DIR` -v
+
+%build
+mkdir -p $RPM_BUILD_ROOT/usr
+./configure --install-directory $RPM_BUILD_ROOT/usr
+make RPM_OPT_FLAGS="$RPM_OPT_FLAGS" -C shared
+make RPM_OPT_FLAGS="$RPM_OPT_FLAGS" scripts tcsim tcng
+
+%install
+[ "$RPM_BUILD_ROOT" = / ] || rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr $RPM_BUILD_ROOT/usr/lib/tcng/tests tcsim
+TCNG_INSTALL_CWD=/usr make install-tcsim
+TCNG_INSTALL_CWD=/usr make install-tests
+rm $RPM_BUILD_ROOT/usr/lib/tcng/tests/tests/usage
+
+%clean
+[ "$RPM_BUILD_ROOT" = / ] || rm -rf $RPM_BUILD_ROOT
+
+%post
+perl -pi -e 's|/usr\b|'$RPM_INSTALL_PREFIX'|g;' $RPM_INSTALL_PREFIX/bin/tcsim
+
+%files -n tcsim
+%defattr(-,root,root)
+%doc tcsim/README COPYING.GPL
+%verify(user group mode) /usr/bin/tcsim
+/usr/bin/tcsim.bin
+/usr/bin/tcsim_filter
+/usr/bin/tcsim_plot
+/usr/bin/tcsim_pretty
+/usr/lib/tcng/include/default.tcsim
+/usr/lib/tcng/include/ip.def
+/usr/lib/tcng/include/packet.def
+/usr/lib/tcng/include/packet4.def
+/usr/lib/tcng/include/packet6.def
+/usr/lib/tcng/include/tcngreg.def
+
+%files -n tcsim-devel
+%defattr(-,root,root)
+/usr/lib/tcng/bin/kmod_cc
+/usr/lib/tcng/bin/tcmod_cc
+/usr/lib/tcng/include/klib/include
+/usr/lib/tcng/include/klib/kernel/include
+/usr/lib/tcng/include/ulib/iproute2/include
+/usr/lib/tcng/include/ulib/iproute2/include-glibc
+/usr/lib/tcng/include/ulib/iproute2/tc/tc_util.h
+/usr/lib/tcng/include/ulib/iproute2/tc/tc_core.h
+
+%files -n tcng-tests
+%defattr(-,root,root)
+/usr/lib/tcng/tests
+
+%changelog
+* Sat Aug 14 2004 Werner Almesberger
+- started name change from "tcc" to "tcng"
+* Fri Sep 20 2002 Werner Almesberger
+- added default.tcsim
+* Tue Jul 16 2002 Werner Almesberger
+- make -C shared before trying to make anything else
+* Tue Apr 30 2002 Werner Almesberger
+- split packet.def into packet4.def and packet6.def
+* Mon Jan 14 2002 Werner Almesberger
+- added tcsim_pretty
+* Fri Dec 14 2001 Werner Almesberger
+- added /usr/lib/tcng/include/packet.def
+* Tue Oct 16 2001 Werner Almesberger
+- removed tests/usage from tcng-tests RPM
+* Mon Oct 15 2001 Werner Almesberger
+- put %defattr before %doc
+* Thu Oct 12 2001 Werner Almesberger
+- added tcng-tests, and related clean-up
+* Thu Oct  4 2001 Werner Almesberger
+- initial release of spec file

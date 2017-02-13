@@ -1,0 +1,333 @@
+THIS FILE IS NO LONGER UPDATED. NEW ENTRIES ARE NOW IN ../CHANGES !
+
+
+Version 1o (24-APR-2001)
+------------------------
+
+- removed stray \n in error, errorf, etc.
+- ingress qdisc refused classes at all
+- updated ef-prio-example to use class variable in priomap
+
+Version 1n (24-APR-2001)
+------------------------
+
+- skipped version 1m
+- CBQ was leaking defaults between sibling classes (reported by Jacob
+  Teplitsky)
+- added copying information (GPL)
+
+Version 1l (23-APR-2001)
+------------------------
+
+- added missing 1j CHANGE entry for RSVP defaults
+- removed old "magic" host construct (used to switch scanner mode)
+- LANGUAGE: described use of double quotes
+- DSMARK: "mask" parameter can now be defaulted on the qdisc
+- all parameters to ROUTE elements can now be defaulted on the filter
+
+Version 1k (23-APR-2001)
+------------------------
+
+- removed compatibility code for 1j name changes
+
+Version 1j (23-APR-2001)
+------------------------
+
+- fixed obsolete examples in LANGUAGE (reported by Jacob Teplitsky)
+- prio: short priomap may not remove all default entries, causing problems if
+  bands < 3
+- renamed parameter "saddr" to "src" and "daddr" to "dst" (the old names are
+  still recognized)
+- "host" keyword is no longer required for IPv4 addresses in dotted quad form
+- "host" keyword now also works with host in double quotes
+- "src" and "dst" automatically treat word argument as host (like "ipproto",
+  "sport", "dport")
+- all parameters to RSVP elements can now be defaulted on the filter
+
+Version 1i (22-APR-2001)
+------------------------
+
+- tcc now refuses DSMARK classes >= indices if there are parameters (reported
+  by Jacob Teplitsky)
+- tcc didn't notice that setting less than tree PRIO bands caused conflict
+  with default priomap
+- tcc issued redundant and potentially harmful qdisc change commands for DSMARK
+  even if neither mask nor value were set (reported by Jacob Teplitsky)
+
+Version 1h (21-APR-2001)
+------------------------
+
+- << and >> had the shift direction reversed (reported by Jacob Teplitsky)
+- added -q option to produce terser output (for regression tests)
+- variable scoping was synchronized with scanner, not parser, occasionally
+  yielding surprises
+- tcc didn't allow adding elements to a class referenced via a variable
+- tcc now refuses to de-reference filter variables in different qdisc
+- tcc didn't allow the use of filter variables to provide filter context
+
+Version 1g (20-APR-2001)
+------------------------
+
+- oops, left-over debugging output in tcng.y:filter_spec
+- var.h, tcng.y, etc.: changed identifiers containing "magic" to "forward"
+- tcc incorrectly refused to accept GRED DP 0
+
+Version 1f (20-APR-2001)
+------------------------
+
+- CBQ didn't check and initialize qdiscs attached to classes
+
+Version 1e (20-APR-2001)
+------------------------
+
+- revised list data type structure to better fit priomap requirements
+- elements now have parent, like everything else
+- priomap now uses forward-references to class variables
+- added priomap parameter to CBQ (corresponds to split/defmap)
+- updated discussion in PARAMETERS file accordingly
+- CBQ now refuses to nest deeper than TC_CBQ_MAXLEVEL levels
+- tcc now prints warning when using class without selector inside filter block
+- fixed bug only allowing single selector after class in some cases
+- added support for RSVP tunnels (new element "tunnel", see LANGUAGE)
+- tcc didn't check that $var is a filter when using "on $var(...)" shortcut 
+
+Version 1d (19-APR-2001)
+------------------------
+
+- fixed typos in LANGUAGE and data.h
+- tcc now flushes stdout before printing to stderr, and stderr always when
+  printing is done
+- double quotes no longer required (but still allowed) for symbolic
+  argument to "ipproto", "sport", and "dport"
+
+Version 1c (19-APR-2001)
+------------------------
+
+- added partial support for CBQ (no split/defmap), untested
+- LANGUAGE: fixed a few anachronisms (reported by Jacob Teplitsky)
+- users can now explicitly assign GRED classes
+- RSVP filter does not allow element numbers to be assigned (reported by Jacob
+  Teplitsky)
+- changed a few %x formats to 0x%x
+- cleaned up definition of default parameter macros
+- added some #defines for TC kernel constants in new file tcdefs.h
+
+Version 1b (18-APR-2001)
+------------------------
+
+- added support for RSVP filter (simplified, e.g. only IPv4, no tunnels)
+- values of parameters "to", "from", and "order" were printed in decimal but
+  with "0x" prefix in error messages
+- removed unused parameter "dst"
+- tc.c: marked many parameters as "const"
+- new function tc_add_classid replaces excessive use of tc_more in filter.c
+
+Version 1a (12-APR-2001)
+------------------------
+
+- added support for SFQ qdisc
+- error message for missing required parameters was garbled
+- option parser now also handles -I dir (instead of -Idir) correctly
+- CPP options no longer have to be last
+- CPP options other than -I, -D, and -U are no longer accepted
+- added check for -lefence to  make dist
+- fixed indentation of usage message
+- fixed small memory leak in "fromif" value
+- added ef-prio-example and added pointer to examples from tcsim
+
+Version 0z (11-APR-2001)
+------------------------
+
+- changed upload location to public FTP directory
+- changed "dump" function for operators to "dump_tc"
+- added support for GRED qdisc
+- added support for FW filter (untested)
+- added support for ROUTE filter (untested)
+- merged parameter dumping for RED and GRED (with some simplifications)
+- removed useless check for presence of class in tcindex
+- changed tc_more to tc_add_{unum,hex} in tcindex_dump_tc
+
+Version 0y (7-MAR-2001)
+-----------------------
+
+- added ingress qdisc
+- split element "dump" functions into "check" and "dump_tc" part
+- added -c option to check validity without generating other output
+- added "ecn" parameter for RED
+- tcindex added spurious shift values if parameter was omitted
+
+Version 0x (27-FEB-2001)
+------------------------
+
+- added binary number format 0b...
+- interface name is no longer followed by colon
+- removed all examples; up to date versions are distributed with tcsim
+- dependencies are now always generated
+- major redesign of parameter handling, which in most cases simplifies access
+- generalized "<qdisc> ... { <qdisc> ... }" syntax by allowing to use more than
+  one such inner qdisc
+
+Version 0w (12-FEB-2001)
+------------------------
+
+- added policer data type
+- policer index number can now be assigned
+- policers can now be shared
+- documented policer syntax
+- added support for bfifo and pfifo qdiscs (both are called "fifo" and the type
+  is selected via the limit parameter type)
+- unit "p" wasn't recognized (only "pck" or "pcks")
+
+Version 0v (12-FEB-2001)
+------------------------
+
+- changed data access syntax to disallow  [index]  accesses (so the
+  tcpdump-like syntax  base[index]  has to be used instead)
+- completed parameter list and parameter checking for sch_prio
+- added basic support for policing
+- changed order of policing action specifications (design may need more work)
+- made also out-of-profile action optional
+
+Version 0u (8-FEB-2001)
+-----------------------
+
+- added range checks for most parameters
+- "hash" parameter selected prm_indices
+- added casts for most uint32_t printfs
+- completed parameter list and parameter checking for cls_tcindex, sch_dsmark,
+  and sch_tbf
+- added file PARAMETERS with development notes on parameter support
+
+Version 0t (5-FEB-2001)
+-----------------------
+
+- don't print an error when encountering cpp options -D or -I
+- tc_add_rate used unit "bps" for "bits per second", which in Russian means
+  "Bytes per second"
+- new option -V to print version number
+
+Version 0s (30-JAN-2001)
+------------------------
+
+- wrote README
+- removed files SYNTAX and in* from the distribution and wrote LANGUAGE and
+  examples/* instead
+- added size qualifiers .b, .ns, and .nl for tcsim compatibility
+- added dummy code for fw and route classifiers (so tcc doesn't just crash)
+- tcc crashed when specifying a filter priority
+- added "Byte" alias for "B"
+- removed "ps" alias for "p"
+- warning for "milli" prefix is now only printed once
+- data_convert refused to convert from unum to fnum
+
+Version 0r (28-JAN-2001)
+------------------------
+
+- added option -h to print usage
+- tcc refused to pass cpp options to cpp
+  (Note: it still complains about them, which is a bug)
+- oops, usage() didn't exit()
+- tcng.l would crash when issuing a syntax error or warning if receiving input
+  without file names (i.e. not from cpp)
+- qdisc ID assignment didn't recurse past next qdisc
+- fixed arguments ordering bugs in tc.c, affecting qdiscs and filter elements
+
+Version 0q (26-JAN-2001)
+------------------------
+
+- added option -r to remove old qdiscs
+- removed "dev" keyword and updated example in5 accordingly
+
+Version 0p (26-JAN-2001)
+------------------------
+
+- if filters are now added to the closest class instead of always adding them
+  to the qdisc; this can be changed by specifying an anchor with
+  if filter $anchor <expression>
+- "if" filter can be explicitly assigned to a variable to serve as an anchor 
+  (not that if cannot be used as a regular filter, though)
+- added a bit of dumping code to if filter and cbq qdisc to faciliate debugging
+  of if anchoring
+- added class id assignment and verification
+- filter parameters were lost in some previous version
+
+Version 0p (26-JAN-2001)
+------------------------
+
+- switched over to new abstract operator handling
+- added logical (&&, ||, !) and relational (==, !=, <, >, <=, >=) operators to
+  expression syntax
+- added Perl-style postfix if, and pseudo-filter "if"
+- added syntax for packet data access (base[index].size; one of base or index
+  may be omitted, so may the integer literal size (default: 32))
+- now recognizes also numbers like 1e6 (no dot) as a floating-point
+- data_add_unit confused unum and fnum, usually yielding 0
+
+Version 0o (25-JAN-2001)
+------------------------
+
+- unrecognized parameters are now reported immediately after parsing them
+- added parameter checking for policing
+- changed mask operator syntax from "a / b : c" to "a : b : c", i.e.
+  a/b -> a:b, a/:c -> a::c, a/b:c -> a:b:c
+- updated example in3 accordingly
+- added / (division) operator
+- added time data type dt_time with unit s(ecs?)?
+- added __attribute__((noreturn)) to all error functions
+- new files op.h and op.c for abstract operator handling (under construction)
+
+Version 0n (25-JAN-2001)
+------------------------
+
+- added operators << and >>
+- expressions now use same precedence rules as in C
+- raised precedence of / : operator to bind stronger than ~
+- updated in3 example to use valid qdisc ID
+- tcc now fails with an error if trying to nest selectors (used to produce
+  garbage)
+- added two more output wrappers: tc_add_unum and tc_add_hex
+- added qdisc ... shortcut for class { qdisc ... }
+- added output function tc_comment to print centered comments
+- changed grammar to allow variable assignments to use syntax $var = ...
+  This allows reserved names (b, B, rate, etc.) to be used as variable names.
+  Had to disallow bare "class" (which isn't useful anyway)
+- current example input set is in in5
+
+Version 0m (24-JAN-2001)
+------------------------
+
+- also detects qdisc 0: as invalid
+- filters are now a first-class data type
+- changed filter element syntax to go between class specification and class
+  body
+- changed linking mechanism from anchors to add_xxx functions
+
+Version 0l (23-JAN-2001)
+------------------------
+
+- added group of reporting functions that don't print the source location
+  (for reporting in functions run at EOF and such)
+- added parameter printing for RED ("burst" isn't correct yet)
+
+Version 0k (23-JAN-2001)
+------------------------
+
+- added checking of filter ID range
+- restructured parameter control to allow earlier error reporting
+
+Version 0j (22-JAN-2001)
+------------------------
+
+- dsmark sets class with "tc class change", not "tc class add"
+- added data type dt_psize (size in packets)
+- tentatively added data type dt_prate (rate in packets per second) with
+  unit name "pps"
+- don't add prio classes with tc
+- fixed small memory leak when creating variables
+- added command-line option -i to set default device
+- moved CPP definition to new include file config.h
+- changed "unsigned int" to uint32_t and ~0UL to UNDEF_U32
+- added checking of duplicate user-assigned qdisc IDs
+- added checking of qdisc ID range
+- improved "make dist" and "make upload" process (make upload now automatically
+  run make dist, if necessary)

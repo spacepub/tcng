@@ -1,0 +1,84 @@
+# relop: (raw & 0b11100111) < 0b00001100 (bit) --------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+egress { 
+    drop if (raw[20] & 0b11100111) < 0b00001100;
+    class (0) if 1;
+}
+EOF
+match 0:160:3=0x0 action 1
+# relop: (raw & 0b11100111) <= 0b00001100 (bit) -------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+egress { 
+    drop if (raw[20] & 0b11100111) <= 0b00001100;
+    class (0) if 1;
+}
+EOF
+match 0:160:3=0x0 action 1
+# relop: (raw & 0b11100111) <= 0b00101100 (prefix) ----------------------------
+tcc -Oprefix -xif:err 2>&1 | grep 'match .* action'
+egress { 
+    drop if (raw[20] & 0b11100111) <= 0b00101100;
+    class (0) if 1;
+}
+EOF
+match 0:160:3=0x1 action 1
+match 0:160:3=0x0 action 1
+# relop: (raw & 0b11100111) > 0b00001100 (bit) --------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+egress { 
+    drop if (raw[20] & 0b11100111) > 0b00001100;
+    class (0) if 1;
+}
+EOF
+match 0:160:1=0x1 action 1
+match 0:161:1=0x1 action 1
+match 0:162:1=0x1 action 1
+# relop: (raw & 0b11100111) > 0b00001100 (prefix) -----------------------------
+tcc -Oprefix -xif:err 2>&1 | grep 'match .* action'
+egress { 
+    drop if (raw[20] & 0b11100111) > 0b00001100;
+    class (0) if 1;
+}
+EOF
+match 0:160:3=0x1 action 1
+match 0:160:2=0x1 action 1
+match 0:160:1=0x1 action 1
+# relop: (raw & 0b11100111) >= 0b00100100 (bit) --------------------------------
+tcc -xif:err 2>&1 | grep 'match .* action'
+egress { 
+    drop if (raw[20] & 0b11100111) > 0b00100100;
+    class (0) if 1;
+}
+EOF
+match 0:160:1=0x1 action 1
+match 0:161:1=0x1 action 1
+match 0:162:1=0x1 0:165:2=0x3 action 1
+match 0:162:1=0x1 0:165:1=0x1 0:167:1=0x1 action 1
+# relop: (raw & 0b11100111) >= 0b00100110 (prefix) ----------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext tcsim -Xc,-xif:test -Xc,-Oprefix | \
+  sed '/.* D :.* /s///p;d' | (tr '\\012' ' '; echo;) | fmt -s -w 50
+dev eth0 1000000 {
+    egress {
+	drop if (raw[20] & 0b11100111) >= 0b00100110;
+	class (0) if 1;
+    }
+}
+
+#define send send 0 x 20
+send 0  send  1 send  2 send  3 send  4 send  5 send  6 send  7
+send 8  send  9 send 10 send 11 send 12 send 13 send 14 send 15
+send 16 send 17 send 18 send 19 send 20 send 21 send 22 send 23
+send 24 send 25 send 26 send 27 send 28 send 29 send 30 send 31
+send 32 send 33 send 34 send 35 send 36 send 37 send 38 send 39
+send 40 send 41 send 42 send 43 send 44 send 45 send 46 send 47
+send 48 send 49 send 50 send 51 send 52 send 53 send 54 send 55
+send 56 send 57 send 58 send 59 send 60 send 61 send 62 send 63
+send 64 send 65 send 66 send 67 send 68 send 69 send 70 send 71
+send 72 send 73 send 74 send 75 send 76 send 77 send 78 send 79
+send 80 send 81 send 82 send 83 send 84 send 85 send 86 send 87
+end
+EOF
+00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+20 21 22 23 24 25 28 29 2a 2b 2c 2d 30 31 32 33
+34 35 38 39 3a 3b 3c 3d

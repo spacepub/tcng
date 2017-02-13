@@ -1,0 +1,6 @@
+# address % integer yields error ----------------------------------------------
+tcc -c 2>&1
+$a = 1.2.3.4 % 10;
+EOF
+ERROR
+<stdin>:1: invalid types for operator "%" (IPv4 address and integer) near ";"

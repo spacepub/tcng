@@ -1,0 +1,16 @@
+/*
+ * default.tcsim - tcsim default includes
+ *
+ * Written 2002 by Werner Almesberger
+ * Copyright 2002 Werner Almesberger
+ */
+
+
+#ifndef DEFAULT_TCSIM
+#define DEFAULT_TCSIM
+
+#include "packet.def"
+#include "ports.tc"
+
+#endif /* DEFAULT_TCSIM */
+#line 1 /* work around funny cpp that embeds -included files */

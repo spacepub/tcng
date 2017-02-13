@@ -1,0 +1,83 @@
+# bit field: ip_RF == 0 -------------------------------------------------------
+tcc -xif:err -Wexppostopt 2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if ip_RF == 0;
+}
+EOF
+match 0:48:1=0x0 action 1
+# bit field: ip_DF == 1 -------------------------------------------------------
+tcc -xif:err -Wexppostopt 2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if ip_DF == 1;
+}
+EOF
+match 0:49:1=0x1 action 1
+# bit field: !ip_MF -----------------------------------------------------------
+tcc -xif:err -Wexppostopt 2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if !ip_MF;
+}
+EOF
+match 0:50:1=0x0 action 1
+# bit field: tcp_URG ----------------------------------------------------------
+tcc -xif:err -Wexppostopt  2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if tcp_URG;
+}
+EOF
+match 0:72:8=0x06 100:106:1=0x1 action 1
+# bit field: tcp_ACK == 0 -----------------------------------------------------
+tcc -xif:err -Wexppostopt  2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if tcp_ACK == 0;
+}
+EOF
+match 0:72:8=0x06 100:107:1=0x0 action 1
+# bit field: tcp_PSH == 1 -----------------------------------------------------
+tcc -xif:err -Wexppostopt  2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if tcp_PSH == 1;
+}
+EOF
+match 0:72:8=0x06 100:108:1=0x1 action 1
+# bit field: tcp_RST != 0 -----------------------------------------------------
+tcc -xif:err -Wexppostopt  2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if tcp_RST != 0;
+}
+EOF
+match 0:72:8=0x06 100:109:1=0x1 action 1
+# bit field: tcp_SYN != 1 -----------------------------------------------------
+tcc -xif:err -Wexppostopt  2>&1 | grep 'match 0'
+#include "fields.tc"
+
+prio {
+    class if tcp_SYN != 1;
+}
+EOF
+match 0:72:8=0x06 100:110:1=0x0 action 1
+# bit field: !tcp_FIN ---------------------------------------------------------
+tcc -xif:err -Wexppostopt  2>&1 | grep 'match 0'
+#include "fields.tc"
+
+field tcp_hdr = raw[20]; /* can't negate test for IPPROTO_TCP */
+
+prio {
+    class if !tcp_FIN;
+}
+EOF
+match 0:271:1=0x0 action 1

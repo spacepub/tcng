@@ -1,0 +1,42 @@
+# tcsim send can use IPv6 address ---------------------------------------------
+tcsim | sed 's/.*eth0: //'
+dev eth0
+send ipv6: ::
+EOF
+00000000 00000000 00000000 00000000
+# tcsim can store IPv6 addresses in variables ---------------------------------
+tcsim
+$var = 1:2:3:4:5:6:7:8
+echo $var
+EOF
+0.000000 * : 1:2:3:4:5:6:7:8
+# tcsim can send IPv6 addresses from variables --------------------------------
+tcsim | sed 's/.*eth0: //'
+dev eth0
+$v = 1::f
+send ipv6: $v
+EOF
+00010000 00000000 00000000 0000000f
+# tcsim refuses to store > 32 bit value in 32 bits ----------------------------
+tcsim 2>&1
+send ipv4: ::1:0:0
+EOF
+ERROR
+<stdin>:2: value is too big for a 32 bit word near ""
+# tcsim can construct IPv6 header ---------------------------------------------
+tcsim | sed 's/.*eth0: //' | tr ' ' '\\012'
+#include "packet.def"
+
+dev eth0
+send IP6_HDR($ip6_plen=1 $ip6_nxt=0 $ip6_src=1::2 $ip6_dst=3::4)
+EOF
+60000000
+00010040
+00010000
+00000000
+00000000
+00000002
+00030000
+00000000
+00000000
+00000004

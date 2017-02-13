@@ -1,0 +1,2749 @@
+Version 10b (3-OCT-2004)
+------------------------
+
+- the "mtu" parameter in TBF is now optional
+- tcsim now uses KVERSION[NUM] instead of KFULLVERSION[NUM] to avoid breaking
+  if EXTRAVERSION contains multiple dots or other surprises (reported by
+  Eduardo Grosclaude)
+- scripts/runtests.sh now runs commands with LANG=C, to avoid localized error
+  messages (reported by Eduardo Grosclaude)
+
+Version 10a (28-SEP-2004)
+-------------------------
+
+- configure is compatible with 2.4.27
+- updated kernel version example in README from 2.4.26 to 2.4.27
+- scripts/compatibility.sh: added 2.4.27
+- changed name of "tcc" to "tcng", for collision with "tiny cc" (reported by
+  Matthias Urlichs)
+- scripts/localize.sh: now installs a wrapper for "tcng", pointing to "tcc"
+- scripts/symlinks.sh: now adds a link from "tcng" to "tcc"
+- tcsim/tcsim.c: now calls "tcc" as "tcng"
+- configure: changed "tcc" to "tcng" at all user-visible places
+- tcc/tcc.c: no longer identifies itself as "tcc" when invoked with -V
+- Makefile: the binary distribution for "tcc" is now called "tcng"
+- build/{tcng,tcsim}.spec.in: changed most references for "tcc" to "tcng"
+- Makefile: removed lib/tcng/include/klib/kernel/include from TCSIM_BINDIST
+- configure now uses include/SNAPSHOT.h instead of RELNOTES to detect iproute2
+  version
+- configure is now compatible with iproute2-2.6.8-ss040730 and
+  iproute2-2.6.9-ss040831 (updated tests/cbqroot and tests/tbf)
+- tcng/README now recommends to download iproute2-2.6.9-ss040831.tar.gz
+  (this also affects tcsim.spec)
+- recent versions of iproute2 only support MPUs <= 255 bytes (updated
+  tests/mpu)
+- tcng can now use "conform-exceed" instead of "action" (updated tests/drop)
+- configure: new options "--action" (or "-a") and "--conform-exceed" (or "-A")
+  to override action handling
+- tcc/Makefile now depends on ../config
+
+Version 9m (9-MAY-2004)
+-----------------------
+
+- configure is compatible with 2.4.26
+- updated kernel version example in README from 2.4.25 to 2.4.26
+- scripts/compatibility.sh: added 2.4.26
+- installation example in README now also mentions downloading the iproute2
+  tarball from Debian
+- configure and scripts/minisrc.sh now also recognize the Debian iproute
+  tarball
+- tcsim/setup.klib: added "time_after" and "time_after_eq" to linux/sched.h
+- tcsim/setup.klib: converts dsfield.h to remove bare newlines from strings
+  (needed to build tcsim with old kernel sources and a new gcc)
+- if_u32.c:dump_and now checks if any but the last && term changes the offset
+  group (tests/tcng-9m; updated tests/tcng-2i, reported by Laurent Moutel)
+- tcsim/Makefile: compile tcsim.c without kernel includes, to avoid confusing
+  glibc headers (reported by Nuutti Kotivuori)
+
+Version 9l (29-FEB-2004)
+------------------------
+
+- configure did not preserve the YACC setting across sessions
+- configure now complains if -k, -i, -d, -t, or -y have no argument
+- tcc and tcsim now use -$ if -std=c99 does not work (updated tests/cppdollar)
+- configure: new options "-$" and "--c99" (or "-c99") to override dollar
+  handling
+- the writer helper process of tcsim now always exits with _exit, to avoid
+  running the exit handler that kills cpp
+- runtests.sh converts " parse " to " syntax " in stderr if expecting an error,
+  because some YACCs print "parse error" instead of "syntax error"
+- examples/prio+fw, examples/tbf, examples-ng/pfifo_fast, examples-ng/prio+fw,
+  examples/priority, tests/idiomatic, tests/packet, tests/tcsattpro,
+  tests/tcsattpsv, tests/tcsattset, tests/tcsdefinc, tests/trace, tests/u32dlb,
+  and tests/u32slb now avoid using variadic macros with an empty argument list
+  all, to keep some versions of CPP from complaining
+- tests/tcng-7g forced a syntax error at EOF, which yielded inconsistent
+  results with different versions of CPP
+- updated kernel version example in tcng/README from 2.4.22 to 2.4.25
+- q_htb.c: used ~0UL to mean "0xffffffffUL"
+- moved removal of .depend from "clean" to "spotless" make target
+- tcsim/Makefile: removed left-over dependencies on module cleanup targets
+  "ephemeral-mod" and "clean-mod"
+- tcsim/modules/Makefile did not define OBJS
+
+Version 9k (28-FEB-2004)
+------------------------
+
+- cpp 3.3.3 unceremoniously dropped "-$", so we're now using "-std=c99"
+  (updated tests/cppdollar, tests/phasep; based on patch by Robin H. Johnson)
+- tcc and tcsim now invoke cpp with argv[0] set to the name of cpp (instead of
+  the name with which tcc or tcsim was invoked), for cpp 3.3.3 compatibility
+  (updated tests/tcng-6u; fixed by Robin H. Johnson)
+- POSIX obsoleted "tail -N", using "tail -n N" now (updated tests/tstcond;
+  fixed by Robin H. Johnson)
+- Makefile: added remark that the ebuild that comes with tcng isn't nearly as
+  good as the one from Gentoo
+- build system now uses bison if "configure" finds no yacc
+- configure: added option --yacc (-y) to set the YACC command
+- toys/comtc now uses extension .i instead of .cpp, since the latter caused cpp
+  to switch to C++ mode
+- configure: changed "dir_or_tarball" to "dir_or_tar.bz2" in description of
+  "--kernel" argument
+- configure now also accepts tarballs for iproute2
+- added scripts/minisrc.sh which extracts the files needed to build tcsim from
+  an iproute2 tarball
+- changed UNDEF_U32 from ~0UL to ~0U for 64 bit compatibility
+- tcc/ext_io.c:expand_errors added casts to avoid complaints when using a
+  pointer difference in printf on 64 bit
+- setup.klib: elements of "struct timeval" are now "unsigned long" instead of
+  "unsigned" for better compatibility with glibc on 64 bit
+- kmod_cc and tcmod_cc now use -fPIC for amd64 compatibility
+- tcc/ext/Makefile and tcc/ext/tcc-ext-test.in now use -fPIC for amd64
+  compatibility
+- tcc/iflib_actdb.c:debug_subtree printed pointer to policier instead of its
+  number
+- setup.klib: linux/types.h now just #includes stddef.h instead of trying its
+  own definitions for size_t and NULL
+- changed long obsolete "make upload" to equal "make upload-sf"
+
+Version 9j (26-FEB-2004)
+------------------------
+
+- Makefile: targets "tcc" and "tcsim" depend also on "shared" (reported by
+  Mustafa Ogun)
+- configure is compatible with 2.4.24 and 2.4.25
+- scripts/compatibility.sh: added 2.4.23, 2.4.24, and 2.4.25
+- minksrc.sh now only extracts kernel source from tarball if the source has not
+  already been extracted
+- moved progress reporting from "configure" to "minksrc.sh"
+- "make clean" now also removes temporary files of "configure"
+
+Version 9i (22-NOV-2003)
+------------------------
+
+- tcc now supports TBF with an inner qdisc (tests/tbfqdsyn, tests/tbfqdtc,
+  tests/tbfqdext, tests/tbfqdrun)
+- removed redundant flag QDISC_HAS_DEFAULT
+- added build/tcng.ebuild file for Gentoo (by "raptor")
+- Makefile: added "gentoo" target
+- setup.klib no longer uses a symbolic link to the original source tree
+- configure: added option --no-defaults to skip loading of old config file
+- tcsim/Makefile.unclean tcsim/modules/Makefile: object files now depend on the
+  config file
+- added scripts/minksrc.sh which extracts the files needed to build tcsim from
+  a kernel tarball
+- added scripts/compatibility.sh which runs all regression tests involving
+  tcsim for all supported kernel versions
+- Makefile: added "compatibility" target
+- "make sf-upload" now prints the MD5 message digest before uploading
+- configure: removed 2.4.11 kernel, which was withdrawn
+- configure: -k argument can be a kernel tarball
+- runtests.sh: added option -t to run only tests probably using tcsim
+- setup.klib: unconditionally defining LONG_MAX in include/linux/kernel.h broke
+  2.5.4 builds
+
+Version 9h (7-NOV-2003)
+-----------------------
+
+- tcc/ext/Makefile: dependencies now only include .c files compiled in that
+  directory, removing a warning when building RPMs
+- split tcsim/Makefile into Makefile.unclean and Makefile.clean to avoid
+  rebuilding klib and ulib when cleaning up after configuration changes
+- configure is compatible with 2.4.22 and 2.4.23 (pre-release, tested with
+  2.4.23-pre9)
+- setup.klib generates linux/smp.h needed for 2.4.22
+- tcsim/trace.c and tcsim/modules/sch_discard.c adjust ..._drop prototype for
+  interface change in 2.4.22
+- setup.klib clears LANG before using sed on [^ -~]
+- setup.klib adds "err" and "error_report" members to "struct sock" in
+  af_netlink.c (for 2.4.23)
+- updated kernel version example in tcng/README from 2.4.21 to 2.4.22
+- configure: added options --no-manual and --with-manual (abbreviations -m and
+  -M) to allow building tcng with or without the documentation (suggested by
+  "raptor")
+- configure: automatically assumes --no-manual if either latex or dvips is not
+  in the PATH
+
+Version 9g (6-NOV-2003)
+-----------------------
+
+- tcsim leaked memory for variable names (fixed by Dimitry Ketov)
+- tcsim now frees commands after execution (based on a patch by Dimitry Ketov)
+- tcsim -c freed command variables on each access (tests/tcng-9g)
+- scripts/runtests.sh: the -c option had no effect and was not mentioned in the
+  usage
+- changed "tree color meter" to "three color meter" in documentation (fixed by
+  Martin A. Brown)
+
+Version 9f (19-JUN-2003)
+------------------------
+
+- updated kernel version example in tcng/README from 2.4.20 to 2.4.21
+- setup.klib is now compatible with 2.4.21 (final release) (by Dimitry Ketov)
+- fixed setup.klib compatibility with old kernels, like 2.4.3
+
+Version 9e (28-APR-2003)
+------------------------
+
+- updated tests/tcng-6u to accept captialization of cpp 3.2
+- put back packet ID in tcsim_filter output, which was removed in tcng-8x
+  because I had forgotten that it was used for delay calculation in tcsim_plot
+  (fixed by Dimitry Ketov; updated tests/basic, tests/tcng-8x, tests/tcsattpro,
+  tests/tcsattpsv, and tests/tcsattset)
+- doc/tcsim.inc: updated tcsim_filter output format description accordingly
+- examples/dsmark+policing, examples/ef-prio, and examples/gred used UDP_HDR
+  instead of IP_HDR
+- "make rpm" and "make tcsim-rpms" now use "rpmbuild" instead of "rpm" if
+  available
+
+Version 9d (14-JAN-2003)
+------------------------
+
+- updated kernel version example in tcng/README from 2.4.19 to 2.4.20
+- configure is now compatible with 2.4.21 (pre-release, tested with pre3)
+- tcsim -V now also prints the versions of the kernel and iproute2 used to
+  build it
+- make "upload-sf" now runs md5sum after uploading
+- README: changed tar xfI <file> to more compatible bzcat <file> | tar xf -
+- generalized argument-fetching mechanism of sprintf, and split it into
+  sprintf.c and sprintf_generic.c
+- removed extra % from sprintf's precision error message (updated
+  tests/sprintf)
+- comtc's second pass now invokes tcc with the -n option, because some versions
+  of CPP don't allow -include with -fpreprocessed
+- toys/comtc mis-converted stdin location tags when using cpp 2.96 (reported by
+  Martin A. Brown)
+- tcsim executed original rtnl_close, closing an undefined file descriptor,
+  which sometimes upset flex, causing it to fail with "input in flex scanner
+  failed" (reported by "bauer")
+
+Version 9c (14-NOV-2002)
+------------------------
+
+- if_u32 badly mis-ordered rules with multi-phase policers (tests/u32pol)
+- updated tests/arith, tests/egress, tests/intro, tests/selpath,
+  tests/selpathcbq, tests/selpathdup, tests/selpathgred, tests/tcng-2n, and
+  tests/tcng-7o to use unified match format introduced with above fix
+- tcc and tcsim silently ignored invalid digits in octal numbers
+  (tests/tcng-9c)
+- tcsim did not report EOF in tcng section as an error (tests/tcng-9c)
+- updated tests/typerr and tests/varhash accordingly
+- if_u32.c can now generate fw and tcindex classifiers from meta-fields
+  (tests/metau32)
+- for consistency, dsmark can now also default parameter "value" from qdisc
+  (tests/u32pol)
+- tests/tcstimstp used packets that caused SFQ to segfault under efence
+- scripts/runtests.sh: also "comtc" now filters efence blabber
+- added known range check problem to TODO
+
+Version 9b (21-OCT-2002)
+------------------------
+
+- tcsim tried to ignore system HZ (tc/tc_core.c:tc_core_init), but didn't
+- test "SLB with MPU (ext)" actually used tc, not the external interface
+  (tests/mpu)
+- added dependency on ../VERSION for tcc.o and tcsim.o
+- if_u32.c now generates hashes only if they are actually referenced
+- updated tests/cbqroot, tests/comtc, tests/egress, tests/htbng, tests/intro,
+  tests/selpath, tests/selpathcbq, tests/selpathdup, tests/selpathgred,
+  tests/tcng-2h, tests/tcng-2i, tests/tcng-2j, tests/tcng-2q, tests/tcng-3g,
+  and tests/tcsenq accordingly
+
+Version 9a (18-OCT-2002)
+------------------------
+
+- iflib_not.c:single_bit_test failed an assertion when comparing 128 bit
+  values (tests/tcng-9a, reported by Jacob Teplitsky)
+- shared/addr.c:ipv{4,6}_host now cache query results in order to avoid
+  inconsistencies when external database changes during tcc run
+- updated TODO accordingly
+- added top-level Makefile target "count-tests"
+- top-level Makefile targets "test", "tests", and "valgrind" weren't .PHONY
+- "c" target did not detect unsupported field roots (tests/tcng-9a)
+- "c" target now supports the "protocol" meta field (tests/protc)
+- renamed meta.h to tccmeta.h and added it to tcc's public include files
+- added support for meta-field to external interface (tests/protext)
+
+Version 8z (10-OCT-2002)
+------------------------
+
+- tcc and tcsim allowed passing more than one file name to cpp, which treats
+  the second file name as output file (tests/tcng-8z)
+- protocol support for u32 mis-attached subexpressions under new field root
+  (tests/protcomb)
+- tests/htbquant and tests/tcstimstp did not probe if HTB is available before
+  using it
+- tcsim stopped HTB timers before last packet was sent (tests/tcstimstp)
+- tcsim now detects stopped devices with packets pending at "end"
+  (tests/tcstimstp)
+- updated tests/basic, tests/tcssnap, tests/u32dlb, and tests/u32slb according
+  to above change
+- -Wexpensive did not warn about implicit negation (tests/tcng-8z)
+- tcc: replaced -E with -Wexperror, and -E -E with -Wexppostopt (tests/newexp)
+- updated tests/bitfield, tests/bittest, tests/expensive, tests/ne,
+  tests/tcng-5y, and tests/tcng-7a according to above change
+- tcc -E now runs cpp without any further processing (just like gcc -E;
+  tests/tccin)
+- tcc: added option -f infile to read from specified file, ignoring input file
+  argument (tests/tccin)
+- tcc now writes location map after dumping, in order to include
+  target-specific fixups in map
+- added script toys/comtc that copies comments immediately preceding elements
+  to tc output (tests/comtc)
+- runtests.sh: added command comtc to invoke toys/comtc
+- tcc sometimes forgot that "prio" qdisc now supports policing (tests/tcng-8z)
+- cleaned up hack causing compiler warning in if_u32.c
+
+Version 8y (21-SEP-2002)
+------------------------
+
+- HTB quantum can now be specified in bytes or seconds (tests/htbquant)
+- documented various parameter handling differences between tcng and tc
+- added first example from HTB documentation to tests/htbng
+- tcsim now uses default.tcsim to automatically include packet.def and
+  ports.tc, similar to how tcc uses default.tc (tests/tcsdefinc)
+- tcsim: added option -n to disable inclusion of default.tcsim
+  (tests/tcsdefinc)
+- updated tests/cbqroot, tests/cpp31, tests/defcbq, tests/defdsm, tests/ext,
+  tests/idiomatic, tests/tcng-2j, tests/tcng-3i, tests/tcng-3t, tests/tcng-4n,
+  and tests/trace to either invoke tcsim with -n, or to avoid using ip.def
+- removed use of ip.def from all examples (examples/*, examples-ng/*)
+- tcc/defaults.tc now resets the line number in order to work around strange
+  cpps that embed -included file instead of including it, causing line numbers
+  to be off by the length of the -included file (reported by "raptor")
+- tcsim now stops SFQ and HTB timers at end (tests/tcstimstp)
+- updated examples/sfq and examples-ng/sfq accordingly
+- moved helper functions alloc, alloc_t, stralloc, and alloc_sprintf to
+  tcng/shared/memutil.*
+- added %c format to alloc_sprintf
+- removed potential buffer overruns in tcsim/module.c and tcsim/cfg.l by using
+  alloc_sprintf
+- tcc did not complain when specifying "limit" in bytes and in packets for FIFO
+  qdisc (tests/tcng-8y)
+- added awk to build prerequisites
+
+Version 8x (20-SEP-2002)
+------------------------
+
+- tcc: added HTB queuing discipline (tests/htbng, by Jacob Teplitsky)
+- tcsim no longer resets the "protocol" attribute when traversing a link
+  (tests/tcsattpsv)
+- tcsim attributes now have two priorities (normal and default, indicated with
+  the keyword "default"), and the global attributes can be set with the
+  command "attributes" (tests/tcsattset)
+- tcsim: IP_PCK and IP6_PCK now set the "protocol" attribute with "default"
+  priority (tests/tcsattpro)
+- updated kernel version example in tcng/README from 2.4.18 to 2.4.19 (change
+  log incorrectly stated this had been done already in 8u)
+- added warning when taking prefix of IPv4 or IPv6 constant instead of field
+  (tests/constpfx, suggested by Jacob Teplitsky)
+- added warning switch "constpfx" to control above warning (tests/constpfx)
+- added new make target "immaculate" which also removes pre-built files
+- tcc/ports.tc is now removed by "immaculate", not "clean"
+- doc/Makefile can now re-generate EPS files (from FIG)
+- .depend is now always removed on "spotless", never on "clean"
+- various other minor "make clean" and "make spotless" corrections (most of
+  them reported by Jacob Teplitsky)
+- added dummy targets "depend" and "dep" to doc/Makefile
+- documentation: added section describing parameter propagation rules
+- tcng/README now lists packages required for building and using tcng
+  (suggested by "raptor")
+- setup.klib now reverts PSCHED_CLOCK_SOURCE to PSCHED_JIFFIES in case it was
+  changed in the source tree (reported by "raptor")
+- runtests.sh got confused by END CONDITIONAL followed by BEGIN CONDITIONAL
+  (tests/tstcond)
+- tcc let various types of "drop on" slip through, crashing it later
+  (tests/dropon)
+- moved "drop on" test from tests/misfeatures to tests/dropon
+- tcsim_filter failed to select by device name (tests/tcng-8x)
+- documentation: -c was missing in "tcsim_filter tos=0xb8" example
+- tcsim_filter included packet ID in output, although documentation claims it
+  doesn't, which makes more sense (tests/tcng-8x)
+- tcc failed to refuse element ID zero in "fw" filter (tests/tcng-8x)
+- updated tests/blocks, tests/cbqzero, tests/extndm, tests/location,
+  tests/misfeatures, tests/newsynmsc, tests/semicolon, tests/tag,
+  tests/tcng-5g, and tests/tcng-6w accordingly
+- tcsim/packet6.def:IP6_HDR did not initialize $ip6_plen
+- added pending issues related to protocol selection support to tcng/TODO
+
+Version 8w (13-SEP-2002)
+------------------------
+
+- added root of meta fields (__meta) and definitions for meta-fields in meta.tc
+  (included via fields.tc)
+- added some layer > 2 protocol numbers to values.tc
+- tcsim's send command now has a "protocol" attribute (default: ETH_P_IP)
+- updated documentation according to above changes
+- ip_hdr and ip6_hdr now check meta_protocol if USE_META_PROTOCOL is #defined
+- added protocol selection support to if_u32.c (tests/protu32)
+- filters fw, tcindex, and u32, now default to ETH_P_ALL instad of ETH_P_IP
+- updated tests/cbqroot, tests/egress, tests/named, tests/selpath,
+  tests/selpathcbq, tests/selpathdup, and tests/setpathgred accordingly
+- configure now detects and prints kernel extra version (e.g. pre7)
+
+Version 8v (12-SEP-2002)
+------------------------
+
+- configure is now compatible with 2.4.20 (pre-release, tested with pre6)
+- tcsim/setup.klib: added struct notifier_block declaration for 2.4.20-pre6
+  compatibility
+- tcsim/setup.klib: disables psched_tick (added in 2.4.20) when terminating
+- added HTB and its various dependencies to the tcsim kernel build process
+- runtests.sh now only counts tests instead of running them if environment
+  variable TCNG_TESTS_COUNT is set
+- runtests.sh: added conditional test execution (tests/tstcond)
+- runtests.sh: added command runtests for regression testing the regression
+  test script
+- README: described how to build tcsim with HTB support (tests/htb)
+- tcsim now sets printk log level to KERN_WARNING (4)
+- tcsim: added option -k <number> to set kernel logging threshold
+- updated documentation accordingly
+- added "help" target to top-level Makefile
+
+Version 8u (12-AUG-2002)
+------------------------
+
+- updated kernel version example in tcng/README from 2.4.18 to 2.4.19
+- configure is now compatible with 2.4.19 (final release)
+- tcc refused to left-shift 32 bit values by 0 bits (tests/tcng-8u)
+- configure now checks for defective cpp (reported by "raptor")
+- added undocumented options --kversions and --iversions to configure
+- added script build/findsrc to locate source files
+- "make tcsim-rpms" now uses any supported version of kernel and iproute2, not
+  only the suggested one
+- added more experimental code for FSM-based classification (not yet useful)
+- documentation: tcsim figure still called tcsim_filter and tcsim_plot
+  "filter.pl" and "plot.pl"
+
+Version 8t (16-JUL-2002)
+------------------------
+
+- tcc: changed some "error"s to "lerrors"s (by Jacob Teplitsky)
+- updated tests/tcng-4i accordingly
+- tcc selected CBQ class 0 when using negation, causing the kernel to busy loop
+  (tests/cbqzero; reported by Bert Hubert)
+- updated tests/cbqroot accordingly
+- tcsim/cfg.[ly] claimed their names were tcsim.[ly]
+- tcsim allowed second and jiffie values to begin with opening square bracket
+  (tests/tcng-8t)
+- tcsim now supports SI prefixes "M", "k", "m", and "u" for second and jiffie
+  values (tests/tcssi)
+- tcsim now supports relative time for "time" and "until" (tests/tcsrelt)
+- updated documentation according to above two changes
+- copied acknowledgements from README to documentation preamble
+- began adding support for FSM-based classification to external interface
+  (untested and undocumented)
+- changed "-C" to "nounspec" in all test titles of tests/defdsm
+- RPM build didn't build "shared" directory introduced in tcng 8s
+
+Version 8s (21-JUN-2002)
+------------------------
+
+- merged u128.[ch] from tcsim and tcc into shared/libtcngmisc.a
+- tcsim now sets the line style globally, such that it can be overridden with
+  -cmd, e.g. -cmd "set data style linespoints"
+- tcsim_plot didn't check return value from system (reported by Bodo Bauer and
+  Don Provan)
+- tests/tcng-8q exercises masking via offset and size (suggested by Jacob
+  Teplitsky)
+- merged ipv4_host/ipv6_host from tcc and evaluate_ipv4 and evaluate_ipv6 from
+  tcsim into shared/libtcngmisc.a
+- tcc and tcsim did not accept address 255.255.255.255 (tests/tcng-8q)
+- scripts/update-port-numbers.sh: increased ports file update interval from one
+  week to 92 days, and switched to using temporary file for download
+- documented that "." does not work as an operator and therefore can't be used
+  with parentheses (tests/misfeatures)
+
+Version 8r (31-MAY-2002)
+------------------------
+
+- tcsim: added out_of_line_bug to linux/kernel.h for compatibility with recent
+  2.4.19 pre-releases (tested with 2.4.19-pre9)
+- tcsim: added min_t to linux/netdevice.h for compatibility with recent 2.4.19
+  pre-releases (tested with 2.4.19-pre8)
+- doc/Makefile now strips extraneous meta-information from EPS included in
+  Postscript output when converting from DVI to Postscript
+- fixed truncated comment in build/tcsim.spec.in
+- build/tcng.spec.in: added conflict between current tcc and tcc-devel < 7r
+- tcsim_plot: new option  -cmd gnuplot_command  to pass commands to gnuplot
+- updated doc/tcsim.inc accordingly
+- doc/tcsim.inc: tcsim_filter synopsis did not include -jpeg and -png
+
+Version 8q (26-MAY-2002)
+------------------------
+
+- removed doc/external.tex and doc/build.asc
+- flagged tcc/README, tcc/LANGUAGE, and tcsim/README as obsolete
+- added much improved documentation in doc/
+- upgraded scripts/t2x.pl to version "26-MAY-2002" (various improvements)
+
+Version 8p (22-MAY-2002)
+------------------------
+
+- added %f format to sprintf (tests/sprintf)
+- added "uninstall" target to tcng/Makefile
+- added section comments to tcng/Makefile
+- tcsim now pretty-prints enqueuing results, as it only did when tracing
+  (tests/tcsenq)
+- updated tests/trace accordingly
+- scripts/trinity.sh now puts $topdir/bin first in the PATH, to avoid getting
+  confused by installed version of tcng
+
+Version 8o (21-MAY-2002)
+------------------------
+
+- if execvp fails, now also tcsim prints the path of the CPP it tried to run
+  (reported by munro)
+- tcsim/packet6.def initialized fictitious $ip6_proto instead of $ip6_nxt
+- tcsim/packet4.def: changed size prefix of $ip_src, $ip_dst, and $igmp_group
+  from nl: to ipv4:
+- added optional "mpu" (minimum policed unit) parameter to metering macros,
+  with default value 0B (tests/mpu)
+- added support for buckets with non-zero mpu parameter to if_u32.c (tests/mpu)
+- police.c:dump_police_tc issued mpu as rate, not as size
+
+Version 8n (17-MAY-2002)
+------------------------
+
+- forgot to include tests/sprintf in distribution, oops
+- sprintf ignored leading zero in format string (tests/sprintf)
+- sprintf caused tcc to abort when processing %% with a format specification
+  yielding not exactly one character (tests/sprintf)
+- sprintf now also supports octal output (%o), and precisions other than "*"
+  (tests/sprintf)
+- documented further IPv6 constraints in TODO
+- tcsim_filter now prints snapshots before processing events at the same time
+- tcsim_filter now sorts snapshots
+- added regression tests for tcsim_filter's -s option, and the corresponding
+  bypass in tcsim_plot (tests/tcssnap)
+- tcsim_plot ignores snapshots from tcsim_filter if writing the plot to
+  standard output (tests/tcssnap)
+- ".ipv6" test was missing in tests/ipv6
+- updated change log entry of version 8d accordingly
+
+Version 8m (17-MAY-2002)
+------------------------
+
+- util.c:alloc_sprintf advanced pointer too far on %.*s
+- util.c:alloc_sprintf mis-calculated length if string is shorter than
+  precision
+- tcng: added new function sprintf(fmt,...) with Perl-like semantics
+  (tests/sprintf)
+- tcsim_filter: new option -s <time> to generate counter snapshot (prefixed by
+  "# ") at specified time
+- tcsim_plot copies lines beginning with "#" to standard output
+
+Version 8l (16-MAY-2002)
+------------------------
+
+- new Makefile target "valgrind" to run all regression tests under Valgrind
+- rel_access over-optimized <= and >= with masked access, yielding incorrect
+  classifiers (tests/relmask)
+- added external program tcc-ext-null that blackholes input, which is useful
+  for performance tests
+- updated Makefile, build/tcng.spec.in, and scripts/symlinks.sh according to
+  above change
+
+Version 8k (16-MAY-2002)
+------------------------
+
+- iflib_arith.c:ne_to_eq now also supports IPv6 addresses (tests/ipv6relne)
+- iflib_arith.c:rel_general now also supports IPv6 addresses (tests/ipv6relge)
+- updated tests/ipv6relar accordingly
+- removed obsolete entries from TODO
+
+Version 8j (14-MAY-2002)
+------------------------
+
+- tcsim_plot still called tcsim_filter filter.pl (tests/tcng-8j)
+- tcsim_plot, tcsim_filter, and tcsim_pretty still called themselves in
+  comments plot.pl, filter.pl, and pretty.pl, respectively
+- added tcsim_plot to programs recognized by scripts/runtests.sh
+- "egress" classes were not converted to "dsmark" when using tc output
+  (tests/tcng-8j)
+- tcsim_plot now writes to standard output if the file name for -p, -png, or
+  -jpeg is "-"
+- tcsim_plot now sets output to /dev/null before terminating, to avoid plotting
+  twice
+- added rules for common configurations of srTCM and trTCM to if_u32.c
+  (tests/u32srtcm, tests/u32trtcm)
+- if_u32.c:issue_actions ignored the do_actions flag and generated actions
+  at each phase, which would yield invalid advanced meters (like trTCM)
+
+Version 8i (14-MAY-2002)
+------------------------
+
+- tcc: -xall:... implies "all" (tests/extall, suggested by Jacob)
+- iflib_arith.c: rel_math, rel_to_eq, and rel_eq_or now also support IPv6
+  addresses (tests/ipv6relar)
+- updated TODO accordingly
+
+Version 8h (30-APR-2002)
+------------------------
+
+- tests/intro was not included in distribution
+- constant overflow in multiplication and bit-shifts now yields an error
+  (tests/range)
+- constant overflow caused by right-shift of access now yields a warning
+  (tests/range)
+- updated tests/access and tests/ipv6 accordingly
+- attempting to take the modulo of an address now yields an error
+  (tests/tcng-8h)
+- tcc/named.c:ipv6_host always used AI_NUMERICHOST, even if allow_dns was set
+- tcc/tcng.y: clarified that "host" must be identical to "host4"
+- tcsim now supports IPv6 addresses and 128 bit arithmetic (tests/ipv6tcs)
+- tcsim has new type qualifiers "ipv4" and "ipv6" (tests/ipv4tcs,
+  tests/ipv6tcs)
+- split packet.def into packet4.def and packet6.def, with new packet.def that
+  includes both
+- updated Makefile, build/tcsim.spec.in, and scripts/symlinks.sh according to
+  above change
+- added remaining pending IPv6 issues to TODO
+
+Version 8g (30-APR-2002)
+------------------------
+
+- tcsim now accepts an optional unit name after the interface rate
+  (tests/tcsiru)
+- changed tcc/iflib_arith.c:rel_access to use 128 bit arithmetic
+- updated tests/access accordingly
+- if_u32.c and if_ext.c now support 128 bit matches (tests/ipv6u32 and
+  tests/ipv6ext)
+- new tcc include file default.tc, which is included by default (tests/definc)
+- split fields.tc into fields4.tc and fields6.tc, with new fields.tc that
+  includes both
+- updated Makefile, build/tcng.spec.in, and scripts/symlinks.sh according to
+  above two changes
+- new tcc option -n to suppress inclusion of default.tc (tests/definc)
+- updated tests/cpp31 accordingly
+
+Version 8f (29-APR-2002)
+------------------------
+
+- oops, 8e had wrong release date
+- tcsim/usvc.c:rtnl_open did not initialize rth->seq, yielding a complaint from
+  Valgrind
+- removed corresponding sections from build/valgrind.supp.in
+- configure is now compatible with iproute2-2.4.7-now-ss010803, 010824, and 
+  020116(-try)
+- tcng/README now recommends to download iproute2-2.2.4-now-ss010824.tar.gz
+  (this also affects tcsim.spec)
+
+Version 8e (26-APR-2002)
+------------------------
+
+- added new operators "host4" and "host6" to processs IPv4 and IPv6 addresses,
+  respectively (tests/ipv4, tests/ipv6)
+- tcng.l now recognizes RFC2373-style IPv6 addresses (tests/ipv6,
+  tests/misfeatures)
+- print_data can now print IPv6 addresses (tests/ipv6)
+- decisions with non-logical operators are now caught earlier (tests/decerr)
+- various minor fixes in nascent but still unusable IPv6 support (tests/ipv6)
+
+Version 8d (25-APR-2002)
+------------------------
+
+- IPv4 addresses have now their own first-class data type (tests/ipv4)
+- in debugging output and variable use output, IPv4 addresses are now printed
+  as dotted quads instead of hexadecimal integers
+- updated tests/named2 accordingly
+- added size qualifiers "ipv4" and "ipv6" (tests/ipv4, tests/ipv6)
+- dotted quads and "host" now yield IPv4 addresses instead of integers
+  (tests/ipv4)
+- "/" becomes a mask operator when applied to an IPv4 address (tests/ipv4)
+- added partial (useless) support for IPv6 addresses
+- added 128 bit arithmetic operations in u128.[ch]
+- print_expr now also prints an operator's type if it is not dt_none, dt_unum,
+  or dt_decision
+- fields.tc: changed type of ip_src, ip_dst, and igmp_group from .nl to .ipv4
+  (tests/ipv4)
+- inside tcng.y, FIELD_NAME was of type char * instead of FIELD *
+
+Version 8c (24-APR-2002)
+------------------------
+
+- scripts/runtests.sh: added command-line option -g for using Valgrind
+  (see http://developer.kde.org/~sewardj/)
+- added Valgrind suppression file build/valgrind.supp.in
+- added fields for old-style TOS octet (RFC791) to idiomatic.tc (suggested by
+  Jacob)
+
+Version 8b (25-MAR-2002)
+------------------------
+
+- merged class of ingress/egress was sometimes referenced after freeing,
+  yielding weird results or crashes (tests/merged, reported by Jacob)
+- tcc now warns that class for shared qdisc should be implicit (tests/merged)
+- added warning switch "explicit" to control above warning (tests/merged)
+- updated tests/classvar, tests/dpcwng, tests/egress, tests/extqch,
+  tests/ingin, and tests/tcng-7n accordingly
+
+Version 8a (15-MAR-2002)
+------------------------
+
+- changed tests/intro to use "egress" instead of "dsmark"
+- improved error message when attempting to use class selection path with
+  non-class (tests/tcng-8a, reported by Jacob)
+- updated tests/nullcsp accordingly
+- "tc" target didn't call egress "dsmark", and forgot to add default index
+  parameter (tests/tcng-8a)
+- updated tests/egress accordingly
+
+Version 7z (12-MAR-2002)
+------------------------
+
+- runtests.sh: added commands tcsim_unadorned and tcc_unadorned to invoke the
+  respective program without adding options or arguments
+- changed tests/tcng-6z to use tcsim_unadorned and tcc_unadorned instead of
+  tcsim/tcsim and tcc/tcc, respectively
+- default fifos are no longer added to yet-to-be-numbered (by a class selection
+  path) class, where they then then caused a complaint about numbering a class
+  with shared qdisc (tests/tcng-7z, reported by Jacob)
+
+Version 7y (12-MAR-2002)
+------------------------
+
+- added new qdisc "egress" that is synonymous to "dsmark", except that it
+  implies "default_index 0", and that using it as an "inner" qdisc produces a
+  warning (tests/egress)
+- changed all error and warning messages mentioning "dsmark" to say "egress" if
+  using egress (tests/egress)
+- updated tests/extndm accordingly
+- added regression test for dsmark's unnumbered and parameterless class warning
+  (tests/dpcwng)
+- fixed off by one error in dsmark index out of range diagnostic
+  (tests/tcng-7y)
+- updated tests/dsind and tests/tcng-1i accordingly
+- ingress qdisc generated invalid default classification decision dt_class
+  instead of dr_class (tests/tcng-7y)
+
+Version 7x (12-MAR-2002)
+------------------------
+
+- tests/ingin: added tcc-ext-echo example
+- added introductory example script tests/intro (suggested by Jacob)
+- policer id assignment is now almost O(n), instead of O(n^2) (tests/fastpol)
+- tcc/Makefile did not rebuild ports.tc after "make clean"
+
+Version 7w (11-MAR-2002)
+------------------------
+
+- tcc: moved class selection path code to separate file csp.c
+- dsmark now accepts class zero generated via class selection paths
+  (tests/tcng-7w)
+- class selection paths can now be empty (tests/nullcsp)
+- tcng now allows ingress qdisc to have a child qdisc, like dsmark
+  (tests/ingin)
+- updated tests/ingext accordingly
+- support for class selection paths is now qdisc flag (tests/tcng-7w)
+- updated tests/extndm accordingly
+
+Version 7v (7-MAR-2002)
+-----------------------
+
+- variable name lookup now uses a hash instead of a linear search
+- tcc: added undocumented option -H to dump hash statistics (tests/varhash)
+- iflib_actdb.c: when assigning preferred action numbers, use an unsorted
+  list of preferred numbers first, then a sorted list, instead of always
+  walking the whole action tree (tests/fastpref)
+
+Version 7u (5-MAR-2002)
+-----------------------
+
+- removed "ingress" qdisc restriction when using -Xx,all (tests/ingext)
+- changed error messages for ingress qdisc to include location (tests/ingext)
+- in diagnostics related to an inner qdisc, gred and dsmark now report qdisc
+  location, not class location (tests/tcng-7u)
+- updated tests/grederr accordingly
+
+Version 7t (4-MAR-2002)
+-----------------------
+
+- tcsim/klink.c: backed out accidential (but harmless) inclusion of linux/ip.h
+- tcc/ext/tccext.c: allocation for bit strings is now rounded to the next
+  full machine word (suggested by Jacob)
+- printing the usage of redefined variables containing structures crashed tcc
+  (tests/tcng-7t, reported by Jacob)
+- increased packet size in tests/barrier because too short packets could crash
+  dsmark since tcsim pretends they're IPv4 anyway
+
+Version 7s (4-MAR-2002)
+-----------------------
+
+- updated kernel version example in tcng/README from 2.4.17 to 2.4.18
+- configure is now compatible with 2.4.19 (pre-release, tested with pre2),
+  2.5.3, and 2.5.4
+- README: clarified valid kernel versions, i.e. that 2.5.5 and above are
+  currently not supported
+- began adding "Bivio Networks" where "Network Robots" is used, or replacing
+  the latter
+
+Version 7r (1-FEB-2002)
+-----------------------
+
+- tccext: added new construct "barrier", indicated by
+  TCCEXT_RULE->actions == NULL, to delimit uncombined, locally optimized rule
+  sets
+- updated tccext.h, tccext.c, echo.c, and match.c accordingly (tests/barrier)
+- tccext: new configuration keyword "nocombine" to keep tcc from merging ifs
+  into a single large expression (suggested by Jacob; tests/nocombsta,
+  tests/nocombmet)
+- tcc-ext-test now also accepts option "nocombine" (tests/barrier)
+
+Version 7q (31-JAN-2002)
+------------------------
+
+- "drop with u32" was missing in version 7o change log entry
+- changed if_ext_act.c to store pointers to buckets/classes, instead of values
+  extracted from them
+- tcc: renamed if_ext_act.c to iflib_actdb.c to reflect sharing with if_u32.c
+- u32 target now supports SLB and DLB meters (tests/u32slb, tests/u32dlb)
+- tcc incorrectly required "mtu" if "peakrate" was not specified
+  (tests/tcng-7q)
+- meters.tc: meter test macros did not enclose argument in parentheses, and
+  grammar did not allow parentheses around policer definition (tests/tcng-7q)
+- meters.tc: meter test macros now evaluate macro argument only once
+  (tests/metmac)
+
+Version 7p (29-JAN-2002)
+------------------------
+
+- fixed buggy buffer use in location.c (tests/tcng-7p)
+- in variable use file, each structure entry now yields a separate line, even
+  if the whole structure was generated in a single assignment (tests/struct)
+- data_clone left parent pointer of top-level structure elements uninitialized
+- compound expressions may now also include field definitions (tests/compound)
+- meters.tc now has macros SLB, DLB, srTCM, and trTCM which are used
+  $var = SLB(...) instead of set_SLB($var,...) (tests/meters2)
+
+Version 7o (29-JAN-2002)
+------------------------
+
+- tcc: -S now omits separator entirely
+- updated tests/tcng-7n accordingly
+- back-ported match generation back-end from external interface to u32, to
+  allow for transparent elimination of contradictory matches
+- updated tests/tcng-2o accordingly
+- also u32 targets now propagates actions to leaf nodes
+- u32 did not generate correct default classification when negating
+  (tests/tcng-7o)
+- u32 target now supports "drop" action (tests/u32drop)
+
+Version 7n (27-JAN-2002)
+------------------------
+
+- tcc: undocumented option -S joins structure entries in variable use output
+  with an underscore instead of a dot (tests/tcng-7n)
+- dsmark now auto-assigns class number if using only one class, so that this
+  class has the implicit qdisc (reported by Jacob; tests/tcng-7n)
+- values.tc now complains if included directly, not via fields.tc
+  (tests/includes)
+- tcsim's packet.def pretends to be fields.tc when including values.tc
+  (tests/includes)
+- new header file idiomatic.tc, for inclusion from fields.tc, with convenience
+  macros for idiomatic patterns in TCP/IP packets (tests/idiomatic)
+- updated scripts/symlinks.sh and build/tcng.spec.in to include idiomatic.tc
+- dsmark did not detect duplicate class numbers (tests/tcng-7n)
+
+Version 7m (26-JAN-2002)
+------------------------
+
+- added first-class data type "bucket", which is similar to "police", but it
+  only takes parameters "rate", "burst", "mpu", "pragma", and "tag", has no
+  attached decisions, and cannot be used in filter ... police ... expressions
+  (tests/bucket)
+- updated meters.tc to use buckets instead of policers (the "mtu" parameter is
+  still accepted, but now ignored)
+- tcc/data.[ch]: removed ancient #ifdefs that controlled whether data_destroy*
+  really free data
+- added compound expression construct { $var = ...; ...; expression; }
+  (tests/compound)
+- added structure data type (associative arrays) (tests/struct)
+- updated tests/tcng-1h and tests/typerr to reflect changed diagnostics due to
+  parser modifications
+- unit suffixes and size qualifiers are now processed in parser instead of
+  scanner, reducing name space restrictions (tests/tcng-7m)
+- tcc accepts (and ignores) option -S again (will be used for compatibility
+  mode in the future)
+
+Version 7l (25-JAN-2002)
+------------------------
+
+- several small corrections in tcc's usage output
+- tcc: removed option -S (obsolete since version 6w)
+- updated tests/tcng-6w accordingly
+- configure is now compatible with 2.5.3 (pre-release, tested with pre5)
+- tcsim/setup.klib: changed af_netlink.c filter for 2.5.3-pre5 compatibility
+
+Version 7k (15-JAN-2002)
+------------------------
+
+- renamed tcsim's pretty.pl to tcsim_pretty
+- updated tcsim/README accordingly
+- added tcsim_pretty to tcsim RPM
+- upgraded scripts/t2x.pl to version "15-JAN-2002" (adds %%end directive and
+  fixes meta-characters as \verb deliminators)
+- several small corrections in tcsim's usage output and tcsim/README
+
+Version 7j (1-JAN-2002)
+-----------------------
+
+- updated kernel version example in tcng/README from 2.4.16 to 2.4.17
+- configure is now compatible with 2.4.18 (pre-release, tested with pre1),
+  2.5.2 (pre-release, tested with pre5)
+- field roots are now syntactically equivalent to fields and can be combined
+  with offsets and size qualifiers (tests/tcng-7j)
+- updated tests/grpalloc accordingly
+- corrected missing access size adjustment uncovered by field root syntax
+  change
+- if_ext.c: added assertion to catch above type of bug
+
+Version 7i (31-DEC-2001)
+------------------------
+
+- credits at the beginning of README now also mention Jacob Teplitsky's
+  contributions
+- added new tcng construct "field_root" to set non-zero base offset group
+  (tests/froot)
+- updated tcc/LANGUAGE accordingly
+- tcc now assigns offset group numbers starting with 100 (defined in
+  config.h:AUTO_OFFSET_GROUP_BASE, tests/grpalloc)
+- updated tests/bitfield, tests/extmult, tests/field, tests/field2,
+  tests/precond, and tests/tcng-2u accordingly
+
+Version 7h (22-DEC-2001)
+------------------------
+
+- if_ext.c: bits from impossible matches could "leak" to next match
+  (tests/tcng-7h)
+- updated tests/precond accordingly
+- added test <= 5 to tests/relop
+- tcc: added option -O to enable optimizations
+- iflib_arith.c: added prefix-based conversion of relational operators, enabled
+  with -Oprefix (suggested by Jacob; tests/relpref)
+- iflib_arith.c: != can now be turned into multiple tests for equality, enabled
+  with -One (tests/ne)
+- common subexpression elimination can now be disabled with -Onocse (tests/cse)
+
+Version 7g (18-DEC-2001)
+------------------------
+
+- macro expansions used by tcc_var2fix.pl were incompatible with Red Hat cpp
+  2.96-54; rewrote tcc_var2fix.pl to use different expansion mechanism
+- tcc gave syntax error for file beginning with semicolon (tests/tcng-7g)
+- tcsim treated semicolons after whitespace in tcc input as comments
+  (tests/tcng-7g)
+
+Version 7f (14-DEC-2001)
+------------------------
+
+- split tcc/fields.tc into fields.tc and values.tc to allow inclusion of the
+  latter by packet.def
+- updated tcc/LANGUAGE accordingly
+- added tcsim/packet.def, a modernized version of ip.def (tests/packet)
+- -N skips most optimizations in the "old" algorithm, for experiments with
+  "smart" backends
+- mask operator generated mask 0 instead of 0xffffffff for ":32" (reported by
+  Jacob; tests/tcng-7f)
+
+Version 7e (13-DEC-2001)
+------------------------
+
+- the use of bare words as strings in expressions or in warning labels is now
+  a syntax error
+- updated tests/bare, tests/host, tests/ports, tests/tag, and tests/tcng-7c
+  accordingly
+
+Version 7d (13-DEC-2001)
+------------------------
+
+- tcc now issues a warning if treating a bare word as a string in expressions
+  and in warning label lists (tests/bare)
+- updated tcc/LANGUAGE accordingly
+- updated examples-ng/prio+rsvp, tests/extrasemi, tests/host,
+  tests/misfeatures, tests/named, tests/named2, tests/ports, tests/semicolon,
+  tests/tag, tests/varredef, tests/waprpos, and tests/warn accordingly
+
+Version 7c (13-DEC-2001)
+------------------------
+
+- fields.tc: changed definitions of ip_RF, ip_DF, ip_MF, tcp_URG, tcp_ACK,
+  tcp_PSH, tcp_RST, tcp_SYN, and tcp_FIN to return 0 or 1, not 0 or 2^n
+  (tests/bitfield)
+- Makefile now uses rpm --eval instead of build/dummy.spec hack
+- removed build/dummy.spec
+- filter "route" parameter "fromif" now accepts constant expressions, and no
+  longer requires fixed string (tests/tcng-7c)
+
+Version 7b (11-DEC-2001)
+------------------------
+
+- added option -N or --with-tcsim to "configure"
+- tcc/iflib-red.c: fixed gcc 3.1 syntax incompatibility
+- changed tests/cppdollar to ignore extra blank lines emitted by cpp 3.1
+- tcc/location.c: changed default file name from "(stdin)" to "<stdin>", for
+  cpp 3.1 compatibility (tests/cpp31)
+- tcc/location.c now inserts "<stdin>" when encountering empty file name, e.g.
+  from older versions of cpp (tests/cpp31)
+- updated tests/bands, tests/basic, tests/blocks, tests/cbqroot, tests/defdsm,
+  tests/drop, tests/dsind, tests/expensive, tests/extcbq, tests/extflt,
+  tests/extlocbas, tests/extlocext, tests/extndm, tests/fredef, tests/grederr,
+  tests/host, tests/ifnamsiz, tests/location, tests/misfeature, tests/named,
+  tests/newsynmsc, tests/phasep, tests/ports, tests/selpath, tests/setpathcbq,
+  tests/selpathdup, tests/selpathext, tests/semicolon, tests/tag,
+  tests/tcng-1g, tests/tcng-1h, tests/tcng-1i, tests/tcng-1j, tests/tcng-2e,
+  tests/tcng-2k, tests/tcng-3k, tests/tcng-3m, tests/tcng-4f, tests/tcng-4i,
+  tests/tcng-4u, tests/tcng-5a, tests/tcng-5c, tests/tcng-6t, tests/tcng-6w,
+  tests/tcng-6x, tests/tcng-7a, tests/typerr, tests/variables, tests/varredef,
+  tests/waprpos, and tests/warn accordingly
+- updated tcng/tcc/README accordingly (i.e. also location map uses "<stdin>"
+  instead of "-")
+- added -X phase "P" for tcsim's cpp
+- tcsim/cfg.l also follows "<stdin>" convention (tests/cpp31)
+- changed tests/modules to work around strange environment variable propagation
+  in recent version of bash
+- scripts/run-all-tests: work-around for case insensitive character range bug
+  in some versions for bash
+
+Version 7a (7-DEC-2001)
+-----------------------
+
+- tcc -E -E no longer refuses ">" and ">=" as "expensive" even though
+  iflib_arith.c:rel_general could handle them (tests/tcng-7a)
+
+Version 6z (6-DEC-2001)
+-----------------------
+
+- updated kernel version example on tcng/README from 2.4.14 to 2.4.16
+- configure is now compatible with 2.4.16, 2.4.17 (pre-release, tested with
+  pre5), 2.5.0, and 2.5.1 (pre-release, tested with pre5)
+- if tcsim couldn't exec tcc, it claimed cpp was missing
+- tcc.c:main did not allocated room for -$ in cpp argv, causing tcsim to
+  segfault if invoked without arguments (tests/tcng-6z)
+- tcc/Makefile: added comment explaining why "make clean" and "make spotless"
+  don't remove file "port-numbers"
+- tcc did not accept semicolons immediately following opening curly brace
+  (tests/tcng-6z)
+
+Version 6y (20-NOV-2001)
+------------------------
+
+- tcc/README: added unnamed scopes to description of variable usage output
+- tcsim now allows double quotes around interface names (tests/tcng-6y)
+- tcc-ext-test subsystem now removes .so, .o, and .out files after usage
+- fields.tc: fragment flag values were shifted by four bits (tests/tcng-6y)
+- updated tests/subbyte accordingly
+
+Version 6x (19-NOV-2001)
+------------------------
+
+- tcc and tcsim now invoke cpp with the option -$ (tests/cppdollar)
+- tcng: blocks ({...}) are allowed anywhere inside other blocks (tests/blocks)
+- updated tcc/LANGUAGE accordingly
+- removed comment explaining past syntax weirdness from tcc/tcng.y
+- lexer read token past closing curly brace with inner scope (tests/tcng-6x)
+- tcc_var2fix.pl generated macros with same name as variables, causing
+  conflicts when using -$
+- removed explicit detection of old-style syntax error of named device without
+  block (tests/newsynmsc)
+- like classes and filters, now also qdiscs can be extended (tests/extend)
+- util.h:__DP_CHECK did not print error location (tests/tcng-6x)
+- on SIGINT, tcc tried to close stream even if already closed, failing
+  assertion
+- added external script tcc-ext-abort that simply sends a SIGABRT to itself
+- tcc now fully decodes and reports exit status and signals from external
+  program (reported by Ronald Murphy; tests/tcng-6x)
+
+Version 6w (15-NOV-2001)
+------------------------
+
+- tcc's usage output did not mention -u in the synopsis
+- tcc: backwards-compatibility -S no-op now yields a warning (tests/tcng-6w)
+- filter.c:unum_only now prints source code location on error (tests/tcng-6w)
+- tcc did not refuse filters other than tcindex on child qdiscs or their
+  classes when using "all" with external interface (tests/tcng-6w)
+- tcc adds empty classifier if classifier is missing when using "all" with
+  external interface (tests/tcng-6w)
+- updated tests/extlocbas, tests/pragma, tests/tcng-4d, tests/tcng-4l,
+  tests/tcng-4o, and tests/tcng-5s accordingly
+
+Version 6v (9-NOV-2001)
+-----------------------
+
+- updated kernel version example on tcng/README from 2.4.13 to 2.4.14
+- configure is now compatible with 2.4.15 (pre-release, tested with pre1)
+- iflib_red.c:bubble_or mis-converted (a || side_effect) && b (tests/tcng-6v)
+- iflib_act.c:iflib_actions now does second round of optimizations to resolve
+  constants hidden between actions (see above)
+- updated tests/misfeatures accordingly
+- type error messages now contain the type found, and frequently also the type
+  expected (tests/typerr)
+- updated tests/ports, tests/tcng-6t accordingly
+
+Version 6u (26-OCT-2001)
+------------------------
+
+- tcc and tcsim did not look at exit status of cpp subprocess (reported by
+  Ronald Murphy; tests/tcng-6u)
+- changed tcc_var2fix.pl to use a field instead of a dummy macro assignment,
+  such that no cleanup is needed after invoking the "next" macro, and
+  continuation (i.e. semicolon or curly brace) following the generated macro
+  can be applied to the "next" macro
+
+Version 6t (25-OCT-2001)
+------------------------
+
+- assert in qdisc.c:add_default_fifos assumed qdisc was already sanity-checked
+  (reported by Ronald Murphy; tests/tcng-6t)
+- updated kernel version example on tcng/README from 2.4.12 to 2.4.13
+- configure is now compatible with 2.4.14 (pre-release, tested with pre1)
+- dropped tcc/tcm.tc from the distribution (and all its offsprings)
+- added scripts/update-port-numbers.sh and scripts/extract-port-numbers.pl to
+  download IANA port-numbers file and to convert it a format suitable for
+  inclusion by tcng scripts (tests/ports)
+- added ports.tc to source distribution and to all tcc binary distributions
+- in expressions X+0, 0+X, and X-0, type of X was not verified (tests/tcng-6t)
+- tcsim/ip.def now uses ports.tc for port definitions (PORT_DNS changed to
+  PORT_DOMAIN)
+- updated examples-ng/u32, examples/u32, tests/ext, and tests/trace accordingly
+- removed description of ambiguous drop with old syntax from tcc/LANGUAGE
+
+Version 6s (23-OCT-2001)
+------------------------
+
+- cleaned up "TODO"
+- fields.tc: ip_RF, ip_DF, ip_MF, tcp_URG, tcp_ACK, tcp_PSH, tcp_RST, tcp_SYN,
+  tcp_FIN no longer contain explicit comparison, allowing tcc to perform better
+  optimizations
+- updated tests/subbyte accordingly
+- moved scripts/var2fix.pl to tcc/tcc_var2fix.pl
+- scripts/symlinks.sh links tcc/tcc_var2fix.pl to bin/
+- build/tcng.spec.in: included tcc/tcc_var2fix.pl in the tcc-devel RPM
+- scripts/symlinks.sh tried to link to directory with ln -s instead of ln -sfn
+
+Version 6r (23-OCT-2001)
+------------------------
+
+- alternate device name syntax "dev <expression>" (suggested by Simon Nuthall;
+  tests/named2)
+- updated tests/location and tests/tag accordigly (used device name "dev")
+- updated tcc/LANGUAGE accordingly
+- enabled "new" algorithms (except for the "new" bit-tree) and removed some
+  old code (iflib_red.c:optimize_eq, shift handling in iflib_bit.c:eq_fsm,
+  special treatment of -N in tcc.c:main)
+- updated tests/arith, tests/access, tests/bittest, tests/buckfill,
+  tests/misfeatures, tests/tcng-2k, tests/tcng-5z
+- moved various shift and mask related problems from tests/misfeatures to
+  tests/tcng-6r
+
+Version 6q (23-OCT-2001)
+------------------------
+
+- ext_io.c now cleans up temporary files when interrupted with SIGINT
+- added scripts/run-all-tests which does what the name suggests
+- TCNG_TESTS_BINDIST and tcng-tests RPM include run-all-tests
+- removed toys/cbq and toys/if
+- updated toys/cspnest and toys/tunnel to use new syntax
+- -E -E now reports negation only when encountering it (tests/bittest)
+- expressions without relational operator are automatically treated as X != 0
+  (added in 6o; tests/bittest)
+- iflib_not optimizes double negation and single bit tests (tests/bittest)
+
+Version 6p (23-OCT-2001)
+------------------------
+
+- switched tcc to exclusively use new syntax (also affects meters.tc and
+  var2fix.pl)
+- cleaned up syntax for classes, filter specifications in selections, and the
+  two "... if" cases previously requiring %prec
+- updated tests/newsynmsc and tests/semicolon accordingly
+- fixed minor glitch in tests/extrasemi
+- updated tcc/LANGUAGE
+
+Version 6o (23-OCT-2001)
+------------------------
+
+- tcc/tcng.y: changed rules for assignments, qdiscs bodies, class bodies,
+  filter bodies, and selector lists from right-hand side to left-hand side
+  recursion to avoid overflowing YACC stack
+- tests/misfeatures: noted that dsmark with class selection paths gets confused
+  if nounspec is set, the classification is not self-contained, and
+  default_index points to a non-existent class number
+- changed /.*something.*/ to /^.*something.*/ in sed regexps of tests/buckfill
+  and tests/tcng-6j, making the tests up to four times faster (this was the
+  "very slow tcsim send" bug)
+- tcc: -N -N didn't switch to "old" algorithm
+- tcc: -N -N -N switches to common "access rel constant" conversion algorithm
+  iflib_arith:rel_access (tests/access)
+- dump_failed now prints shorter "can't dump subexpression", and optionally
+  the reason of failure instead of the line number
+- updated tests/additive, tests/access, tests/misfeatures, and tests/tcng-5q
+  accordingly
+- changed if_u32.c:dump_eq and if_ext.c:dump_match to handle multiple ands
+  (previously filtered by iflib_red.c:optimize_eq)
+- tcng.l used strtol to parse uint32_t, limiting all integer literals to 31
+  bits (tests/tcng-6o)
+- tcsim's cfg.l used strtol to parse binary uint32_t (tests/tcng-6o)
+
+Version 6n (20-OCT-2001)
+------------------------
+
+- "tag" parameter did not accept expressions (tests/tcng-6n)
+- "pragma" parameter did not accept expressions (tests/tcng-6n)
+- tests/misfeatures: "pragma" should accept normal expressions, not only
+  primary expressions
+- tcc/meters.tc.in: all meter definition macros (set_*) now have optional
+  parameters "tag" and "pragma" to set the tag and one pragma for the buckets
+  generated (only with new syntax; tests/mettagpra)
+- moved old TCM examples in toys/srtcm.tc and toys/trtcm.tc to tests/pol_ext
+- tcng tests bindist and tcng-tests RPM no longer include toys/srtcm.tc and
+  toys/trtcm.tc
+- prio now automatically raises default for "bands" parameter if necessary
+  (tests/bands)
+- updated tests/tcng-4u accordingly
+
+Version 6m (20-OCT-2001)
+------------------------
+
+- scripts/runtests.sh now invokes tcc with -S -S -S, and tcsim with
+  -Xc,-S -Xc,-S -Xc,-S -DTCNG_SEMICOLON
+- converted examples-ng/* to new syntax
+- converted tcc/example to new syntax
+- converted toys/srtcm.tc and toys/trtcm.tc to new syntax
+- de-crowded tests/arith, tests/host, tests/misfeatures, tests/named,
+  tests/tcng-1i, tests/tcng-1j, tests/tcng-1o, tests/tcng-2f, and tests/tcng-3g
+- converted all regression tests to new syntax
+- removed ambiguous syntax tests from tests/misfeatures
+- removed ugly old syntax tests from tests/newsynmsc and tests/semicolon
+- tests/tcng-5y showed spectacular failure of old syntax, with subtle syntax
+  ambiguity leading to subtle error in generated classifier
+- TODO: removed entry for mythical __ file bug
+
+Version 6l (19-OCT-2001)
+------------------------
+
+- extra semicolons are now allowed where one semicolon or a block end appears,
+  e.g. ;;; is equivalent to ; and }; is equivalent to } (tests/extrasemi)
+- new syntax requires interface sections to be enclosed by curly braces
+  (tests/newsynmsc)
+- new syntax does no longer allow filters specified in selectors to have their
+  own blocks (tests/newsynmsc)
+- tcc now handles both old-style and new-style syntax for filters specified in
+  selectors (tests/newsynmsc)
+- updated tests/semicolon accordingly
+- documented new syntax in tcc/LANGUAGE
+- tcc.c:main did not allocated room for -DTCNG_*SEMICOLON in cpp argv, causing
+  tcc to segfault if invoked without arguments
+- empty tags are now ignored (updated tests/tcng-5a accordingly)
+- empty pragmas are now ignored (updated tests/pragma accordingly)
+- tags can now also be specified as "tag <string>" (updated tests/tag)
+- strings are now first-class data types in the tcng language, can be compared
+  with relational operators, and can be concatenated with + (tests/string)
+- updated tcc/LANGUAGE accordingly
+- "host" can now be followed by an expression, not only a host name or IPv4
+  address (tests/named2)
+- host, port, ipproto, and (ether) protocol parameters can now be also use
+  strings expression, not just string literals or numeric expressions
+  (tests/named2)
+- variables now record the location where they are created, yielding much
+  better location information in warnings
+- updated tests/location, tests/selpath, tests/tcng-3k, tests/tcng-5c,
+  tests/varredef, tests/waprpos, and tests/warn accordingly
+- syntax changes changed the location indicated in some error messages. Updated
+  tests/named accordingly
+- tcc/LANGUAGE: split parameters section to cover expressions in their own
+  section
+
+Version 6k (19-OCT-2001)
+------------------------
+
+- fixed precond() example in tcc/LANGUAGE (reported by Ronald Murphy)
+- tcng language will soon require semicolons at the end of constructs, unless
+  they end with a block, e.g.  $x = 5  will be  $x = 5;  fifo  will be  fifo;
+  but  prio { ... }  will stay the same
+- tcc can help migration with the undocumented -S option: without -S, behaves
+  like it did before, with -S it warns when using semicolons (for comments),
+  with -S -S semicolons no longer begin comments, and tcc warns if a semicolon
+  is missing somewhere, and with -S -S -S missing semicolons yield an error
+  (tests/semicolon)
+- updated fields.tc accordingly (remains backwards-compatible)
+- tcc adds -DTCNG_NOSEMICOLON to CPP options if no or only one -S it set,
+  -DTCNG_SEMICOLON if more than one -S is set
+- meters.tc is now generated via macro-generating preprocessor
+  scripts/var2fix.pl
+- updated meters.tc such that it is generated to contain a part with, and one
+  without semicolons (new files meters.tc.in and meters_nosemi.tc.in)
+- duplicate global pragma location is reported more accurately
+- updated tests/waprpos accordingly
+
+Version 6j (17-OCT-2001)
+------------------------
+
+- Makefile: "tcc" has no dependency on "symlink", breaking RPM build in 6i
+- tcc/location.c:file_open printed wrong file name on error
+- meters.tc: trTCM_red fell through if packet conformed to Tc, but not to Tp
+  (tests/tcng-6j)
+- if_ext_act.c:add_actions gave up too quickly when encountering unusual
+  expressions (tests/tcng-6j)
+
+Version 6i (17-OCT-2001)
+------------------------
+
+- tcc and tcsim now print CPP's path if CPP isn't found (reported by Jacob)
+- tcng-tests RPM no longer includes tests/usage, which can safely be tested in
+  a regular build environment, and is very location-dependent 
+- fields.tc: renamed fields "ip", "tcp", etc. to "ip_hdr", "tcp_hdr", etc.
+- updated tests/classvar, tests/field, tests/tcng-4n, and tests/tcng-5y
+  accordingly
+- described now consistent field naming convention in tcc/LANGUAGE
+- tcm.tc now fails with an #error (was #warning) and will be removed very soon
+- updated TODO
+
+Version 6h (15-OCT-2001)
+------------------------
+
+- unless -B is set: -N is now enabled by default, and double -N switches off
+  -N (to reuse old regression tests for a while)
+- updated tests/buckfill, tests/classvar, tests/expensive, tests/fastpath,
+  tests/relop, tests/tcng-5j, tests/tcng-5y, and tests/tcng-5z accordingly
+- build/tc{ng,sim}.spec.in: %doc came before %defattr, which caused
+  documentation files to pick up wrong ownership
+- meters.tc was not compatible with SuSE's CPP that identifies itself as
+  CPP 2.95.2 but appears to be different from the CPP that comes with GCC
+  2.95.2
+
+Version 6g (15-OCT-2001)
+------------------------
+
+- tcc: moved generation of location map and variable use list before build
+  phase, so external programs can use these files
+- doc/external.tex: clarified that tokens need to be added to a bucket not only
+  on "conform", but also on "count".
+- removed corresponding (rather obscure) tests from tests/misfeatures
+- tcc/ext/match.c and tcc/tcm_cls.c now refill buckets on "count" too
+  (tests/buckfill)
+- iflib_red.c:prune_shortcuts sometimes removed count in "count ... || 1"
+  (tests/buckfill)
+- tcm_cls.c now prints policer state if DEBUG is #defined
+- added correct solution for double count test, and failure of "old" algorithm
+  (tests/misfeatures)
+
+Version 6f (12-OCT-2001)
+------------------------
+
+- updated path to fields.tc in tcc/LANGUAGE
+- added function "precond" that evaluates the preconditions of its argument
+  (tests/precond)
+- added regression tests for bit and other sub-byte fields (tests/subbyte)
+- fixed subtle pointer aliasing issues in field.c
+
+Version 6e (12-OCT-2001)
+------------------------
+
+- updated kernel version example on tcng/README from 2.4.10 to 2.4.12
+- configure is now compatible with 2.4.12 and 2.4.13 (pre-release, tested with
+  pre1)
+- added #warning to tcm.tc, telling users to switch to meters.tc
+- added test for count-count crash with -N -B to tests/misfeatures
+- scripts/runtests.sh now searches PATH for executables
+- build/Makefile: "variable" expansion sed scripts only expanded first
+  occurrence of "variable"
+- TCSIM_BINDIST and tcsim-devel now also contain header files from
+  ulib/iproute2/include*, ulib/iproute2/tc/tc_{util,core}.h, toys/?rtcm.tc,
+  and all examples
+- tcc/ext/tcc-ext-test is now relocatable via TCNG_TOPDIR
+- make tcsim-rpms  now also generates tcng-tests RPM
+- trimmed usage lines of tcc and tcsim to avoid wrap-around if installed at
+  default location
+
+Version 6d (11-OCT-2001)
+------------------------
+
+- added more regression tests for fields (tests/field2)
+- fields in variables were expanded too early, i.e. at the time of assignment
+  instead of at the time of use (moved tests from tests/misfeatures to
+  tests/tcng-6d)
+- pseudo parameter names for meter macros can now be macros themselves
+  (added tests to tests/meters)
+- updated tests/expensive, tests/fastpath, and tests/tcm to use meters.tc
+  instead of tcm.tc
+
+Version 6c (11-OCT-2001)
+------------------------
+
+- meters.tc: set_SLB sometimes used __dlb_ names, causing a variable
+  uninitialized error (tests/tcng-6c)
+- added tests for SLB and DLB macros, and the set_* macros of srTCM and trTCM
+  (tests/meters)
+
+Version 6b (11-OCT-2001)
+------------------------
+
+- tcng expression syntax didn't include unary minus, oops :-) (tests/tcng-6b)
+- tcc/LANGUAGE acknowledges that there are "standard" header files and naming
+  conventions
+- added tcc/meters.tc with improved TCM macros and single/double leaky bucket
+  macros, obsoleting tcm.tc
+- fields in variables are expanded too early, i.e. at the time of assignment
+  instead of at the time of use, which can cause problems with preconditions
+  (tests/misfeatures)
+ 
+Version 6a (10-OCT-2001)
+------------------------
+
+- extended tests/relop to check range 0-31 (was 0-16) to ensure better coverage
+  of upper bits
+- tcc, tcsim: added -X phase "p" for tcc's cpp (tests/phasep)
+- tcng: the "warn" directive can now appear anywhere where variables or fields
+  are allowed (tests/waprpos)
+- tcng: the global pragma can now appear after global variables, fields, or
+  "warn" directives (tests/waprpos)
+- updated tcc/LANGUAGE accordingly, described pragmas, and renamed the
+  "preamble" to "processing directives"
+- tcng no longer allows the empty string as a pragma value (tests/pragma)
+- tccext.c included keyword "pragma" among pragma values for qdiscs and classes
+  (updated tests/pragma)
+- tcng/README now recommends to download iproute2-2.2.4-now-ss001007.tar.gz
+  instead of iproute2-current.tar.gz (this also affects build/tcsim.spec)
+- build/Makefile: target "all" now depends on "rpmstuff"
+
+Version 5z (10-OCT-2001)
+------------------------
+
+- "C" target didn't support < or >= (tests/tcng-5z)
+- iflib_bit.c did not recognize matches with values larger than the field size
+  as always false (tests/tcng-5z)
+- tcc can now translate relational operators with arbitrary constants
+  (tests/relop)
+- added list of unfiled items to TODO
+
+Version 5y (9-OCT-2001)
+-----------------------
+
+- new option -Wexpensive to warn about expensive operations (as opposed to -E,
+  which yields a fatal error; added tests to tests/expensive)
+- variables can now be re-defined, just like fields (tests/varredef)
+- new option -Wredefine (tests/varredef)
+- updated tcc/LANGUAGE accordingly
+- iflib_red.c:bundle could not handle multiple optimizations at the same level
+  and has fence-post error when optimizing expressions of the type (ab || a)
+  (tests/tcng-5y)
+- updated tests/not accordingly
+- oops, build/dummy.spec was never added (since tcng-5v)
+
+Version 5x (5-OCT-2001)
+-----------------------
+
+- util.c: new function alloc_sprintf that acts as asprintf with error handling
+- fixed about a dozen potential buffer overflows, many of them by using
+  alloc_sprintf
+- if_c.c: changed asserts on bucket/result overflow to errorf; moved array size
+  definitions to config.h
+- updated tests/additive according to above changes
+- added and enabled data_destroy and data_destroy_1
+- fixed calls to data_destroy* iflib_act.c and iflib_arith.c, and access after
+  destroy problems in iflib_red.c
+
+Version 5w (5-OCT-2001)
+-----------------------
+
+- new external program tcc-ext-file that writes the configuration data to the
+  file specified with -Xx,file=<name>
+- added tcc-ext-file to binary distributions
+- child termination detection in tcc/ext_io.c was unnecessarily complicated and
+  caused a race condition between child termination and processing of errors
+  reported by child
+
+Version 5v (4-OCT-2001)
+-----------------------
+
+- changed the names of filter.pl and plot.pl to tcsim_filter and tcsim_plot,
+  respectively
+- updated tcsim/README, scripts/symlinks.sh, scripts/runtests.sh,
+  tests/pol_traffic, tests/tbf, tests/tcng-3i, and tests/usage accordingly
+- scripts/runtests.sh: changed trinity.sh to "trinity" in order to eliminate
+  last remaining bash-ism
+- updated tests/ext, tests/tcng-2u, and tests/usage accordingly
+- build/tcng.spec.in: split tcc RPM into tcc and tcc-devel
+- added echoh.h to tcc-devel RPM
+- Makefile: changed dependencies on ".distisuptodate" to the equivalent "dist"
+- Makefile: added target "rmaltdist" to remove all binary distributions in
+  tar.gz files or in RPMs, and any SRPMs, leaving only source distributions
+  created with "make dist"
+- "make rpm" now symlinks tcng source instead of copying it
+- added experimental spec file build/tcsim.spec.in and helper file
+  build/dummy.spec to build tcsim RPM (use with  make tcsim-rpms )
+- Makefile: re-structured RPM-related targets
+- TCSIM_BINDIST now also includes directories lib/tcng/include/klib/include and
+  lib/tcng/include/klib/kernel/include
+- added missing dependency of tcsim on symlinks
+
+Version 5u (3-OCT-2001)
+-----------------------
+
+- TODO: removed obsolete remark about bubble_and
+- tcc: removed obsolete options -A, -C, and -F
+- tcc: new option -W[no]... to enable/disable specific warnings
+- -Wtruncate enables warning when truncating value ranges (disabled by default;
+  used to be always enabled)
+- updated tests/tcng-2e accordingly
+- -Wnounused disables unusued variable warning (enabled by default)
+- updated tests/devbra and tests/tcng-5g (also removing several of useless -w),
+  and tests/extlocbas and tests/misfeatures accordingly, i.e. by changing -w to
+  -Wnounused
+- tcng: new construct "warn [no]warning,..." to include -W options in
+  configuration files (tests/warn)
+- duplicate class selection paths are now valid, and are treated as distinct
+  classes at top-level dsmark, in order to allow use of marking at top-level
+  dsmark (tests/selpathdup)
+- removed duplicate class selection path test from tests/selpath
+
+Version 5t (3-OCT-2001)
+-----------------------
+
+- tcc/ext/tccext.* added field "location" to TCCEXT_BLOCK, TCCEXT_QDISC,
+  TCCEXT_CLASS, and TCCEXT_BUCKET, containing pre-formatted location string
+- tcc/ext/echoh.*: added function echoh_buckets to print buckets
+- tcc/ext/echoh.* now prints an error with location information and exits, if
+  encountering pragma "force_failure"
+- added regression tests for error feedback (tests/extlocext)
+- tcc/ext/tccext.c:tccext_destroy did not free block->name
+- tcc/ext.c no longer uses yyerror, because it's usually invoked either before
+  parsing the first line or at EOF anyway
+- removed tccext output formatting from TODO
+
+Version 5s (3-OCT-2001)
+-----------------------
+
+- location specifications enclosed in [<...>] in standard error from external
+  programs are now translated by tcc back to source code locations
+  (tests/extlocbas)
+- added new external program tcc-ext-xlat used by tests/extlocbas
+- -Xx,fifos no longer attaches fifos to numbered dsmark classes (tests/tcng-5s,
+  reported by Jacob)
+- tcc now prints "expression" as the value of non-constant variables
+  (tests/tcng-5s)
+- updated tcc/README accordingly
+- child process for external program executed exit handler, causing attempt to
+  unlink input file twice, which failed, and output file was not deleted as a
+  consequence (tests/tcng-5s, reported by Jacob)
+  
+Version 5r (2-OCT-2001)
+-----------------------
+
+- configure is now compatible with 2.4.11 (pre-release, tested with pre2)
+- tcsim/setup.klib: added MODULE_LICENSE to include/linux/module.h for 2.4.11
+  compatibility
+- added targets "ephemeral", "dep", "depend", and "clean" to build/Makefile
+- added "build" to DIRS in top-level Makefile, in particular so that
+  "make ephemeral" now descends into "build"
+- Makefile and scripts/Makefile: added "all" to .PHONY
+- doc/Makefile: added .PHONY
+
+Version 5q (2-OCT-2001)
+-----------------------
+
+- q_gred.c: changed diagnostics to provide better location data
+- added set of regression tests for GRED error detection (tests/grederr)
+- q_gred.c tested for presence of qdisc parameter "grio" in class scope
+  (tests/grederr)
+- q_prio.c: changed diagnostics to provide better location data
+- updated tests/tcng-1i, tests/tcng-1j, and tests/tcng-4u accordingly
+- q_dsmark.c:sel_add_hier_filters "return"ed when encountering GRED, instead of
+  "continue"ing, thereby possibly skipping other qdiscs (tests/tcng-5q,
+  reported by Jacob)
+- updated tests/selpathgred accordingly
+- iflib_act.c:bubble_and now explicitly checks for invalid condition
+  (tests/tcng-5q)
+- updated tests/misfeatures accordingly
+- tcc/LANGUAGE: clarified role of parent classes within the same qdisc in class
+  selection path
+- added set of regression tests for class selection paths with CBQ
+  (tests/selpathcbq)
+
+Version 5p (28-SEP-2001)
+------------------------
+
+- tcc/LANGUAGE: documented variables containing expressions
+- tcc now refuses interface names longer than IFNAMSIZ-1 (15) characters
+  (tests/ifnamsiz)
+
+Version 5o (28-SEP-2001)
+------------------------
+
+- variables can now contain expressions (tests/varexp)
+
+Version 5n (27-SEP-2001)
+------------------------
+
+- added portable default value for BuildRoot to build/tcng.spec.in
+
+Version 5m (26-SEP-2001)
+------------------------
+
+- tcc.spec.in: added LGPL to "copyright" tag
+- tcc.spec.in used COPYING instead of COPYING.{GPL,LGPL}
+- tcc.spec.in: RPM_BUILD_ROOT test for / had logic reversed
+- copied copyright information from tcng/README to tcng/tcc/README
+- "make rpm" now moves RPM file to tcng top-level directory and removes
+  directory "rpm" after use
+- "make clean" now removes directories "build-test" and "rpm"
+- "make rpm" now generates a relocatable RPM, and also the SRPM for tcng
+- moved bytesex.c and tcc.spec.in to new directory tcng/build
+- updated tcng/configure accordingly
+- moved setting of topdir from tcc.spec.in to build/rpmrc and build/rpmmacros
+  (see build/README for details)
+
+Version 5l (25-SEP-2001)
+------------------------
+
+- scripts/symlinks.sh still created obsolete links to kmod_cc and tcmod_tcc in
+  tcng/bin
+- tcc-ext-test.in still expected kmod_cc and tcmod_cc in $TOPDIR/bin, not
+  $TOPDIR/lib/tcng/bin
+- scripts/localize.sh now allowed environment variable TCNG_INSTALL_CWD to
+  override its notion of the current directory
+- "make all" and "make install" now automatically skip tcsim if disabled in
+  configuration
+- added tcc RPM spec file tcng/tcc.spec.in, and Makefile target "rpm"
+
+Version 5k (25-SEP-2001)
+------------------------
+
+- added assorted regression tests using class variables (tests/classvar)
+- new directory locations:
+  - tcc-module, tcc-ext-err, kmod_cc, and tcmod_cc now go into
+    $TOPDIR/lib/tcng/bin instead of $TOPDIR/bin
+  - libtccext.a, tcm_cls.c, and tcm_f.c now go into $TOPDIR/lib/tcng/lib
+    instead of $TOPDIR/lib
+  - tccext.h, echoh.h, fields.tc, ip.def, tcngreg.def, and the symbolic links
+    to tcsim/klib and tcsim/ulib now go into $TOPDIR/lib/tcng/include instead
+    of $TOPDIR/include
+- updated scripts/symlinks.sh, Makefile, scripts/localize.sh, tcc/tcc.c,
+  tcc/if_c.c, tcc/tcc-module.in, tcc/ext/tcc-ext-test.in, tcsim/tcsim.c,
+  tcsim/modules/kmod_cc.in, and tcsim/modules/tcmod_cc.in accordingly
+- moved toys/tcm.tc to tcc/tcm.tc (and $TOPDIR/lib/tcng/include)
+- updated tests/expensive, tests/fastpath, and tests/tcm accordingly
+- tcc/ext_io.c now adds $TOPDIR/lib/tcng/bin to the PATH
+- removed now unnecessary PATH=$PATH:tcc/ext from the following tests:
+  arith, bitopt, cbqroot, classvar, defifo, drop, dsind, expensive, ext,
+  extcbq, extflt, extmult, extndm, extqch, fastpath, field, fredef, location,
+  misfeatures, not, phasex, pol_ext, setpathext, tcm, tcng-2u, tcng-3b,
+  tcng-3h, tcng-3m, tcng-3n, tcng-3p, tcng-3r, tcng-3s, tcng-4a, tcng-4c,
+  tcng-4d, tcng-4f, tcng-4h, tcng-4j, tcng-4l, tcng-4n, tcng-4p, tcng-4u,
+  tcng-4w, tcng-4z, tcng-5a, tcng-5j, and unspec
+- updated kernel version example on tcng/README from 2.4.9 to 2.4.10
+  
+Version 5j (25-SEP-2001)
+------------------------
+
+- iflib_red.c: added debbugging function to dump matrix considered by "bundle"
+- iflib_red.c:bundle_skip effectively limited bundling to one level
+- updated tests/not and tests/tcng-2j accordingly
+- iflib_red.c: changed order of transformations when using -N so that common
+  uses of trTCM can be optimized too (tests/fastpath)
+- ext_all.c: _root hack came back to bite us when using multiple interfaces
+  (tests/tcng-5j)
+- iflib_cheap.c: rewrote detection of expensive combination of static
+  classification and policing (tests/expensive)
+
+Version 5i (21-SEP-2001)
+------------------------
+
+- tcc: it is now an error to try to use the obsolete options -A, -C, and -F
+- updated tests/defifo and tests/location accordingly
+- iflib_red.c:bubble_or removed incorrect comment about side-effect of
+  iflib_act.c:self_contained
+- tcc: added new option -E to make tcc fail if encountering an "expensive"
+  operation, such as negation (either explicitly or via !=, > or >=), or an
+  action tree that is not self-contained (tests/expensive; suggested by Jacob)
+- iflib_red.c:bubble_or now more aggressively eliminates right-hand side of
+  logical and
+- README and configure: tcc is not compatible with kernel versions < 2.4.3
+
+Version 5h (20-SEP-2001)
+------------------------
+
+- tcc/iflib_red.c:iflib_normalize no longer bubbles actions through static
+  classification in expressions ending in  ... && (conditions || decision)
+  (tests/fastpath; only with -N; suggested by Jacob)
+- tcc/iflib_red.c:iflib_normalize makes expressions typical in simple multi
+  color markers self-contained, thereby making above optimization possible in a
+  wider range of cases (only with -N; tests/fastpath)
+- toys/tcm.tc: added constrained versions of the color test macros, which tcc
+  can process more easily.
+- if_ext.c: removed redundant pass through iflib_normalize when using the "old"
+  algorithm
+
+Version 5g (19-SEP-2001)
+------------------------
+
+- "make spotless" did not imply "make clean", leaving e.g. .symlinks
+- TODO: documented tests/selpathgred incompatibility with older kernels
+- added device and tunnel data types to simplify implementation of variable use
+  scope information output
+- variable use output (-u) now includes scope information
+- updated tcc/README, tests/tcng-5f, and tests/varuse accordingly
+- filters had no blank between "filter" and identifier in variable use output
+  (tests/tcng-5g)
+- added more precise location information to CBQ error messages (suggested by
+  Jacob)
+- updated tests/cbqroot accordingly
+
+Version 5f (19-SEP-2001)
+------------------------
+
+- tcsim/setup.klib: added max_t for compatibility with recent 2.4.10
+  pre-releases
+- tcc/LANGUAGE: clarified that class selection paths cannot be nested (see
+  toys/cspnest)
+- tcc did not suppress pseudo-parameter "class_sel_path" in tccext output
+- added regression tests for class selection path with external interface
+  (tests/selpathext)
+- ext_all.c now issues a warning when defaulting to CBQ root class (suggested
+  by Jacob)
+- scripts/cvsupdate.sh: added option -n to avoid accidental file changes
+- class selection path data structures are now deallocated after use
+- class selection paths now also work with GRED (tests/selpathgred)
+- tcc/README: CBQ support is no longer "untested" (spotted by Gautam Thaker)
+- tcc/iflib_act.c: self_contained did not handle constants or op_count
+  correctly, was too optimistic with logical or, and did not consider that
+  boolean operations involving self-contained subexpressions constrain their
+  possible values, even though they may not be self-contained themselves
+- tcc/iflib_red.c:bubble_or no longer tries to "normalize" actions, because
+  iflib_act.c:push_action has to re-arrange them anyway (experimental)
+- tcc/iflib_act.c: added function trim_self_contained to remove self-contained
+  sub-expressions before doing anything else (experimental, may be redundant)
+- variable use list did not include forward-declared variables (tests/tcng-5f,
+  reported by Jacob)
+- undocumented tcc command-line option -N now sets general algorithm mode (also
+  for old algorithm) and no longer implies -B
+
+Version 5e (14-SEP-2001)
+------------------------
+
+- updated TODO to reflect changes in version 5d
+- last two entries were missing in CHANGES section of version 5d
+- tcc/README: documented the -u option
+- tcc/LANGUAGE: documented class selection paths
+
+Version 5d (13-SEP-2001)
+------------------------
+
+- added experimental <...> construct to automatically generate tcindex-based
+  classification system in conjunction with dsmark (tests/selpath)
+- made dsmark "indices" parameter optional
+- mask and value parameters that are equivalent to default values are ignored
+
+Version 5c (11-SEP-2001)
+------------------------
+
+- tcc: new option  -u var_use_file  to write content of variables to the
+  specified file (tests/varuse)
+- variables before first implict device now really have global scope
+  (tests/tcng-5c)
+- unused global variables are reported at end of file (tests/tcng-5c)
+- updated tests/tcng-3k accordingly
+- tcsim/plot.pl: added PNG (-png) and JPEG (-jpeg) output (based on patch by
+  Gautam and Nikhil Thaker)
+- dsmark no longer complains if class with a number above "indices" sets "mask"
+  or "value" to values that imply no change (tests/dsind)
+- dsmark: "indices" is now optional, and set to the next power of two above the
+  highest class number (tests/dsind)
+- q_dsmark.c: changed diagnostics to provide better location data
+- updated tests/tcng-1i accordingly
+- configure now exits on the first error
+- tcsim/Makefile.ulib now invokes further makes with -e, to facilitate
+  cross-compilation (reported by Langie Light)
+
+Version 5b (8-SEP-2001)
+-----------------------
+
+- added new debugging function debugf2 that prints if debug > 1
+- scripts/symlinks.sh no longer prints the names of directories in "list" mode
+  (this broke "make spotless")
+- added "new" bit graph algorithm in tcng/tcc/iflib_newbit.c (it's completely
+  useless at the moment)
+- tcc: new undocumented option -N to select "new" bit graph algorithm
+
+Version 5a (30-AUG-2001)
+------------------------
+
+- added helper functions for run-time measurement (start_timer, print_timer)
+- fixed uninitialized variable bug in tcc/if_u32.c:dump_offset
+- fixed harmless uninitialized variable warnings in
+  tcc/iflib_bit.c:{dump_static,dump_all_paths_to}
+- file names containing blanks or other unprintable characters are now printed
+  as <unprintable> in location map (tests/tcng-5a)
+- empty strings are no longer allowed as tags (tests/tcng-5a)
+- added new reporting functions lwarn and lwarnf
+- changed most yy{error,warn}* to l{error,warn}* in ext_all.c, if_c.c, and
+  if_ext.c
+- updated tests/additive, tests/extcbq, tests/extflt, and tests/extndm
+  accordingly
+- iflib_bit.c now validates reference counts after all major operations unless
+  NDEBUG is defined
+- iflib_bit.c:{bubble_static,swap_bits} were badly broken (tests/tcng-5a,
+  reported by Jacob)
+- when debugging (-d), iflib_bit.c:unique_state validates that all bit types
+  are still valid (they become invalid if free'ing a bit still in use)
+- unique_state now eliminates bits when discovering that they are redundant
+  (bit->true == bit->false), yielding more compact results
+- adapted tests/tcng-4p accordingly
+
+Version 4z (29-AUG-2001)
+------------------------
+
+- tcc/police.c:assign_policer_ids was only invoked once, but more policers
+  could be defined afterwards (tests/tcng-4z, reported by Jacob)
+- configure, scripts/runtests.sh, and scripts/symlinks.sh assumed that the
+  shell looks for files to source in the current directory instead of following
+  the PATH if no explicit path is given (reported by Jacob)
+- configure now reports loading defaults from old config file
+- configure is now compatible with 2.4.10 (pre-release, tested with pre2)
+
+Version 4y (24-AUG-2001)
+------------------------
+
+- tcsim/setup.klib generated include/linux/in.h with byte order hard-coded to
+  little endian
+- tcsim/modules/kmod_cc.in, tcsim/modules/tcmod_cc.in, and tcc/ext/tcc-ext-test
+  now look for environment variable CC before using hard-coded default of "cc"
+  (was "gcc")
+- bindist-tcng-tests now also includes various files from tcc/ext and
+  tcsim/modules
+- tcc did not consider empty strings ("") to be strings at all (reported by
+  Jacob)
+- setup.klib generated netfilter.h with unnamed struct, causing warnings with
+  some versions of gcc
+- described input file format in scripts/runtests.sh
+- scripts/runtests.sh now automatically inserts FILE directives if multiple
+  input files are specified on the command line
+
+Version 4x (23-AUG-2001)
+------------------------
+
+- removed useless -I- from tcsim/Makefile
+- new binary distribution target bindist-tcng-tests added (not generally useful
+  yet)
+- extended scripts/runtests.sh to take TOPDIR and TCNG_TOPDIR from the
+  environment, and to use reasonable defaults if "config" is absent
+- modified scripts/trinity.sh.in to use environment variable TCNG_TOPDIR (if
+  present) instead of configured-in TOPDIR
+- Makefile: added target "scripts" (how did scripts/trinity.sh ever get built
+  without ??)
+- changes names of binary distribution files from <component>-<version>.tar.gz
+  to <component>-<version>-bin.tar.gz
+- tcc/config.h:TCC_MODULE_CMD always used hard-coded TOPDIR instead of allowing
+  TCNG_TOPDIR override
+- configure: new options --big-endian (-b) and --little-endian (-l) to set the
+  bytesex
+- configure: now also "inherits" bytesex from old config file
+
+Version 4w (22-AUG-2001)
+------------------------
+
+- fixed a few glitches in the CHANGES section of 4v
+- updated tcsim/setup.klib to handle max(type,a,b) macro introduced in 2.4.9
+- updated kernel version example on tcng/README from 2.4.7 to 2.4.9
+- fields now have scoping, like variables (tests/tcng-4w)
+- updated tests/misfeatures and tests/fredef accordingly (moved old misfeature
+  test to tests/tcng-4w, but moved one now broken test from tests/fredef to
+  tests/misfeatures and added new tests for similar problem with variables)
+- devices now have optional braces around their qdiscs in order to avoid
+  ambiguous variable scope (tests/devbra)
+- updated tcc/LANGUAGE according to the two changes above
+- tcc: added option -w to suppress all warnings
+
+Version 4v (22-AUG-2001)
+------------------------
+
+- configure: added option --no-tcsim (abbreviation -n) to enable build of tcc
+  only
+- top-level make now refuses all targets depending on tcsim, and build-test if
+  tcsim is disabled in configuration
+- removed unnecessary inclusion of ../../config from tcsim/modules/Makefile
+  (caused complaint on  make cvsupdate  in virgin tree)
+- scripts/symlinks.sh now sources "config" only if linking (unconditional
+  sourcing caused complaint on  make cvsupdate  in virgin tree)
+- tcc now sorts sibling classes by class ID (tests/sort; suggested by Jacob)
+- updated tests/extqch accordingly
+- tcc now allows fields to be re-defined wherever one can put a variable
+  assignment (tests/fredef)
+- known bug: fields still have global scope (tests/misfeatures)
+
+Version 4u (16-AUG-2001)
+------------------------
+
+- configure is now compatible with 2.4.9 (pre-release, tested with pre4)
+- tcc/README: "Invocation" section was obsolete and incorrect (reported by
+  Mika Yrjola)
+- added realistic tcc example in tcc/example
+- tcsim: added option -c to perform only syntax check
+- new test tests/examples checks all examples in examples/*, examples-ng/*, and
+  tcc/example for correct syntax
+- tcsim/setup.klib now skips cls_u32.c patch applied somewhere in 2.4.8-pre*
+- dump_if_u32 now also handles negation
+- updated tests/tcng-3g accordingly
+- location map used "file:line", not "file line" as described in README
+- location map now uses "-" instead of empty string to indicate stdin.
+  Clarified tcc/README accordingly.
+- updated tests/location and tests/tag according to above changes
+- dsmark did not adjust parent qdisc when resolving class 0 collision
+  (tests/tcng-4u)
+- inner qdisc of explicit CBQ root class was not dumped on tc (tests/tcng-4u)
+- CBQ messed up order of filters on parent and root (which are the same), so
+  now tcc refuses this bizarre combination (tests/tcng-4u)
+- -B now sorts bits (in a very ugly way), just like without -B (tests/tcng-4u)
+
+Version 4t (10-AUG-2001)
+------------------------
+
+- split make target "bindist" into "bindist-tcc" and "bindist-tcsim"
+- added missing target "tcsim" to tcng/Makefile
+
+Version 4s (9-AUG-2001)
+-----------------------
+
+- "make clean" in tcng/tcsim tried to access klib/ulib, which may not exist
+  after partial build
+- forgot to include scripts/localize.sh in distribution
+
+Version 4r (9-AUG-2001)
+-----------------------
+
+- added tcng/tcc/ext/tcc-ext-err to tcng/bin
+- modified tcc/tcc.c, tcc/tcc-module.in, tcsim/tcsim.c,
+  tcsim/modules/kmod_cc.in, and tcsim/modules/tcmod_cc.in to use environment
+  variable TCNG_TOPDIR (if present) instead of compiled-in TOPDIR
+- added option --install-directory (or -d) to configure
+- added "make install" target and "make bindist" targets
+- new script scripts/localize.sh to generate wrapper scripts for tcc and tcsim
+- tcc/Makefile now uses scripts/topdir.sh to build tcc-module
+- described installation procedure in tcng/README
+
+Version 4q (9-AUG-2001)
+-----------------------
+
+- added new target "ephemeral" to most Makefiles
+- added new target "cvsupdate" to top-level Makefile, which removes ephemeral
+  files from CVS' list
+- added scripts scripts/cvsupdate.sh invoked for above target
+- added new target "bindist" to top-level Makefile to build binary
+  distributions of tcc and tcsim
+- scripts/symlinks.sh now accepts the mode of operation as its first argument
+  ("list" or "link")
+- fixed various files forgotten by "make clean" and such
+
+Version 4p (8-AUG-2001)
+-----------------------
+
+- optimized iflib_bit.c:clear_counters (from O(2^N) worst-case to O(N))
+- added new field BIT.dump_number to optimize iflib_bit.c:deassign_numbers
+  (from O(2^N) worst-case to O(N))
+- slightly improved heuristic used by iflib_bit.c:pick_best to produce up to
+  80% fewer matches
+- updated tests/tcng-3r accordingly
+- copy_list selected first, not last common node, confusing eliminate_bundle
+  (tests/tcng-4p)
+- tcng/tcc/Makefile did not use CC_OPTS (from tcng/Common.make)
+
+Version 4o (7-AUG-2001)
+-----------------------
+
+- added more compact test case for bug fixed in 4n (tests/tcng-4n)
+- added more precise location information to dsmark_default_class error message
+- updated tests/defdsm accordingly
+- dsmark failed to merge auto-generated class 0 with explicitly specified class
+  0, yielding duplicate class 0 (tests/tcng-4o; reported by Jacob)
+- tccext.c did not find nested classes and therefore erroneously created dummy
+  classes (tests/tcng-4o; reported by Jacob)
+- fixed tests/extqch accordingly
+
+Version 4n (3-AUG-2001)
+-----------------------
+
+- tcc/iflib_bit.c:swap_bits did not distinguish true and false, causing tcc to
+  crash (tests/tcng-4n)
+
+Version 4m (3-AUG-2001)
+-----------------------
+
+- tests/location did not include test for ingress qdisc
+- error.h: added new error reporting functions lerror, lerrorf, vlerrof
+- improved reporting of error location in parameter handling
+- updated tests/tcng-2e accordingly
+
+Version 4l (30-JUL-2001)
+------------------------
+
+- broke if_ext.c down into individual functions allowing to dump exactly what
+  is needed in each mode
+- updated tests/extmult accordingly; added bucket test to tests/extmult
+- tccext.h: renamed TCCEXT_ACTION.u.classes to class_list to avoid ambiguity
+  with TCCEXT_QDISC/TCCEXT_CLASS.classes (suggested by Jacob)
+- updated tccext.c, echo.c, and match.c accordingly
+- configure is now compatible with 2.4.8 (pre-release)
+- tccext.c now detects duplicate items on input (tests/dupext)
+- tcc-ext-echo used to loop if there was more than one bucket (tests/tcng-4l)
+- tcc: renamed DEVICE.qdisc to DEVICE.egress
+- -A ("all") no longer requires use of if to generate code (tests/tcng-4l)
+
+Version 4k (24-JUL-2001)
+------------------------
+
+- tcc: undocumented options -A, -C, -F now print warning
+- tcc-ext-test now accepts "nounspec" argument, and echoes it in config mode
+- updated tests/defcbq, tests/defdsm, tests/defifo, tests/extflt,
+  tests/extmult, tests/extndm, tests/extqch, tests/location, tests/pragma,
+  tests/tcng-3m, tests/tcng-3s, tests/tcng-4a, tests/tcng-4d, tests/tcng-4f,
+  and tests/unspec to no longer use undocumented options, or to suppress the
+  warning
+- callers of scripts/runtests.sh can now pass file name information using a
+  FILE <file_name> directive
+- q_cbq.c now always generates an explicit root class, if none is present
+  (tests/cbqroot)
+- updated tests/extndm, tests/extqch, tests/location, tests/tcng-1n,
+  tests/tcng-2c, tests/tcng-2h, and tests/tcng-4f accordingly
+- q_cbq.c combines the root class with the qdisc when generating tc output
+  (tests/cbqroot)
+- qdisc.c:make_class did not initialize all fields of new class, causing stray
+  problems with require_class
+
+Version 4j (24-JUL-2001)
+------------------------
+
+- tccext: moved actions and rules from global scope to block scope
+- updated tccext.h, tccext.c, echo.c, and tests/tcng-3s accordingly
+- tcc/ext/match.c now detects and refuses multiple blocks (at run-time)
+- tcc/ext/echo.c now prints offsets and buckets before blocks, to maintain at
+  least some resemblance of order
+- updated tests/pragma, and tests/tcng-3s accordingly
+- suppressed cross-block sharing in if_ext_act.c (tests/extmult)
+- CHANGES: tcng-4h entry for iflib_act problem was incomplete and also missing
+  in TODO
+- tcc/ext.c:ext_build used shadowed variable "name", yielding confusing reports
+- lex hack to express if anchors conflicted with "drop if", causing enigmatic
+  syntax errors (tests/tcng-4j)
+- fields.tc: added field udp_data, for symmetry with TCP
+
+Version 4i (24-JUL-2001)
+------------------------
+
+- added runtests.sh, trinity.sh, topdir.sh, and configure to usage format
+  checking (tests/usage)
+- tcc, tcsim, runtests.sh: added new -X phase "x" or "x<elem>" to send
+  command-line arguments to programs at tcc's external interface (tests/phasex)
+- ext.c now prints standard output of external program when -d is set
+- divided TODO into short-term and long-term issues
+- ext_all now follows CBQ classes for further classification (tests/extcbq)
+- removed corresponding misfeature test from tests/extflt
+- ext_all now selects root class if classification fails completely in CBQ,
+  instead of yielding an error (tests/extcbq)
+- ext_all now refuses priomap parameter (tests/extcbq)
+- qdisc.c:assign_class_id did not detect duplicate class IDs (tests/tcng-4i)
+- variable scoping was outside-in (tests/tcng-4i)
+- "drop" without selector now warns that it's useless (tests/tcng-4i)
+
+Version 4h (23-JUL-2001)
+------------------------
+
+- updated kernel version example on tcng/README from 2.4.6 to 2.4.7
+- external interface: there is now only a single action per action line, which
+  simplifies the code and makes the data structures less ambiguous
+- eliminated TCCEXT_ACTIONS and added "index" and "next" fields in
+  TCCEXT_ACTION
+- updated doc/external.tex accordingly
+- updated tests/pragma, tests/tcm, and tests/tcng-3s accordingly
+- oops, iflib_bit never emitted "action N" clauses (tests/tcng-4h)
+- iflib_act.c:bubble_and turns  Action && Match  into  M && A  without
+  considering possible side-effects of A or M (note: the resulting mess fails
+  at later processing stages, so at least no incorrect output is generated)
+
+Version 4g (22-JUL-2001)
+------------------------
+
+- split qdisc.c into qdisc.c, qdisc_common.h, q_ingress.c, q_cbq.c, q_dsmark.c,
+  q_fifo.c, q_gred.c, q_prio.c, q_red.c, q_sfq.c, and q_tbf.c
+- split filter.c into filter.c, filter_common.h, f_if.c, f_fw.c, f_route.c,
+  f_rsvp.c, and f_tcindex.c
+- qdiscs now dump to external interface via QDISC_DSC.dump_ext (using new
+  file ext_dump.c)
+
+Version 4f (20-JUL-2001)
+------------------------
+
+- ext_all now allows simple configurations with other qdiscs than dsmark at
+  root (tests/extndm)
+- ext_all tried to include priomap parameter in output (tests/tcng-4f)
+- tcc now refuses duplicate parameters in same parameter list
+- updated tcc/LANGUAGE accordingly
+- simplified intriguingly complicated (and rather fragile) contraption to
+  add "bands 3" for PRIO at ext_all
+- dsmark can now also generate default classification if default_index is
+  absent, but set_tc_index is present (tests/defdsm)
+- CBQ can now also generate default classification (tests/defcbq)
+- ext_io.c is now better at deleting temporary files (reported by Jacob)
+- make clean-test now also removes "precious" files generated by tcc-ext-test
+- tcc-ext-test.in and tcc/ext/match.c: changed name of file with tccext data
+  from _m*.out to __m*.out to simplify cleanup
+
+Version 4e (19-JUL-2001)
+------------------------
+
+- tcc now registers the source code location of all major language elements
+- tcc: added new option  -l location_map_file  to generate source code location
+  map for language elements (tests/location)
+- updated tcc/README accordingly
+- a user-defined tag can be assigned to devices, qdiscs, classes, filters,
+  filter elements, policers, and tunnels, by including a string in the
+  parameter list (tests/tag)
+- added test that usage lines of tcc, tcc-module, tcsim, filter.pl, and plot.pl
+  are short enough (tests/usage)
+
+Version 4d (17-JUL-2001)
+------------------------
+
+- ext_all leaked default parameters among sibling classes (reported by Jacob)
+- symbolic links are now generated by scripts/symlinks.sh for better CVS
+  compatibility (suggested by Langie Light)
+- link to echoh.h was missing in distribution
+- when using -B, action "unspec" was called "continue"
+- added draft description of new external protocol rules (doc/README.tccext)
+- renamed tcc/ext.c to tcc/ext_io.c
+- added prototype implementation of new external protocol
+- tcc/ext: updated tcc-ext-err, echo.c, echoh_main.c, and tcc-ext-test.in
+  accordingly
+- made output selection in tests/ext less dependent on naming conventions of
+  tcc-ext-test
+- updates tests/tcng-3s to obey new calling conventions
+- external program now needs to be available even if tcc faild before the build
+  phase; updated tests/extflt accordingly
+- dependency on "tcc" was missing for "make test"
+
+Version 4c (16-JUL-2001)
+------------------------
+
+- added trailing line of dashes to each test title
+- added "drop if" construct, which is roughly synonymous to
+  "class if (...) && drop" (tests/drop, tests/misfeatures)
+- updated tcc/LANGUAGE accordingly
+- accessing "raw" without specifying an index crashed iflib_off.c:use_offset
+- added cases where bit strings are combined across presence boundaries to
+  tests/misfeatures
+- included TODO file
+
+Version 4b (14-JUL-2001)
+------------------------
+
+- tcsim: an end time can now be specified for "every" (suggested by Stefano
+  Avallone; test in tests/until)
+- added description of test writing concepts in tests/README
+- verified that filter ID range is indeed 1..0xffff, as filter.c assumes
+- ext_all.c:filter_path now checks that tcindex classifiers don't use policing
+  (tests/extflt)
+- ext_all.c:filter_path accessed prm_mask in element, where it doesn't exist
+  (but by sheer luck happens to have the right value)
+- tcng/README did not mention that also echoh is under the LGPL
+- echoh_blocks now accepts a file argument, and tcc-ext-echoh prints on stderr,
+  not stdout
+- updated kernel version example on tcng/README from 2.4.3 to 2.4.6
+- runtests.sh now strips trailing line of dashes from test title, allowing
+  writing of more easily readable test files
+
+Version 4a (13-JUL-2001)
+------------------------
+
+- tcc/param.c:param_print would de-reference NULL pointer on childless elements
+  (reported by Jacob)
+- Common.make didn't remove __*.in files generated at external interface
+- ext.c did not clean up temporary files after error exit
+- libtccext.a: added new function echoh_block to print qdisc/class hierarchy
+  (suggested by Jacob)
+- added link from include/echoh.h
+- added corresponding external program tcc-ext-echoh
+- tcc/ext_all.c:filter_path did shift before mask instead of mask before shift
+- tcc/ext_all.c:filter_path messed up default parameters
+- plot.pl now weights samples when calculating the average rate over multiple
+  packets (based on a patch by Lars Wischhof)
+
+Version 3z (12-JUL-2001)
+------------------------
+
+- added patch to iproute2/tc to fix offset increment for data items larger than
+  4 bytes (patches/tc-u32-incr)
+- new qdisc flags QDISC_CHILD_QDISCS and QDISC_SHARED_QDISC to indicate
+  how many child qdiscs a qdisc can have
+- new undocumented option -F to add FIFO qdiscs wherever a default qdisc is
+  used (tests/defifo)
+- tccext.h: clarified that TCCEXT_BLOCK.qdiscs points to the top-level qdisc
+- started adding infrastructure for clean external interface protocol
+- replaced huge "if_ext calls ext_all" hack by several smaller ones
+
+Version 3y (10-JUL-2001)
+------------------------
+
+- external.tex did not mention that qdisc and class pragmas begin with the
+  keyword "pragma"
+- documented how qdisc and class structure is represented at external
+  interface
+- added support for class hierarchy and pointers to child qdiscs to
+  tcc/ext/{tccext.[ch],echo.c} (tests/extqch)
+- ext_all.c generated qdiscs parent-first, not child-first
+- tccext: introduced new type TCCEXT_CLASS_LIST for list of classes (so that
+  classes can be linked according to their own hierarchy)
+- added comment to tcc/ext/echo.c to clarify its role
+
+Version 3x (9-JUL-2001)
+-----------------------
+
+- tccext.c:tccext_destroy may have looped on qdisc destruction
+- tccext and ext_all now support pragmas on qdiscs and classes (tests/pragma)
+
+Version 3w (9-JUL-2001)
+-----------------------
+
+- new default parameter handling model involving a stack (currently only used
+  by ext_all.c)
+- param_get now sets prm_priority.v to 1e6 times the floating-point value
+- config.h, error.c: renamed MAX_STACK_DEPTH to MAX_DEBUG_DEPTH
+- added dependency on mkprminc to all .inc files generated by it
+- mkprminc now names fields in structure initializer
+- tcc/ext/{tccext.[ch],echo.c} now know about parameters, and a little bit
+  about the structural relationship between qdiscs and classes
+- added description of qdiscs, classes, and parameters to doc/external.tex
+
+Version 3v (6-JUL-2001)
+-----------------------
+
+- pragma on devices did not set param_def, which could crash tcc (test added
+  to tests/pragma)
+
+Version 3u (6-JUL-2001)
+-----------------------
+
+- in tccext, changed "queue" to "qdisc", "QUEUE" to "QDISC"
+- added experimental module for dumping full configuration (activated with -A)
+- tccext recognizes (and ignores) "class"
+
+Version 3t (4-JUL-2001)
+-----------------------
+
+- configure is now compatible with 2.4.7 (pre-release)
+- configure now takes defaults from old config file if one exists
+- ip.def: UDP_HDR did not evaluate parameters (reported by Stefano Avallone)
+- tcsim/modules/kmod_cc and scripts/runtests.sh used [ with == instead of =,
+  causing problems with older versions of bash (reported by Nikhil Thaker)
+
+Version 3s (4-JUL-2001)
+-----------------------
+
+- at external interface, "class" action can now be a comma-separated list of
+  queue/class numbers
+- tcc-ext-echo now prints action number in decimal instead of hex
+- tcc-ext-echo now prints items in the order described in doc/external.tex
+- prio default classification was off by a factor of two
+- adjusted tests accordingly (pragma, unspec)
+- tccext.c could not parse consecutive drops actions
+
+Version 3r (2-JUL-2001)
+-----------------------
+
+- remove_duplicates did not handle branches with multiple ingress paths right
+
+Version 3q (2-JUL-2001)
+-----------------------
+
+- iflib_bit.c:make_bit now clears counters to avoid buggy-looking debugging
+  output
+- added daVinci URL to scripts/fsm2dav.pl
+- scripts/fsm2dav.pl now also supports "conform" and "count"
+- added missing prototype of if_ext.c:get_offset_group
+- added masks and shifts to iflib_bit.c
+- added mask and shift tests tests/bitops, derived from tests/ifopt
+
+Version 3p (1-JUL-2001)
+-----------------------
+
+- oops, iflib_bit.c:dump_this_action had qdisc and class number swapped
+- made iflib_bit.c bug list more complete
+- moved toys/tcm-tests to tests/tcm to show off the new algorithm
+- added test to show double inequality (tests/tcng-3p)
+
+Version 3o (29-JUN-2001)
+------------------------
+
+- integrated early development prototype of "if" expression optimization
+  based on a finite state machine (not useful yet; invoke with -B)
+- added script fsm2dav.pl to convert "raw" FSM output to daVinci term
+  representation
+
+Version 3n (27-JUN-2001)
+------------------------
+
+- syntax "if conform ($p)" is now accepted
+- policer variables can now be redefined (a syntax conflict was introduced in
+  version 3k)
+- greatly simplified the way how the "police" prefix is made optional
+- data_equal: added assertion that arguments aren't operators
+- added debugging output to tcc/var.c
+
+Version 3m (26-JUN-2001)
+------------------------
+
+- tcng language documentation update (use of bare words is discouraged,
+  "police" keyword before variables is optional in if expressions, described
+  "if" and related constructs)
+- added tests for negation combined with field conditions (tests/field)
+- dsmark complained about class for inner qdisc if using default parameters
+- after negation, the && and || actions were not swapped, causing incorrect
+  processing of multiple nested negations
+- tcc/ext/match.c incorrectly refused to count packets for which not enough
+  tokens were available
+- policing may be too permissive if using "count" without prior "conform"
+  (misfeature)
+- tcsim used bit size to check room in byte-sized buffer
+- tcsim did not check room for default size (one byte)
+- tcsim now checks values of packet data for correct range
+- require_class always searched for class 0, yielding incorrect default
+  selections if such a class existed
+- added missing tests for arithmetic replacement of non-equality (tests/arith)
+
+Version 3l (19-JUN-2001)
+------------------------
+
+- qdiscs now have flags expressing their capabilities
+- more rigid checking for qdisc capabilities
+- ingress, dsmark, and prio now generate default class selection (currently
+  enabled with undocumented tcc option -C)
+- added new action "unspec" which is taken in the absence of -C
+- updated tests accordingly (ext, field, misfeature, not, tcng-2u)
+- tcc now knows that  # 1 "."  from cpp really means ""
+
+Version 3k (18-JUN-2001)
+------------------------
+
+- tcc no longer warns when using "milli" for seconds
+- "police" prefix before variable name is now optional
+- likewise, "filter" prefix before variable name on "on" expression is now
+  optional
+- tcc incorrectly refused "eth0 $q = prio ..."
+- tcc still refuses above assignment with default device (misfeature)
+- tcc incorrectly refused use of qdisc variables at top level
+- "mtu" is no longer required for policers if target is not "tc"
+- updated tests according to above change (pol_ext, pol_traffic, pragma,
+  tcng-3b, vartype)
+
+Version 3j (14-JUN-2001)
+------------------------
+
+- tccext_destroy did not free buckets and actions
+- added "pragma" parameter to all traffic control elements
+- added global pragma directive (tcc)
+- added tcc/ext/echo.c to print parsed configuration on standard error
+- added regression test tests/pragma to test pragmas
+- updated doc/external.tex accordingly
+
+Version 3i (14-JUN-2001)
+------------------------
+
+- added patch patches/tc-dsmark-dfl for iproute2/tc to accept default_index 0
+  (reported by Stefano Avi)
+- tcc now refuses "if" rooted at classes, or combined with other filters
+- added preliminary support for negation in "if" expressions
+
+Version 3h (12-JUN-2001)
+------------------------
+
+- tcm.tc overestimated tcc's clearvoyance skills by including "count" in
+  negated expressions, from where it may not be removed in time
+- action numbering did not work when "drop" was involved (it did not recognize
+  that "drop" equals "drop", and generated a new inverted tree every time)
+- scripts/runtests.sh now prints a grammatically correct message when there is
+  only a single test
+
+Version 3g (12-JUN-2001)
+------------------------
+
+- if_ext_act.c now tries to use class numbers as action numbers in order to
+  ease visual inspection (suggested by Jacob)
+- updated tests accordingly (tests/field, tests/tcng-2u, tests/tcng-3b)
+- fields.tc is now protected against multiple inclusion
+- iflib_red.c:prune_shortcuts incorrectly reduced 0 || X to 1
+- op.c:unum1_eval incorrectly assumed operands were always constant
+- added TCM design study in toys/tcm.tc
+
+Version 3f (11-JUN-2001)
+------------------------
+
+- added various simple arithmetic optimizations (iflib_arith.c)
+- added corresponding tests in tests/arith
+- tcsim crashed when device name was missing after "dev"
+- u32 target now also supports boolean constants 0 and 1
+- disabled globbing in runtests.sh to allow the use of asterisks in titles
+- iflib_reduce is no longer called by common if code in filter.c:if_dump_tc
+- iflib_red.c:do_optimize_eq shifted the default mask in the wrong direction
+- if_u32 still has problems with masks; recorded them in tests/misfeatures
+
+Version 3e (7-JUN-2001)
+-----------------------
+
+- tcc: fields can now be redefined (added test tests/field)
+- policing results can now be used explicitly in "if" expressions (see
+  tests/lib/pol_single_drop.tcsim)
+- added action "drop" to tccext
+
+Version 3d (7-JUN-2001)
+-----------------------
+
+- configure is now compatible with 2.4.6 (pre-release)
+- global "make" now also builds content of documentation directory
+- new file tests/pol_traffic with "live" policing tests for "C" and "ext"
+- policing in tcc/ext/match.c didn't work at all
+- added "block" statement to external interface
+- if_ext now sorts bits within the same match and offset group by offset
+- updated regression tests according to above two changes
+- forgot to include scripts/rlatex, oops
+
+Version 3c (5-JUN-2001)
+-----------------------
+
+- ether_proto_print(ether_proto(N)) can now return different name than N, or
+  number (to handle protocols unknown to tc, or known under a different name)
+- policer list wasn't NULL-terminated
+- major redesign of action handling in if_ext, resulting in more compact
+  actions group
+- added flag "combine" to iflib_offset to make optimizations suitably tame for
+  if_ext (reported by Jacob)
+- above change makes if_ext generate less elegant offset expressions. Adjusted
+  tests accordingly and moved old test to toys/reminiscence
+- actions may now also include "action N" to point to that action. Updates
+  documentation accordingly.
+
+Version 3b (1-JUN-2001)
+-----------------------
+
+- moved runtests.sh to scripts/ where it rightfully belongs
+- iflib_act issued redundant expressions, creating the impression that they
+  were not self-contained
+- moved action_tree from if_ext.c to iflib_act.c
+- action_tree now knows that C || X is an action tree (C = self-contained)
+- iflib_act incorrectly walked into action trees when walking an || chain,
+  making incorrect transformations
+- README still pointed to old download location (reported by Jacob)
+- moved protocol/host/port lookups from tcng.y to new file named.c
+- all filters: new parameter "protocol" to set ether protocol (suggested by
+  Steven Van den Berghe)
+- added a bunch of tests for named items (tests/named)
+
+Version 3a (1-JUN-2001)
+-----------------------
+
+- if_ext now moves policing below matches (using iflib_act.c)
+- if_ext now detects redundant or conflicting tests and reduces matches/rules
+  accordingly
+- if_ext now maintains an actions registry, eliminating the shared counter
+  hack
+- added regression tests for above to tests/pol_ext and tests/ext
+- added tests for things to fix: tests/misfeatures
+
+Version 2z (31-MAY-2001)
+------------------------
+
+- added policing support to tcc/ext/match.c
+- added support for overflow bucket to tccext.[ch]
+- doc/external.tex: documented overflow bucket and excluded 0 as bucket index
+- doc/external.tex: count does not count below zero
+- if_ext now generates policing information
+- added regression tests for build process with policing (tests/pol_ext)
+
+Version 2y (30-MAY-2001)
+------------------------
+
+- added pointer to PAX PDL to fields.tc (pointer from Michael Richardson)
+- if_ext.c now generates action indices and actions (largely untested)
+- tccext.c now parses actions and buckets groups
+- adjusted tests/tcng-2u and tccext.[ch] accordingly
+- added warning that tccext_destroy does not free memory objects attached to
+  user fields
+- added policing operators "conform" and "count"
+- added policer parameter "overflow"
+- data.c:print_data now also prints a policer's number
+- added policer construction examples toys/srtcm.tc and toys/trtcm.tc
+- "rate" parameter was optional in CBQ
+- if_ext.c now only invokes debugf if debug > 1
+
+Version 2x (29-MAY-2001)
+------------------------
+
+- tcc/tc.h tcc/tcdefs.h: put macro name after #endif in comments
+- tcsim's include/linux/time.h only provides struct timeval #ifdef __KERNEL__;
+  added #include <sys/time.h> to provide it where needed (2.4.5 compatibility)
+- tcsim used flag 1 in pseudo-CPP # lines, confusing cpp 2.96-81
+
+Version 2w (29-MAY-2001)
+------------------------
+
+- tcc/ext/tccext: added context as explicit argument to TE_SIZEOF macro (by
+  Jacob Teplitsky)
+- cleaned up tcc/PARAMETERS; moved RSVP and CBQ differences to tcc/README
+- moved description of external format from tcc/if_ext.c to doc/external.tex
+- added scripts/t2x.pl for conversion from LaTeX to ASCII
+- added scripts/rlatex for automatic repeated invocation of LaTeX
+- implemented some of the changes to the external interface
+- renamed tcc-ext-cat to tcc-ext-err and changed output from stdout to stderr
+- updated regression tests to follow external interface changes
+- added new targets sf-upload and upload-sf to upload tcng to SourceForge
+
+Version 2v (25-MAY-2001)
+------------------------
+
+- added test for additive headers (tests/additive)
+- u32 can't handle additive headers; removed code pretending it can
+
+Version 2u (25-MAY-2001)
+------------------------
+
+- iflib_off:extract_sum now also crosses op_offset
+- moved removal of __*.out from clean-test to clean-mod
+- new external script tcc-ext-cat for test framework (-x if:cat)
+- fixed various bugs related to nested offsets (major overhaul of iflib_off.c)
+- if_u32:dump_offset shifted in the wrong direction on mis-aligned field, and
+  didn't adjust mask
+- added corresponding regression tests (tests/tcng-2u)
+- tests/ now has sub-directory tests/lib/ with files shared among tests
+- trinity.sh must now be invoked with  [-v] [file]
+- trinity.sh has dependency on trinity.sh.in
+- output filter in trinity.sh did not work for tc target
+- removed sed filter from use of trinity.sh in tests/ext; changed use of -v
+- runtests.sh now knows about trinity.sh, and how to remove efence output
+- new debugging function debugf for better reporting from recursive functions
+- tcc now flushes stdout and stderr before invoking external script
+- Makefile: added target build-test as alias for test-build
+
+Version 2t (24-MAY-2001)
+------------------------
+
+- changed the horrible tcc-ext-ext_test* to tcc-ext-test*
+- consolidated TOPDIR replacement in tcsim/modules/Makefile and
+  tcc/ext/Makefile in new script scripts/topdir.sh
+- added script scripts/trinity.sh.in to compare classifier output for tc, c,
+  and external target
+- added more tests to tests/ext
+- removed redundant call to abort from dump_failed(d); abort();
+- if_ext.c now generates  offset  lines
+- Makefile: added target test-build to test building the current distribution
+
+Version 2s (23-MAY-2001)
+------------------------
+
+- added parser for external target interface (under the LGPL)
+- renamed COPYING to COPYING.GPL and upgraded to its Y2k-compatible version
+- kmod_cc now removes -shared and adds -c if -r is present in command line
+- cls_unspec.c didn't #include <net/rtnetlink.h>, causing compilation of "real"
+  kernel module to fail
+- tcc/tcm_f called itself "unspec" in usage line
+- added framework for including code for external targets
+- added corresponding regression test tests/ext
+
+Version 2r (15-MAY-2001)
+------------------------
+
+- tcc: target "tc" was mistakenly called "u32"
+- enabled more compiler warnings
+- fixed new warnings
+- made authorship/copyright headers more uniform and extensible
+- made "if" expression handling functions more modular
+- began adding very experimental generic interface for external targets
+- tcc: new command line option -x to register external targets
+
+Version 2q (14-MAY-2001)
+------------------------
+
+- bison didn't like tcc/tcng.y (reported by Kristof Verniers)
+- iproute2/tc depended on /proc/net/psched, containing values which may differ
+  from tcsim's HZ default
+- preconditions were always inserted at root, even from below ||
+- tcc: usage claimed that "c" was the default target
+- Common.make: upload host name wasn't fully qualified
+
+Version 2p (4-MAY-2001)
+-----------------------
+
+- make depend in tcng/tcc no longer tries to read tcm_{cls,f}.c (reported by
+  Jacob)
+- added directories tcng/{bin,include,lib} with links to files used by
+  scripts, and for module builds
+- tcc and tcsim now automatically add -I for tcng's various header files
+- tcc-module no longer requires PATH to be set
+- simplified runtests.sh and tests/c according to above changes
+- tcc-module is now generated from tcc-module.in
+- tcc and tcsim did not set last argv element to NULL before invoking cpp
+
+Version 2o (4-MAY-2001)
+-----------------------
+
+- added more tcng regression tests
+- tcc/op.c:additive_eval sometimes over-optimized
+- tcsim: removed -C option, use -Xc instead
+- runtests.sh now also supports -X argument; added phase "s" for tcsim
+- tcc-module assumed internal problems on simple usage error
+- make targets clean-test{,s} and clean-mod to remove temporary files
+- if.c:do_optimize_eq now reports an error if the access would have to be moved
+  (which should never happen)
+- if_u32 now catches conflicting matches detected by f_u32.c (reported by
+  Jacob)
+- tcm_cls.c now prints debugging output if compiled with -DDEBUG
+- tcc/data.c:data_dump: dt_fnum format is now %#g to make it look different
+  from dt_unum
+
+Version 2n (4-MAY-2001)
+-----------------------
+
+- added more tcng regression tests
+- added 2.4.5 (pre-release) compatibility (memory management changes in
+  linux/skbuff.h; removal of ETH_P_ECHO)
+- "if 0" and "if 1" now work too
+- tcc: recursed endlessly on un-optimized || (reported by Jacob)
+- added ../Common.make dependency to {tcc,tcsim,tcsim/modules}/Makefile, so
+  "make" after configuration changes has the desired effect
+- tcsim: added function warnf
+- replaced tcsim's -C by unified -Xphase,arg (like gcc -Xl,...), supported by
+  tcsim, tcc, and tcc-module, with phases c=tcc, m=tcc-module, k=kmod_cc,
+  t=tcmod_cc
+- updated tests/c accordingly
+- tcc-module no longer constructs temporary .c files
+
+Version 2m (2-MAY-2001)
+-----------------------
+
+- distribution didn't contain tcc/target.h, tcc/target.c
+
+Version 2l (2-MAY-2001)
+-----------------------
+
+- added framework for generating C code (experimental)
+- tcc: new option -t to enable/disable code generation targets
+- tcsim: new option -C to pass arguments to tcc (e.g. -C -tc)
+- added C target for "if"
+- added more tcng regression tests
+- tcc: make clean now removes param_*.inc
+- more "if" optimizations to eliminate redundant boolean expressions (fixes
+  problems reported by Jacob Teplitsky)
+
+Version 2k (1-MAY-2001)
+-----------------------
+
+- added more tcng regression tests
+- dump_failed now indicates file name and line number of caller
+- if: couldn't dump (field & mask) == value
+- if now reduces <<, >>, & underneath ==
+- added warnings if masks don't make sense
+- added warning if size qualifier is not 8, 16, or 32
+
+Version 2j (1-MAY-2001)
+-----------------------
+
+- added one more tcng regression test
+- if: added crude hack to work around u32 limitation that offset may not be
+  used without previous match (reported by Jacob Teplitsky)
+
+Version 2i (30-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- if: always try to pull offsets to make leafs more regular (fixes problems
+  reported by Jacob Teplitsky)
+
+Version 2h (30-APR-2001)
+------------------------
+
+- added one more tcng regression test
+- removed defeatistic comment from examples-ng/u32
+- make dist: -lefence check still looked in Makefile, not Common.make
+- added more definitions to fields.tc
+- "if" is always linked to qdisc, not class
+- added warning for "if" anchor
+
+Version 2g (29-APR-2001)
+------------------------
+
+- new construct: "if" (yes, it works now !)
+- added more tcng regression tests
+- cleaned up libnetlink.c fix
+- no more warnings due to data_destroy{,_1} doing nothing
+- patch k-u32-offset was wrong; fixed it
+
+Version 2f (28-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- tcc error message for invalid tunnel id claimed range starts at 0, not 1
+- RSVP: "ah", "esp", and "ipproto" on element supersedes all their defaults
+- added directory tcng/patches with fixes needed to pass regression tests
+- added more preliminary code for "if"
+
+Version 2e (27-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- expected losses were mis-calculated in examples/tbf and examples-ng/tbf
+- changed field "tos" to "ip_tos" in toys/if
+- moved field definitions from toys/if to new file tcc/fields.tc
+- parameter truncation warnings were sometimes printed twice
+- value of dt_rate parameters is now reported in bps, not Bps in truncation
+  warning
+- CHANGES: forgot to mention tcc -d option added in 2d
+- added tracing of u32 classification process
+- setup.ulib fixed receive buffer overrun bug in iproute2/tc (now-ss001007)
+- added examples/u32 and (non-functional) examples-ng/u32
+- added more preliminary code for "if"
+
+Version 2d (26-APR-2001)
+------------------------
+
+- several slight changes to replacement kernel headers to improve compatibility
+- moved common Makefile items to Common.make for consistent behaviour in all
+  directories
+- added tcc option -d to enable debugging output
+
+Version 2c (26-APR-2001)
+------------------------
+
+- added more tcng regression tests
+- iproute2/tc expects CBQ "weight" to be a size, although it's a rate
+  everywhere else. tcng now reluctantly complies ...
+- CBQ didn't include "bandwidth" among default parameters, but used it as such
+- some preliminary code for parts of "if"
+- moved tcng/tcsim/toys to tcng
+- added toys/if, my "if" test input
+- plot.pl now only plots data sets actually containing data
+- parameter name "isolated" wasn't recognized (reported by Jacob Teplitsky)
+
+Version 2b (24-APR-2001)
+------------------------
+
+- make clean didn't remove left-over temporary test files
+- oops, runtests.sh wasn't included in the distribution
+
+Version 2a (24-APR-2001)
+------------------------
+
+- added tcsim to tcng package
+- former tcng is now in tcng/tcc/, moved tests and examples-* directories of
+  tcsim to tcng/
+- removed tcng/tcc/ef-prio-example
+- merged COPYING, and parts of README and Makefile
+- moved tests and configuration to the top-level
+- configure: always sets TCC to $TOPDIR/tcc/tcc, unless explicitly overridden
+- tcc: RSVP filter now prints a warning if it has no elements

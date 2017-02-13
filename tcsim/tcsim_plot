@@ -1,0 +1,222 @@
+#!/usr/bin/perl
+#
+# tcsim_plot - Plot various aspects of tcsim_filter output
+#
+# Written 2001,2002 by Werner Almesberger
+# Copyright 2001 EPFL-ICA
+# Copyright 2002 Bivio Networks, Werner Almesberger
+#
+
+use IO::Handle;
+
+$color = 1;
+undef $ps_file;
+$type = "rate";
+$jiffies = 0;
+$avg = 1;
+$user_cmd = "";
+
+
+sub usage
+{
+    print STDERR "usage: $0 [-a samples] [-j] [-m] [-t plot_type]\n";
+    print STDERR (" "x 18)."[-p ps_file | -jpeg jpeg_file | -png png_file]\n";
+    print STDERR (" "x 18)."[-cmd command ...] [file ...] \n";
+    print STDERR "  -a samples      Average over the number of samples\n";
+    print STDERR "  -j              Time is in jiffies, not seconds\n";
+    print STDERR "  -m              Monochrome output\n";
+    print STDERR "  -cmd command    Send command to gnuplot before plotting\n";
+    print STDERR "  -p ps_file      Generate Postscript output (- for stdout)".
+      "\n";
+    print STDERR "  -jpeg jpeg_file Generate JPEG output (- for stdout)\n";
+    print STDERR "  -png png_file   Generate PNG output (- for stdout)\n";
+    print STDERR "  -t plot_type    rate (default), iat, cumul, delay\n";
+    exit(1);
+}
+
+
+while ($ARGV[0] =~ /^-/) {
+    $arg = shift;
+    if ($arg eq "-m") { $color = 0; }
+    elsif ($arg eq "-a") {
+	$avg = shift;
+	&usage unless $avg =~ /^\d+$/;
+    }
+    elsif ($arg eq "-p" || $arg =~ /-?-ps/) {
+	$ps_file = shift;
+	&usage if defined $jpeg_file || defined $png_file;
+	&usage unless defined $ps_file;
+    }
+    elsif ($arg =~ /-?-jpe?g/) {
+	$jpeg_file = shift;
+	&usage if defined $ps_file || defined $png_file;
+	&usage unless defined $jpeg_file;
+    }
+    elsif ($arg =~ /-?-png/) {
+	$png_file = shift;
+	&usage if defined $jpeg_file || defined $ps_file;
+	&usage unless defined $png_file;
+    }
+    elsif ($arg eq "-cmd") {
+	$_cmd = shift;
+	&usage unless defined $_cmd;	
+	$user_cmd .= $_cmd."\n";
+    }
+    elsif ($arg eq "-t") {
+	$type = shift;
+	&usage unless $type =~ /^(rate|iat|cumul|delay)$/;
+    }
+    else {
+	&usage;
+    }
+}
+
+print STDERR "warning: -m ignored with --jpeg\n"
+  if defined $jpeg_file && !$color;
+
+$stdout = 0;
+if (defined $ps_file) {
+    $gp = "set terminal postscript eps ".($color ? "color solid" :
+      "monochrome"). "\n";
+    $gp .= "set output \"$ps_file\"\n" unless $ps_file eq "-";
+    $stdout = $ps_file eq "-";
+    $opt = "";
+}
+elsif (defined $png_file) {
+    $gp = "set terminal png ".($color ? "color" : "monochrome"). "\n";
+    $gp .= "set output \"$png_file\"\n" unless $png_file eq "-";
+    $stdout = $png_file eq "-";
+    $opt = "";
+}
+elsif (defined $jpeg_file) {
+    $gp = "set terminal jpeg\n";
+    $gp .= "set output \"$jpeg_file\"\n" unless $jpeg_file eq "-";
+    $stdout = $jpeg_file eq "-";
+    $opt = "";
+}
+else {
+    $opt = ($color ? "" : "-mono ")."-persist";
+}
+
+$tmp_num = 0;
+while (<>) {
+    chop;
+    if (/^#/) {
+	print "$_\n" unless $stdout;
+	next;
+    }
+    if (/\d+\.\d+\s+\S\s+:\s+/) {
+	print STDERR
+	  "unrecognized input - did you rember to use tcsim_filter ?\n";
+	exit(1);
+    }
+    die unless /^(\d+\.\d+)\s+(\S+)\s+(\d+)/;
+    if (($type eq "rate" || $type eq "iat") && !defined $last_time{$2}) {
+	$last_time{$2} = $1;
+	$last_size{$2} = $3;
+	next;
+    }
+    if (!defined $fh{$2}) {
+	$fh{$2} = IO::Handle->new();
+	$name = ".plot_$tmp_num.tmp";
+	$tmp_num++;
+	open($fh{$2},">$name") || die "create $name: $!";
+	$set{$2} = $name;
+	$unused{$2} = 1;
+	if ($type eq "cumul") {
+	    print { $fh{$2} } "0 0\n" || die "write $name: $!";
+	}
+    }
+    $weight = 1;
+    if ($type eq "rate") {
+	if ($last_time{$2} == $1) {
+	    $last_size{$2} += $3;
+	    next;
+	}
+	$weight = $1-$last_time{$2};
+	$y = $last_size{$2}*8.0;
+    }
+    if ($type eq "iat") {
+	$y = $1-$last_time{$2};
+    }
+    if ($type eq "cumul") {
+	$cumul{$2} += $3;
+	$y =  $cumul{$2};
+    }
+    if ($type eq "delay") {
+	if (substr($2,0,1) eq "E") {
+	    $enq{$'} = $1;
+	    next;
+	}
+	die "ghost packet$' from nowhere" unless defined $enq{$'};
+	$y = $1-$enq{$'};
+	delete $enq{$'};
+    }
+    if (@{ $hist{$2} } == $avg) {
+	$sum{$2} -= shift @{ $hist{$2} };
+	$weight{$2} -= shift @{ $hist_weight{$2} };
+    }
+    $sum{$2} += $y;
+    $weight{$2} += $weight;
+    push(@{ $hist{$2} },$y);
+    push(@{ $hist_weight{$2} },$weight);
+    print { $fh{$2} } "$1 ".($sum{$2}/$weight{$2})."\n" || die "write: $!";
+    delete $unused{$2};
+    $last_time{$2} = $1;
+    $last_size{$2} = $3;
+}
+
+for (values %fh) {
+    close $_ || die "close: $!";
+}
+
+if ($jiffies) {
+    $gp .= "set xlabel \"Time (jiffies)\"\n";
+}
+else {
+    $gp .= "set xlabel \"Time (sec)\"\n";
+}
+
+if ($type eq "rate") {
+    $gp .= "set ylabel \"Rate (bps)\"\n";
+}
+if ($type eq "iat") {
+    $gp .= "set ylabel \"Inter-arrival time (sec)\"\n";
+}
+if ($type eq "cumul") {
+    $gp .= "set ylabel \"Cumulative (bytes)\"\n";
+}
+if ($type eq "delay") {
+    $gp .= "set ylabel \"Queuing delay (sec)\"\n";
+}
+$gp .= "set yrange [0:]\n";
+
+if (!keys %set) {
+    print STDERR "no data sets\n";
+    exit(1);
+}
+
+@tmpfile = values %set;
+for (keys %unused) {
+    delete $set{$_};
+}
+
+$gp .= "set data style lines\n";
+$gp .= $user_cmd."plot";
+# open(GP,">.gnuplot") || die "open .gnuplot: $!";
+for (@tmp = sort keys %set) {
+    $gp .= " \"$set{$_}\" title \"$_\"";
+    $gp .= $_ eq $tmp[$#tmp] ? "\n" : ", \\\n";
+}
+
+# Otherwise, gnuplot plots twice, apparently no matter what else we do. Weird.
+$gp .= "set output \"/dev/null\"\n";
+
+push(@tmpfile,".gnuplot");
+open(GP,">.gnuplot") || die "open .gnuplot: $!";
+print GP $gp || die "write .gnuplot: $!";
+close GP || die "close .gnuplot: $!";
+
+die "gnuplot: $!" if system("gnuplot $opt .gnuplot") == 1;
+
+unlink(@tmpfile);

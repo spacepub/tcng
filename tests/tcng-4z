@@ -1,0 +1,9 @@
+# policer IDs are assigned on all policers ------------------------------------
+tcc -xif:err 2>&1 | grep bucket
+prio {
+    class if conform police(rate 0bps,burst 0b);
+    class if conform police(rate 0bps,burst 0b);
+}
+EOF
+bucket 1 = 0 0 0 0 0
+bucket 2 = 0 0 0 0 0

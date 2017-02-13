@@ -1,0 +1,26 @@
+--- iproute2/tc/f_rsvp.c.orig	Sat Apr 28 15:13:04 2001
++++ iproute2/tc/f_rsvp.c	Sat Apr 28 15:13:22 2001
+@@ -85,6 +85,7 @@
+ 		pi->offset = 4;
+ 		if (pinfo->protocol == 0)
+ 			pinfo->protocol = IPPROTO_AH;
++		argc--; argv++;
+ 	} else if (strcmp(*argv, "spi/esp") == 0 ||
+ 		   strcmp(*argv, "gpi/esp") == 0) {
+ 		__u32 gpi;
+@@ -96,6 +97,7 @@
+ 		pi->offset = 0;
+ 		if (pinfo->protocol == 0)
+ 			pinfo->protocol = IPPROTO_ESP;
++		argc--; argv++;
+ 	} else if (strcmp(*argv, "flowlabel") == 0) {
+ 		__u32 flabel;
+ 		NEXT_ARG();
+@@ -106,6 +108,7 @@
+ 		pi->mask = htonl(0x000FFFFF);
+ 		pi->key = htonl(flabel) & pi->mask;
+ 		pi->offset = -40;
++		argc--; argv++;
+ 	} else if (strcmp(*argv, "u32") == 0 ||
+ 		   strcmp(*argv, "u16") == 0 ||
+ 		   strcmp(*argv, "u8") == 0) {

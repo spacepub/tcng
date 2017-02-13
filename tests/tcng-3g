@@ -1,0 +1,16 @@
+# Incorrect reduction 0 || X -> 1 ---------------------------------------------
+tcsim -v | wc -l | tr -d ' '
+dev lo {
+    prio {
+	class if 0;
+	class if 1;
+    }
+}
+EOF
+2
+# ! assumed constant operand --------------------------------------------------
+tcc -c
+prio {
+    class if !raw[0];
+}
+EOF

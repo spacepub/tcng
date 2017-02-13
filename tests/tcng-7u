@@ -1,0 +1,25 @@
+# dsmark reports location of inner qdisc causing problems ---------------------
+tcc -c -w 2>&1
+dsmark {
+    class (1) {
+	fifo;
+    }
+    class (2) {
+	fifo;
+    }
+}
+EOF
+ERROR
+<stdin>:6: dsmark has only one inner qdisc
+# gred reports location of inner qdisc causing problems -----------------------
+tcc -c 2>&1
+#include "tcngreg.def"
+
+gred (RED_PARAMS) {
+    class (1,default) {
+	fifo;
+    }
+}
+EOF
+ERROR
+<stdin>:5: gred has no inner qdiscs

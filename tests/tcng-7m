@@ -1,0 +1,4 @@
+# "b" is available in the "word" name space -----------------------------------
+tcc -c
+field b = raw[0];
+EOF

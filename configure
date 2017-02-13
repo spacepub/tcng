@@ -1,0 +1,434 @@
+#!/bin/sh -e
+#
+# configure - Configure directories and system environment for tcc and tcsim
+#
+# Written 2001-2004 by Werner Almesberger
+# Copyright 2001 EPFL-ICA, Network Robots
+# Copyright 2002 Bivio Networks, Network Robots, Werner Almesberger
+# Copyright 2003,2004 Werner Almesberger
+#
+
+KVERSIONS=2.4.3,2.4.4,2.4.5,2.4.6,2.4.7,2.4.8,2.4.9,2.4.10,2.4.12,2.4.13
+KVERSIONS=$KVERSIONS,2.4.14,2.4.15,2.4.16,2.4.17,2.4.18,2.4.19,2.4.20,2.4.21
+KVERSIONS=$KVERSIONS,2.4.22,2.4.23,2.4.24,2.4.25,2.4.26,2.4.27
+KVERSIONS=$KVERSIONS,2.5.0,2.5.1,2.5.2,2.5.3,2.5.4
+IVERSIONS=991023,001007,010803,010824,020116,040702,040831
+
+KSUFFIXES=-2.4.19,-2.4.20,-2.4.21.-2.4.22
+
+if [ "$1" = --kversions ]; then
+    echo $KVERSIONS | tr , ' '
+    exit 0
+fi
+
+if [ "$1" = --iversions ]; then
+    echo $IVERSIONS | tr , ' '
+    exit 0
+fi
+
+kdir=
+idir=
+install_dir=
+with_tcsim=
+with_manual=
+bytesex=
+no_tests=
+yacc=
+dollar=
+action=
+
+if [ "$1" != --no-defaults ]; then
+    if [ -r config ]; then
+	echo "Reading configuration defaults from ./config"
+	. ./config
+	kdir=$KSRC
+	idir=$ISRC
+	install_dir=$INSTALL_DIR
+	with_tcsim=$TCSIM
+	with_manual=$BUILD_MANUAL
+	bytesex=$BYTEORDER
+	yacc="$YACC"
+	dollar=$DOLLAR
+	action=$ACTION
+    fi
+else
+    shift
+fi
+
+topdir=`pwd`
+[ -z "$idir" -o ! -d "$idir" ] && \
+  idir="`find tcsim -name 'iproute2*' -type d -maxdepth 1 | sed 1q`"
+[ -z "$with_tcsim" ] && with_tcsim=true
+[ -z "$with_manual" ] && with_manual=true
+tcc=
+
+if [ -z "$kdir" -o ! -d "$kdir" ]; then
+    for n in tcsim/linux /usr/src/linux; do
+	for m in `echo $KSUFFIXES | tr , ' '` ""; do
+	    kdir=$n$m
+	    [ -d $kdir ] && break 2
+	done
+    done
+fi
+
+
+usage()
+{
+    cat <<EOF 1>&2
+usage: $0 [--no-defaults] [--kernel <dir_or_tar.bz2>]
+                 [--iproute2 <dir_or_tar.gz>] [--tcng <path>]
+                 [--install-directory <dir>] [--no-tcsim|--with-tcsim]
+                 [--no-manual|--with-manual] [--big-endian|--little-endian]
+		 [--action|--conform-exceed] [--yacc <command>] [-$|--c99]
+  abbreviations: -k for --kernel, -i for --iproute2,
+                 -t for --tcng, -d for --install-directory,
+                 -n for --no-tcsim, -N for --with-tcsim,
+                 -m for --no-manual, -M for --with-manual,
+                 -b for --big-endian, -l for --little-endian,
+		 -a for --action, -A for --conform-exceed,
+                 -y for --yacc
+EOF
+    exit 1
+}
+
+
+while [ ! -z "$*" ]; do
+    case "$1" in
+	-k|--kernel)
+	    [ ! -z "$2" ] || usage
+	    kdir="$2"
+	    shift;;
+	-i|--iproute2)
+	    [ ! -z "$2" ] || usage
+	    idir="$2"
+	    shift;;
+	-t|--tcc|--tcng)
+	    [ ! -z "$2" ] || usage
+	    tcc="$2"
+	    shift;;
+	-d|--install-directory)
+	    [ ! -z "$2" ] || usage
+	    install_dir="$2"
+	    shift;;
+	-n|--no-tcsim)
+	    with_tcsim=false;;
+	-N|--with-tcsim)
+	    with_tcsim=true;;
+	-m|--no-manual)
+	    with_manual=false;;
+	-M|--with-manual)
+	    with_manual=true;;
+	-b|--big-endian)
+	    bytesex=BIG_ENDIAN;;
+	-l|--little-endian)
+	    bytesex=LITTLE_ENDIAN;;
+	-y|--yacc)
+	    [ ! -z "$2" ] || usage
+	    yacc="$2"
+	    shift;;
+	-\$)
+	    dollar=true;;
+	-c99|--c99)
+	    dollar=false;;
+	-a|--action)
+	    action=true;;
+	-A|--conform-exceed)
+	    action=false;;
+	*) usage;;
+    esac
+    shift
+done
+
+#
+# Extract kernel tarball
+#
+
+if [ -f "$kdir" -a \
+  \( "${kdir#linux-2.4.*.tar.bz2}" = "" -o \
+     "${kdir#*/linux-2.4.*.tar.bz2}" = "" \) ]; then
+    scripts/minksrc.sh "$kdir" | tee .configure.tmp
+    kdir=`sed '/^.*[Ee]xtracted to \(.*\)/s//\1/p;d' <.configure.tmp`
+    rm -f .configure.tmp
+    [ ! -z "$kdir" ] || exit 1
+fi
+
+#
+# Extract iproute2 tarball
+#
+
+if [ -f "$idir" -a \
+  \( "${idir#iproute2-*.tar.gz}" = "" -o \
+     "${idir#*/iproute2-*.tar.gz}" = "" -o \
+     "${idir#iproute_*.orig.tar.gz}" = "" -o \
+     "${idir#*/iproute_*.orig.tar.gz}" = "" \) ]; then
+    scripts/minisrc.sh "$idir" | tee .configure.tmp
+    idir=`sed '/^.*[Ee]xtracted to \(.*\)/s//\1/p;d' <.configure.tmp`
+    rm -f .configure.tmp
+    [ ! -z "$idir" ] || exit 1
+fi
+
+#
+# Make relative paths absolute
+#
+
+pwd=`pwd`
+kdir=`echo "$kdir" | sed 's|^\([^/]\)|'$pwd'/\1|'`
+idir=`echo "$idir" | sed 's|^\([^/]\)|'$pwd'/\1|'`
+
+
+# ----- Report inclusion of tcsim ---------------------------------------------
+
+
+if $with_tcsim; then
+    echo "building tcsim:       yes"
+    echo "// 1" >.cpptest
+    echo "// 2" >>.cpptest
+    if echo "#warning test" | gcc -include .cpptest -E - 2>&1 |
+      grep '^[^:]*:1' >/dev/null; then : ; else
+	no_tests="broken version of cpp"
+	echo "Warning: cpp installed on this system mis-calculates line numbers"
+	echo "         and is not compatible with the regression tests of tcng."
+    fi
+    rm -f .cpptest
+else
+    echo "building tcsim:       NO"
+    no_tests="tcng built without tcsim"
+fi
+
+
+# ----- Detect kernel ---------------------------------------------------------
+
+
+if $with_tcsim; then
+    if [ ! -d $kdir ]; then
+	echo $kdir: no kernel directory 2>&1
+	exit 1
+    fi
+
+    if [ ! -f $kdir/Makefile ]; then
+	echo no kernel in $kdir: need $kdir/Makefile 2>&1
+	exit 1
+    fi
+
+    kversion=`sed '/^\(VERSION\|PATCHLEVEL\|SUBLEVEL\) = /s///p;d'  \
+      <$kdir/Makefile | tr '\012' . | sed 's/\.$//'`
+    extraversion="`sed '/^EXTRAVERSION = *-/{s///;q;};d' <$kdir/Makefile`"
+
+    none=true
+    for n in `echo $KVERSIONS | tr , ' '`; do
+	if [ "$kversion" = $n ]; then
+	    none=false
+	    break
+	fi
+    done
+    if $none; then
+	echo "found kernel $kversion, need one of $KVERSIONS" 2>&1
+	exit 1
+    fi
+
+    kfullversion="$kversion"
+    if [ ! -z "$extraversion" ]; then
+	kfullversion="$kfullversion-$extraversion"
+	extraversion=" [$extraversion]"
+    fi
+    echo "Kernel source:        $kdir"
+    echo "Kernel version:       $kversion$extraversion"
+fi
+
+
+# ----- Detect iproute2 -------------------------------------------------------
+
+
+if $with_tcsim; then
+    if [ ! -d $idir ]; then
+	echo $idir: no iproute2 directory 2>&1
+	exit 1
+    fi
+
+    if [ ! -f $idir/include/SNAPSHOT.h ]; then
+	echo no iproute2 in $idir: need $idir/include/SNAPSHOT.h 2>&1
+	exit 1
+    fi
+
+    iversion=`sed '/.*"\([0-9]*\)".*/s//\1/;q' <$idir/include/SNAPSHOT.h`
+
+    none=true
+    for n in `echo $IVERSIONS | tr , ' '`; do
+	if [ "$iversion" = $n ]; then
+	    none=false
+	    break
+	fi
+    done
+    if $none; then
+	echo "found iproute $iversion, need one of $IVERSIONS" 2>&1
+	exit 1
+    fi
+
+    echo "iproute2 source:      $idir"
+    echo "iproute2 version:     $iversion"
+fi
+
+
+# ----- Detect byte order -----------------------------------------------------
+
+
+if $with_tcsim; then
+    if [ -z "$bytesex" ]; then
+	make -C build -s bytesex
+	bytesex=`build/bytesex`
+
+	[ -z "$bytesex" ] && exit 1
+    fi
+
+    if [ $bytesex = LITTLE_ENDIAN ]; then
+	echo "Host byte order:      little endian"
+    else
+	echo "Host byte order:      big endian"
+    fi
+fi
+
+
+# ----- Find tcc --------------------------------------------------------------
+
+
+if $with_tcsim; then
+    if [ ! -z "$tcc" ]; then
+	if [ ! -f "$tcc" -o ! -x "$tcc" ]; then
+	    echo "$tcc is not an executable file" 2>&1
+	    exit 1
+	fi
+	if [ "`$tcc -V | awk '{$4="";print $0}'`" != "tcng version " ]; \
+	  then
+	    echo "$tcc is not the tcng-compiler" 2>&1
+	    exit 1
+	fi
+	if [ "$tcc" != tcng ]; then
+	    tcc=`echo "$tcc" | sed 's|^\([^/]\)|'$pwd'/\1|'`
+	fi
+    fi
+
+    if [ -z "$tcc" ]; then
+	tcc=$topdir/bin/tcng
+    fi
+
+    echo "tcng command:         $tcc"
+fi
+
+
+# ----- Find a YACC -----------------------------------------------------------
+
+
+if [ -z "$yacc" ]; then
+    if type -path yacc >/dev/null; then
+	yacc=yacc
+    elif type -path bison >/dev/null; then
+	yacc="bison -y"
+    else
+        echo "no YACC found" 1>&2
+	exit 1
+    fi
+fi
+echo "YACC is:              $yacc"
+
+
+# ----- Make CPP separate dollar signs from identifiers -----------------------
+
+
+if [ -z "$dollar" ]; then
+    {
+	if [ "`gcc -std=c99 -E - | sed '$p;d'`" != '$bar' ]; then
+	    dollar=true
+	else
+	    dollar=false
+	fi
+    } <<EOF
+#define foo bar
+\$foo
+EOF
+fi
+if $dollar; then
+   echo '$ is not identifier:  -$'
+else
+   echo '$ is not identifier:  -std=c99'
+fi
+
+
+# ----- Check if "tc" supports "action" ---------------------------------------
+
+
+if [ -z "$action" ]; then
+    if tc filter change dev nontdv fw police action pass/pass 2>&1 | \
+      grep Illegal >/dev/null; then
+	action=false
+    else
+	action=true
+    fi
+fi
+if $action; then
+   echo 'tc supports "action": yes'
+else
+   echo 'tc supports "action": no (using "conform-exceed" instead)'
+fi
+
+
+# ----- Report inclusion of the manual ----------------------------------------
+
+
+if $with_manual; then
+    if type -path latex >/dev/null && type -path dvips >/dev/null; then
+	echo "building the manual:  yes"
+    else
+        echo "building the manual:  NO (need latex and dvips)"
+	with_manual=false
+    fi
+else
+    echo "building the manual:  NO"
+fi
+
+
+# ----- Check install directory -----------------------------------------------
+
+usr_local=
+[ -d /usr/local ] && usr_local=/usr/local
+[ -z "$install_dir" ] && install_dir=$usr_local
+if [ ! -z "$install_dir" ]; then
+    if [ ! -e "$install_dir" ]; then
+	echo "installation directory $install_dir does not exist" 1>&2
+	exit 1
+    fi
+    if [ ! -d "$install_dir" ]; then
+	echo "installation directory $install_dir is not a directory" 1>&2
+	exit 1
+    fi
+    echo "install directory:    $install_dir"
+fi
+
+
+# ----- Write output ----------------------------------------------------------
+
+
+cat <<EOF >config.tmp
+# MACHINE-GENERATED
+TOPDIR=$topdir
+TCSIM=$with_tcsim
+BUILD_MANUAL=$with_manual
+NO_TESTS="$no_tests"
+INSTALL_DIR=$install_dir
+YACC="$yacc"
+DOLLAR=$dollar
+ACTION=$action
+EOF
+
+$with_tcsim && cat <<EOF >>config.tmp
+KSRC=$kdir
+KVERSION=$kversion
+KFULLVERSION=$kfullversion
+ISRC=$idir
+IVERSION=$iversion
+BYTEORDER=$bytesex
+TCC=$tcc
+EOF
+
+mv -f config.tmp config
+
+exit 0

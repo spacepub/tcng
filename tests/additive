@@ -1,0 +1,20 @@
+# Additive headers at external interface (C) ----------------------------------
+LD_LIBRARY_PATH=. \
+  tcsim -v -Xc,-tif:c tests/lib/additive.tcsim | \
+  sed '/.* c .*returns /{s///;s/ (.*//;p;};d'
+OK
+UNSPEC
+UNSPEC
+OK
+# Additive headers at external interface (external) ---------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -v -Xc,-xif:test tests/lib/additive.tcsim | \
+  sed '/.* c .*returns /{s///;s/ (.*//;p;};d'
+OK
+UNSPEC
+UNSPEC
+OK
+# Additive headers at external interface (u32 can't do this) ------------------
+tcc tests/lib/additive.tc 2>&1 >/dev/null
+ERROR
+can't dump subexpression (if_u32.c, access expected)

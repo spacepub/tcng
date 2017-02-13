@@ -1,0 +1,15 @@
+# TCNG: handle (field & mask) == value ----------------------------------------
+tcsim -v | sed '/.*match /{s///;s/ classid .*//p;};d'
+dev eth0 {
+    #include "fields.tc"
+
+    dsmark (indices 64) {
+	class (0x10) if (ip_tos & 0xfc) == 0xa << 2;
+    }
+}
+EOF
+u8 0x28 0xfc at 1
+# TCNG: refuse invalid size qualifier -----------------------------------------
+echo 'prio { class if raw[0].5 == 1; }' | tcc 2>&1
+ERROR
+<stdin>:1: size must be 8, 16, or 32, not 5 near "5"

@@ -1,0 +1,20 @@
+/*
+ * prio+fw - Prio with FW classifier
+ *
+ * Like prio+rsvp, but using the fw classifier.
+ */
+
+#define NOTHING
+#define HIGH	TCP_PCK(NOTHING)
+#define LOW	TCP_PCK(NOTHING)
+
+dev eth0 100000 /* 100 Mbps */
+
+tc qdisc add dev eth0 root handle 1:0 prio
+tc filter add dev eth0 parent 1:0 proto ip fw 
+
+send nfmark=2 LOW
+send nfmark=2 LOW
+send nfmark=1 HIGH
+
+end

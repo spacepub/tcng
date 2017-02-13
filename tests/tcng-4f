@@ -1,0 +1,55 @@
+# ext_all removes priomap parameter in output (PRIO) --------------------------
+tcc -xif:err -Xx,all 2>&1 | grep '^qdisc'
+prio (priomap $c) {
+    $c = class (1)
+        if 1;
+}
+EOF
+qdisc 1 = prio bands 3
+# ext_all removes priomap parameter in output (CBQ qdisc) ---------------------
+tcc -xif:err -Xx,all 2>&1 | grep '^qdisc'
+cbq (bandwidth 4Bps,allot 1.5kB,avpkt 1kB,maxburst 2p,priomap $c) {
+    class (rate 3Bps)
+      if 1
+    {
+	$c = class (rate 2Bps);
+    }
+}
+EOF
+qdisc 1 = cbq
+# ext_all removes priomap parameter in output (CBQ class, no child) -----------
+tcc -xif:err -Xx,all 2>&1 | grep '^class'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 3Bps,bandwidth 5Bps,priomap $c)
+      if 1
+    {
+	$c = class (rate 2Bps);
+    }
+}
+EOF
+class 0 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 rate 1250000
+class 1 = allot 1536 avpkt 1024 bandwidth 5 maxburst 2 parent 0 rate 3
+class 2 = allot 1536 avpkt 1024 bandwidth 5 maxburst 2 parent 1 rate 2
+# ext_all removes priomap parameter in output (CBQ class, with child) ---------
+tcc -xif:err -Xx,all 2>&1 | grep '^class'
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 3Bps,bandwidth 5Bps,priomap $c)
+      if 1
+    {
+	$c = class (rate 2Bps) {
+	    fifo;
+	}
+    }
+}
+EOF
+class 0 = allot 1536 avpkt 1024 bandwidth 1250000 maxburst 2 rate 1250000
+class 1 = allot 1536 avpkt 1024 bandwidth 5 maxburst 2 parent 0 rate 3
+class 2 = allot 1536 avpkt 1024 bandwidth 5 maxburst 2 parent 1 qdisc 2 rate 2
+# refuse duplicate parameters -------------------------------------------------
+echo 'prio (bands 3,bands 3);' | tcc 2>&1
+ERROR
+<stdin>:1: duplicate parameter "bands" near ")"

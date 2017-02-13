@@ -1,0 +1,48 @@
+# compare IPv6 with 32 bit zero (ext) -----------------------------------------
+tcc -xif:err 2>&1 | grep match 2>&1
+prio {
+    drop if raw[0].ipv6 == 0;
+}
+EOF
+match 0:0:128=0x00000000000000000000000000000000 action 1
+match action 0
+# compare IPv6 with 128 bit zero (ext) ----------------------------------------
+tcc -xif:err 2>&1 | grep match 2>&1
+prio {
+    drop if raw[0].ipv6 == ::;
+}
+EOF
+match 0:0:128=0x00000000000000000000000000000000 action 1
+match action 0
+# compare IPv6 with 32 bit non-zero (ext) -------------------------------------
+tcc -xif:err 2>&1 | grep match 2>&1
+prio {
+    drop if raw[0].ipv6 == 0x1234;
+}
+EOF
+match 0:0:128=0x00000000000000000000000000001234 action 1
+match action 0
+# compare IPv6 with 128 bit non-zero (ext) ------------------------------------
+tcc -xif:err 2>&1 | grep match 2>&1
+prio {
+    drop if raw[0].ipv6 == 1234:5678:9abc:def0:fedc:ba98:7654:3210;
+}
+EOF
+match 0:0:128=0x123456789ABCDEF0FEDCBA9876543210 action 1
+match action 0
+# compare shifted IPv6 (ext) --------------------------------------------------
+tcc -xif:err 2>&1 | grep match 2>&1
+prio {
+    drop if (raw[0].ipv6 << 1) == 10;
+}
+EOF
+match 0:1:127=0x00000000000000000000000000000005 action 1
+match action 0
+# compare anded IPv6 (ext) ----------------------------------------------------
+tcc -xif:err 2>&1 | grep match 2>&1
+prio {
+    drop if raw[0].ipv6/48  == 1:2:3:4:5:6:7:8/48;
+}
+EOF
+match 0:0:48=0x000100020003 action 1
+match action 0

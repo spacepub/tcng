@@ -1,0 +1,74 @@
+# u32 issues rules in correct order with multi-phase policers (1) -------------
+tcsim | tcsim_filter -d tos  | awk '{print $2}'
+dev eth0 10Mbps {
+    $p = trTCM(cir 10bps,cbs 1B,pir 10bps,pbs 1B);
+
+    dsmark (mask 0,value 0) {
+	class (0) if raw[0] == 1 && __trTCM_green($p);
+	class (1) if raw[0] == 1 && __trTCM_yellow($p);
+	class (2) if raw[0] == 1 && __trTCM_red($p);
+	class (3,value 0xff) if 1;
+    }
+}
+
+send 1 0 x 19
+end
+EOF
+D:00
+# u32 issues rules in correct order with multi-phase policers (2) -------------
+tcsim | tcsim_filter -c -d
+dev eth0 10Mbps {
+    $p = trTCM(cir 10bps,cbs 1B,pir 10bps,pbs 1B);
+
+    egress {
+	class (<>) if raw[0] == 1 && __trTCM_green($p);
+	class (<>) if raw[0] == 1 && __trTCM_yellow($p);
+	class (<>) if raw[0] == 1 && __trTCM_red($p);
+	drop if 1;
+    }
+}
+
+send 1 0 x 19
+end
+EOF
+D 1
+# u32 issues rules in correct order with multi-phase policers (3) -------------
+tcsim | tcsim_filter -c -d tos
+dev eth0 10Mbps {
+    $p = trTCM(cir 10bps,cbs 1B,pir 10bps,pbs 1B);
+
+    dsmark {
+	class (1,value 1) if tcp_sport == 22 && __trTCM_green($p);
+	class (2,value 2) if tcp_sport == 22 && __trTCM_yellow($p);
+	class (3,value 3) if tcp_sport == 22 && __trTCM_red($p);
+	class (4,value 4) if 1;
+    }
+}
+
+send TCP_PCK($tcp_sport = 22)
+end
+EOF
+D:03 1
+# u32 issues rules in correct order with multi-phase policers (4) -------------
+tcsim | tcsim_filter -c tos
+/* see u32srtcm for details */
+
+dev eth0 1Mbps {
+    egress {
+        $p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+        class (<>,mask 0,value 1) if tcp_dport == 100 && srTCM_green($p);
+        class (<>,mask 0,value 2) if tcp_dport == 100 && srTCM_yellow($p);
+        class (<>,mask 0,value 3) if tcp_dport == 100 && srTCM_red($p);
+	drop if 1;
+    }
+}
+
+every 0.005s send TCP_PCK($tcp_dport = 100) 0 x 85  /* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002

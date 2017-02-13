@@ -1,0 +1,42 @@
+# variable names may contain underscores --------------------------------------
+echo '$v_v = 5' | tcsim 2>&1
+# variable names must not contain plus signs
+echo '$v+v = 5' | tcsim 2>&1
+ERROR
+<stdin>:1: syntax error near "$v"
+# simple command variable -----------------------------------------------------
+tcsim
+dev eth0 10000 
+
+command $c = send 0x88 x 4
+
+command $c
+send 0x66 x 4
+command $c
+EOF
+0.000000 E : 0x00000000 4 : eth0: 88888888
+0.000000 D : 0x00000000 4 : eth0: 88888888
+0.000000 E : 0x00000001 4 : eth0: 66666666
+0.000000 E : 0x00000002 4 : eth0: 88888888
+# command variable with "every" -----------------------------------------------
+tcsim
+dev eth0 10000
+
+command $c = send 0x77 x 4
+
+every 1s command $c
+time 1.5s
+command $c
+time 2.5s
+end
+EOF
+0.000000 E : 0x00000000 4 : eth0: 77777777
+0.000000 D : 0x00000000 4 : eth0: 77777777
+1.000000 E : 0x00000001 4 : eth0: 77777777
+1.000000 D : 0x00000001 4 : eth0: 77777777
+1.500000 E : 0x00000002 4 : eth0: 77777777
+1.500000 D : 0x00000002 4 : eth0: 77777777
+2.000000 E : 0x00000003 4 : eth0: 77777777
+2.000000 D : 0x00000003 4 : eth0: 77777777
+3.000000 E : 0x00000004 4 : eth0: 77777777
+3.000000 D : 0x00000004 4 : eth0: 77777777

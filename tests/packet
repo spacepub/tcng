@@ -1,0 +1,61 @@
+# packet.def: default IP packet -----------------------------------------------
+tcsim | sed 's/.*: //'
+#include "packet.def"
+
+dev eth0
+
+#define NOTHING
+send IP_PCK(NOTHING)
+EOF
+45000014 00000000 40000000 0a000001 0a000002
+# packet.def: default TCP packet -----------------------------------------------
+tcsim | sed 's/.*: //'
+#include "packet.def"
+
+dev eth0
+
+#define NOTHING
+send TCP_PCK(NOTHING)
+EOF
+45000028 00000000 40060000 0a000001 0a000002 00000000 00000000 00000000 50000000 00000000
+# packet.def: default UDP packet -----------------------------------------------
+tcsim | sed 's/.*: //'
+#include "packet.def"
+
+dev eth0
+
+#define NOTHING
+send UDP_PCK(NOTHING)
+EOF
+4500001c 00000000 40110000 0a000001 0a000002 00000000 00000000
+# packet.def: default ICMP packet ---------------------------------------------
+tcsim | sed 's/.*: //'
+#include "packet.def"
+
+dev eth0
+
+#define NOTHING
+send ICMP_PCK(NOTHING)
+EOF
+45000018 00000000 40010000 0a000001 0a000002 08000000
+# packet.def: default IGMP packet ---------------------------------------------
+tcsim | sed 's/.*: //'
+#include "packet.def"
+
+dev eth0
+
+#define NOTHING
+send IGMP_PCK(NOTHING)
+EOF
+4500001c 00000000 40020000 0a000001 0a000002 11000000 00000000
+# packet.def: TCP SYN packet --------------------------------------------------
+tcsim | sed 's/.*: //'
+#include "packet.def"
+#include "ports.tc"
+
+dev eth0
+
+send TCP_PCK($ip_DF=1 $ip_tos=0x10
+  $tcp_SYN=1 $tcp_seq=0x1a2b3c4d $tcp_sport=0x1234 $tcp_dport=PORT_HTTP)
+EOF
+45100028 00004000 40060000 0a000001 0a000002 12340050 1a2b3c4d 00000000 50020000 00000000

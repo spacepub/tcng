@@ -1,0 +1,12 @@
+# variable use output for filter is in correct format -------------------------
+tcc -c -u stderr 2>&1
+prio {
+    $f = fw;
+    class on $f(1);
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+$f = filter eth0:1::1
+}
+}

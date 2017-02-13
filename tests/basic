@@ -1,0 +1,27 @@
+# Send command ----------------------------------------------------------------
+echo "dev eth0 send 0 1 2 3 4" | tcsim
+0.000000 E : 0x00000000 5 : eth0: 00010203 04
+# Repetition operator (x) -----------------------------------------------------
+echo "dev eth0 send 1 x 6" | tcsim
+0.000000 E : 0x00000000 6 : eth0: 01010101 0101
+# Size/order qualifiers -------------------------------------------------------
+echo "dev eth0 send b: 1 ns: 2000 nl: 300000" | tcsim
+0.000000 E : 0x00000000 7 : eth0: 0107d000 0493e0
+# Every command ---------------------------------------------------------------
+echo "dev eth0 every 1s send ns: 1 x 5 time 1s" | tcsim
+0.000000 E : 0x00000000 10 : eth0: 00010001 00010001 0001
+1.000000 E : 0x00000001 10 : eth0: 00010001 00010001 0001
+# Effect of "end" command after "every" ---------------------------------------
+tcsim | tcsim_filter -e
+dev eth0 1kbps
+every 1s send ns: 1 x 5
+time 1s
+end
+EOF
+0.000000 E 10 0x00000000
+1.000000 E 10 0x00000001
+2.000000 E 10 0x00000002
+# Detection of time reversal --------------------------------------------------
+echo "time 0.002s time 0s end" | tcsim 2>&1
+ERROR
+<stdin>:1: can't turn back time near "end"

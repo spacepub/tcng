@@ -1,0 +1,71 @@
+# compound construct with single expression -----------------------------------
+tcc -c -u stderr -Wnounused 2>&1 >/dev/null
+$x = { 5; };
+EOF
+$x = 5
+# compound construct can be anywhere in expression ----------------------------
+tcc -c -u stderr -Wnounused 2>&1 >/dev/null
+$y = 7*({ 5; }+1);
+EOF
+$y = 42
+# compound construct with assignment ------------------------------------------
+tcc -c -u stderr -Wnounused 2>&1 >/dev/null
+$z = { $z = 10; $z+5; };
+EOF
+{
+$z = 10
+}
+$z = 15
+# compound construct with multiple assignments --------------------------------
+tcc -c -u stderr -Wnounused 2>&1 >/dev/null
+$z = { $x = 10; $y = 8; $x << $y; }/60;
+EOF
+{
+$x = 10
+$y = 8
+}
+$z = 42
+# compound construct must end with semicolon ----------------------------------
+tcc -c -u stderr -Wnounused 2>&1
+$z = { 5 };
+EOF
+ERROR
+<stdin>:1: syntax error near "}"
+# compound construct may end with multiple semicolons -------------------------
+tcc -c -Wnounused 2>&1
+$a = { 5;;;; };
+EOF
+# compound construct requires semicolon after assignment ----------------------
+tcc -c -Wnounused 2>&1
+$a = { $x=2 $x+5; };
+EOF
+ERROR
+<stdin>:1: syntax error near "$x"
+# compound construct allows multiple semicolons after assignment --------------
+tcc -c -Wnounused 2>&1
+$a = { $x=2;; $x+5; };
+EOF
+# compound construct warns about unused variables -----------------------------
+tcc -c 2>&1
+$a = { $x = 13; 7; };
+field foo = raw if $a == $a;
+EOF
+<stdin>:1: warning: unused variable x
+# compound expressions may contain fields -------------------------------------
+tcc -c -Wnounused 2>&1
+$a = { field foo = raw; 5; };
+EOF
+# compound expressions require semicolon after field --------------------------
+tcc -c -Wnounused 2>&1
+$a = { field foo = raw 5; };
+EOF
+ERROR
+<stdin>:1: syntax error near "5"
+# compound expressions allow multiple semicolons after field ------------------
+tcc -c -Wnounused 2>&1
+$a = { field foo = raw;;;; 5; };
+EOF
+# compound expressions can use gcc syntax -------------------------------------
+tcc -c -Wnounused 2>&1
+$foo = ({ $x = 17; field foo = raw[2] if $x; $x*2; });
+EOF

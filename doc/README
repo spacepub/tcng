@@ -1,0 +1,14 @@
+The documentation in this directory describes the whole tcng
+system, and replaces the documents tcc/LANGUAGE, tcc/README,
+tcsim/README, and doc/external.tex
+
+Currently, only the Postscript output (tcng.ps) is correct. There
+are still some bugs in t2x.pl, leading to formatting problems in
+the plain text version (tcng.txt)
+
+Just running "make" generates both, the Postscript and plain text
+versions. "make tcng.pdf" also generates a PDF version from the
+Postscript file.
+
+README.tccext is and old description of the design of the external
+interface, and only kept temporarily as a development reference.

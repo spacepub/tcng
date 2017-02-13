@@ -1,0 +1,208 @@
+# u32 srTCM: tcc-ext-test reference -------------------------------------------
+PATH=$PATH:tcc/ext LD_LIBRARY_PATH=. tcsim -Xc,-xif:test | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 1) if srTCM_green($p);
+	class (<>,mask 0,value 2) if srTCM_yellow($p);
+	class (<>,mask 0,value 3) if srTCM_red($p);
+    }
+}
+
+/*
+ * Packets sent: ca. 1000
+ * Admitted at CBS: ca. 10% (100) plus 50kB (400)
+ * Admitted at EBS: 25kB (200)
+ *
+ * So we expect roughly:
+ * green ~ CBS, ca. 500
+ * yellow ~ EBS, ca. 200
+ * red ~ all-yellow-green, ca. 300
+ */
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 505
+D:02 204
+D:03 293
+E:00 1002
+# u32 srTCM: class/class/class (__GYR) ----------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 1) if __srTCM_green($p);
+	class (<>,mask 0,value 2) if __srTCM_yellow($p);
+	class (<>,mask 0,value 3) if __srTCM_red($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002
+# u32 srTCM: class/class/class (GYR) ------------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 1) if srTCM_green($p);
+	class (<>,mask 0,value 2) if srTCM_yellow($p);
+	class (<>,mask 0,value 3) if srTCM_red($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002
+# u32 srTCM: class/class/class (GRY) ------------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 1) if srTCM_green($p);
+	class (<>,mask 0,value 3) if srTCM_red($p);
+	class (<>,mask 0,value 2) if srTCM_yellow($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002
+# u32 srTCM: class/class/class (YGR) ------------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 2) if srTCM_yellow($p);
+	class (<>,mask 0,value 1) if srTCM_green($p);
+	class (<>,mask 0,value 3) if srTCM_red($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002
+# u32 srTCM: class/class/class (YRG) ------------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 2) if srTCM_yellow($p);
+	class (<>,mask 0,value 3) if srTCM_red($p);
+	class (<>,mask 0,value 1) if srTCM_green($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002
+# u32 srTCM: class/class/class (RGY) ------------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 3) if srTCM_red($p);
+	class (<>,mask 0,value 1) if srTCM_green($p);
+	class (<>,mask 0,value 2) if srTCM_yellow($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002
+# u32 srTCM: class/class/class (RYG) ------------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 3) if srTCM_red($p);
+	class (<>,mask 0,value 2) if srTCM_yellow($p);
+	class (<>,mask 0,value 1) if srTCM_green($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+D:03 258
+E:00 1002
+# u32 srTCM: class/class/drop (__GYR) -----------------------------------------
+tcsim | tcsim_filter -c tos
+#include "packet.def"
+
+dev eth0 1Mbps {
+    egress {
+	$p = srTCM(cir 20kbps,cbs 50kB,ebs 25kB);
+
+	class (<>,mask 0,value 1) if __srTCM_green($p);
+	class (<>,mask 0,value 2) if __srTCM_yellow($p);
+	drop if __srTCM_red($p);
+    }
+}
+
+every 0.005s send 0 x 125 	/* 200 kbps */
+time 5s
+end
+EOF
+D:01 530
+D:02 214
+E:00 1002

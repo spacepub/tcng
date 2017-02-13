@@ -1,0 +1,112 @@
+# named: protocol defaults to "all" -------------------------------------------
+tcc | grep filter
+prio {
+    fw();
+}
+EOF
+tc filter add dev eth0 parent 1:0 protocol all prio 1 fw
+# named: protocol "ipv4" is translated to "ip" --------------------------------
+tcc | grep filter
+prio {
+    fw(protocol "ipv4");
+}
+EOF
+tc filter add dev eth0 parent 1:0 protocol ip prio 1 fw
+# named: set protocol by name, retrieve by name -------------------------------
+tcc | grep filter
+prio {
+    fw(protocol "ipv6");
+}
+EOF
+tc filter add dev eth0 parent 1:0 protocol ipv6 prio 1 fw
+# named: set protocol by number, retrieve by name -----------------------------
+tcc | grep filter
+prio {
+    fw(protocol 0x86dd);
+}
+EOF
+tc filter add dev eth0 parent 1:0 protocol ipv6 prio 1 fw
+# named: invalid protocol name ------------------------------------------------
+tcc 2>&1
+prio {
+    fw(protocol "no such protocol");
+}
+EOF
+ERROR
+<stdin>:2: unknown ether protocol "no such protocol" near ")"
+# named: invalid protocol number ----------------------------------------------
+tcc 2>&1
+prio {
+    fw(protocol 0x12345);
+}
+EOF
+ERROR
+<stdin>:2: parameter "protocol" value 0x12345 above limit 0xffff near ")"
+# named: set ipproto by name --------------------------------------------------
+tcc | sed '/.* ipproto/s//ipproto/p;d'
+prio {
+    class
+	on rsvp(ipproto "udp") element (dst 1.2.3.4);
+}
+EOF
+ipproto 17 session 1.2.3.4 classid 1:1
+# named: set ipproto by number ------------------------------------------------
+tcc | sed '/.* ipproto/s//ipproto/p;d'
+prio {
+    class
+	on rsvp(ipproto 8) element (dst 1.2.3.4); /* EGP */
+}
+EOF
+ipproto 8 session 1.2.3.4 classid 1:1
+# named: invalid ipproto name -------------------------------------------------
+tcc 2>&1
+prio {
+    class
+	on rsvp(ipproto "no such proto") element (dst 1.2.3.4);
+}
+EOF
+ERROR
+<stdin>:3: unknown IP protocol "no such proto" near ")"
+# named: invalid ipproto number -----------------------------------------------
+tcc 2>&1
+prio {
+    class
+	on rsvp(ipproto 0x100) element (dst 1.2.3.4);
+}
+EOF
+ERROR
+<stdin>:3: parameter "ipproto" value 256 above limit 255 near ")"
+# named: set port by name -----------------------------------------------------
+tcc | sed '/.* ipproto/s//ipproto/p;d'
+prio {
+    class
+	on rsvp(ipproto "tcp") element (dst 1.2.3.4,sport "finger");
+}
+EOF
+ipproto 6 session 1.2.3.4 sender any/79 classid 1:1
+# named: set port by number ---------------------------------------------------
+tcc | sed '/.* ipproto/s//ipproto/p;d'
+prio {
+    class
+	on rsvp(ipproto "tcp") element (dst 1.2.3.4,sport 22);  /* SSH */
+}
+EOF
+ipproto 6 session 1.2.3.4 sender any/22 classid 1:1
+# named: invalid port name ----------------------------------------------------
+tcc 2>&1
+prio {
+    class
+	on rsvp(ipproto "tcp") element (dst 1.2.3.4,sport "no such port");
+}
+EOF
+ERROR
+<stdin>:3: unknown service/port "no such port" near ")"
+# named: invalid port number --------------------------------------------------
+tcc 2>&1
+prio {
+    class
+	on rsvp(ipproto "tcp") element (dst 1.2.3.4,dport 0);  /* SSH */
+}
+EOF
+ERROR
+<stdin>:3: parameter "dport" value 0 below limit 1 near ")"

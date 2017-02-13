@@ -1,0 +1,109 @@
+# policer at external interface: build srTCM ----------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -Xc,-xif:test -q
+dev eth0 {
+    // THIS EXAMPLE IS OBSOLETE - USE meters.tc INSTEAD !
+
+    /*
+     * srtcm.tc - Color-blind Single Rate Three Color Marker (srTCM) example
+     *
+     * Written 2001 by Werner Almesberger
+     * Copyright 2001 Network Robots
+     *
+     * This example implements an srTCM as described in RFC2697.
+     */
+
+
+    #define CIR	 100 kbps
+    #define CBS	  10 kB
+    #define EBS	  50 kB
+
+    #define MTU	1500 B	/* required by implementation */
+
+    #define RED	1
+    #define YELLOW	2
+    #define GREEN	3
+
+    $Te = police(rate 0 kbps,burst EBS,mtu MTU);
+    $Tc = police(rate CIR,burst CBS,overflow police $Te,mtu MTU);
+
+    dsmark (indices 64) {
+	class (GREEN)
+	    if conform police $Tc && count police $Tc;
+	class (YELLOW)
+	    if conform police $Te && count police $Te;
+	class (RED)
+	    if 1;
+    }
+}
+send 0	/* match only becomes active if there is traffic */
+EOF
+# policer at external interface: build trTCM ----------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -Xc,-xif:test -q
+dev eth0 {
+    // THIS EXAMPLE IS OBSOLETE - USE meters.tc INSTEAD !
+
+    /*
+     * trtcm.tc - Color-blind Two Rate Three Color Marker (trTCM) example
+     * 
+     * Written 2001 by Werner Almesberger
+     * Copyright 2001 Network Robots
+     *
+     * This example implements a trTCM as described in RFC2698. 
+     */
+
+
+    #define CIR	 100 kbps
+    #define PIR	 150 kbps
+    #define CBS	  10 kB
+    #define PBS	  50 kB
+
+    #define MTU	1500 B	/* required by implementation */
+
+    #define RED	1
+    #define YELLOW	2
+    #define GREEN	3
+
+    $Tc = police(rate CIR,burst CBS,mtu MTU);
+    $Tp = police(rate PIR,burst PBS,mtu MTU);
+
+    dsmark (indices 64) {
+	class (GREEN)
+	    if conform police $Tc && conform police $Tp &&
+	      count police $Tc && count police $Tp;
+	class (YELLOW)
+	    if conform police $Tp && count police $Tp;
+	class (RED)
+	    if 1;
+    }
+}
+send 0	/* match only becomes active if there is traffic */
+EOF
+# policer at external interface: with matches (no overlap) --------------------
+tcc -xif:err 2>&1 | sed '/^match/s/ action.*//p;d'
+$p1 = police(rate 1kbps,burst 1kB);
+$p2 = police(rate 2kbps,burst 2kB);
+prio {
+    class if raw[0] == 5 && conform police $p1;
+    class if raw[1] == 4 && conform police $p2;
+    class if 1;
+}
+EOF
+match 0:0:16=0x0504
+match 0:0:8=0x05
+match 0:8:8=0x04
+match
+# policer at external interface: with matches (with overlap) ------------------
+tcc -xif:err 2>&1 | sed '/^match/s/ action.*//p;d'
+$p1 = police(rate 1kbps,burst 1kB);
+$p2 = police(rate 2kbps,burst 2kB);
+prio {
+    class if raw[0] == 5 && conform police $p1;
+    class if raw[0] == 4 && conform police $p2;
+    class if 1;
+}
+EOF
+match 0:0:8=0x05
+match 0:0:8=0x04
+match

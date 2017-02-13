@@ -1,0 +1,49 @@
+# policer in if_c: traffic test (single policer) ------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -Xc,-tc tests/lib/pol_single.tcsim | tcsim_filter -c tos
+D:00 50
+D:01 51
+E:00 101
+# policer at external interface: traffic test (single policer) ----------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -Xc,-xif:test tests/lib/pol_single.tcsim | tcsim_filter -c tos
+D:00 54
+D:01 47
+E:00 101
+# policer at if_c: drop test (single policer) ---------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -Xc,-tc tests/lib/pol_single_drop.tcsim | tcsim_filter -c tos
+D:01 51
+E:00 101
+# policer at if_ext: drop test (single policer) -------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -Xc,-xif:test tests/lib/pol_single_drop.tcsim | tcsim_filter -c tos
+D:01 47
+E:00 101
+# policer at if_ext: alternative version --------------------------------------
+LD_LIBRARY_PATH=. PATH=$PATH:tcc/ext \
+  tcsim -Xc,-xif:test | tcsim_filter -c tos
+/*
+ * Single policer, drops
+ */
+
+dev eth0 10000 { /* 10 Mbps */
+    $p = police(rate 250kbps,burst 130B);
+    dsmark (indices 2) {
+        class (1,mask 0,value 1)
+            if (conform police $p && count police $p) || drop;
+        class (0)
+            if 1;
+    }
+}
+
+every 0.001s send 0 x 125       /* 1 Mbps */
+time 0.1s
+
+/*
+ * Should enqueue 101 packets, mark 25% of them as "1", and drop the rest
+ */
+
+EOF
+D:01 25
+E:00 101

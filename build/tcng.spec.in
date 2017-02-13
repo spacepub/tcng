@@ -1,0 +1,128 @@
+Summary: Linux Traffic Control - Next Generation
+Name: tcng
+Version: $VERSION
+Release: 1
+Copyright: GPL, LGPL
+Group: System Environment/Base
+URL: http://tcng.sourceforge.net/
+Packager: Werner Almesberger
+Source: http://tcng.sourceforge.net/dist/tcng-$VERSION.tar.gz
+BuildRoot: %{_tmppath}/%{name}-root
+Prefix: /usr
+
+%description
+TCNG is a package containing the Traffic Control compiler "tcng" and
+the event-driven Traffic Control simulation environment "tcsim".
+
+%package -n tcng
+Summary: Linux Traffic Control subsystem configuration
+Group: System Environment/Base
+Conflicts: tcng-devel < 7r
+
+%description -n tcng
+tcng is the compiler that processes Traffic Control configurations
+written in the tcng (Traffic Control - Next Generation) language and
+issues the appropriate commands to iproute2/tc or to some external
+conversion program.
+
+%package -n tcng-devel
+Summary: C library for processing tcng external output
+Group: Development/Libraries
+
+%description -n tcng-devel
+The library "libtccext", which offers a convenient C interface to
+the data provided by tcng at its "external" interface. The library
+is accompanied by header files for itself, and for the debugging
+functions echoh, which are also included in libtccext.
+
+%prep
+%setup -n tcng
+
+%build
+mkdir -p $RPM_BUILD_ROOT/usr
+./configure --no-tcsim --install-directory $RPM_BUILD_ROOT/usr
+make -C shared RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
+make RPM_OPT_FLAGS="$RPM_OPT_FLAGS" tcc
+
+%install
+[ "$RPM_BUILD_ROOT" = / ] || rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr
+TCNG_INSTALL_CWD=/usr make install
+
+%clean
+[ "$RPM_BUILD_ROOT" = / ] || rm -rf $RPM_BUILD_ROOT
+
+%post
+perl -pi -e 's|/usr\b|'$RPM_INSTALL_PREFIX'|g;' $RPM_INSTALL_PREFIX/bin/tcc
+perl -pi -e 's|/usr\b|'$RPM_INSTALL_PREFIX'|g;' $RPM_INSTALL_PREFIX/bin/tcng
+
+%files -n tcng
+%defattr(-,root,root)
+%doc tcc/README TODO COPYING.GPL COPYING.LGPL CHANGES tcc/LANGUAGE
+%verify(user group mode) /usr/bin/tcc
+%verify(user group mode) /usr/bin/tcng
+/usr/bin/tcc.bin
+/usr/lib/tcng/bin/tcc-module
+/usr/lib/tcng/bin/tcc-ext-err
+/usr/lib/tcng/bin/tcc-ext-null
+/usr/lib/tcng/bin/tcc-ext-file
+/usr/lib/tcng/lib/tcm_cls.c
+/usr/lib/tcng/lib/tcm_f.c
+/usr/lib/tcng/include/default.tc
+/usr/lib/tcng/include/meta.tc
+/usr/lib/tcng/include/fields.tc
+/usr/lib/tcng/include/fields4.tc
+/usr/lib/tcng/include/fields6.tc
+/usr/lib/tcng/include/values.tc
+/usr/lib/tcng/include/meters.tc
+/usr/lib/tcng/include/ports.tc
+/usr/lib/tcng/include/idiomatic.tc
+
+%files -n tcng-devel
+%defattr(-,root,root)
+/usr/bin/tcc_var2fix.pl
+/usr/lib/tcng/lib/libtccext.a
+/usr/lib/tcng/include/tccext.h
+/usr/lib/tcng/include/echoh.h
+/usr/lib/tcng/include/tccmeta.h
+
+%changelog
+* Sat Aug 14 2004 Werner Almesberger
+- started name change from "tcc" to "tcng"
+* Fri Oct 18 2002 Werner Almesberger
+- added include/tccmeta.h
+* Thu Sep 12 2002 Werner Almesberger
+- added meta.tc
+* Tue Jul 16 2002 Werner Almesberger
+- make -C shared before trying to make tcc
+* Tue May 29 2002 Werner Almesberger
+- added conflict between tcc >= 7r and tcc-devel < 7r
+* Thu May 16 2002 Werner Almesberger
+- added tcc-ext-null
+* Tue Apr 30 2002 Werner Almesberger
+- added default.tc
+- split fields.tc into fields4.tc and fields6.tc
+* Sun Jan 27 2002 Werner Almesberger
+- added lib/tcng/include/idiomatic.tc
+* Fri Dec 14 2001 Werner Almesberger
+- added lib/tcng/include/values.tc
+* Thu Oct 25 2001 Werner Almesberger
+- dropped lib/tcng/include/tcm.tc
+- added lib/tcng/include/ports.tc
+* Tue Oct 23 2001 Werner Almesberger
+- added tcc_var2fix.pl to tcng-devel RPM
+* Mon Oct 15 2001 Werner Almesberger
+- put %defattr before %doc
+* Fri Oct  5 2001 Werner Almesberger
+- added tcc-ext-file
+* Thu Oct  4 2001 Werner Almesberger
+- split tcc into tcc and tcc-devel RPM
+- added include/echoh.h to tcc-devel
+* Tue Sep 26 2001 Werner Almesberger
+- added portable BuildRoot
+* Tue Sep 26 2001 Werner Almesberger
+- added LGPL to "copyright" tag
+- made package relocatable
+- RPM_BUILD_ROOT test for / had logic reversed
+* Tue Sep 25 2001 Werner Almesberger
+- initial release of spec file

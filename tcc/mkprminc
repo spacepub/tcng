@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# mkprminc - Make include files for parameter handling
+#
+# Written 2001 by Werner Almesberger
+# Copyright 2001 EPFL-ICA, Network Robots
+#
+sed 's/#.*//;/^ *$/d' <Parameters | (
+    case "$1" in
+      decl)	awk '{ print "extern PARAM_DSC prm_" $1 ";" }';;
+      dsc)	awk '{ if ($2 == "flag") $2 = "unum"; \
+		       if ($2 == "special") $2 = "none"; \
+		       print "PARAM_DSC prm_" $1 " = { .id = \"" $1 \
+			 "\", .type = dt_" $2 " };" \
+		       }';;
+      reset)	awk '{ print "prm_" $1 ".present = 0;" }';;
+      stack)	awk '{ print "PARAM_DSC prm_" $1 ";" }';;
+      push)	awk '{ print "prm_stack[prm_sp].prm_" $1 " = prm_" $1 ";" }';;
+      pop)	awk '{ print "prm_" $1 " = prm_stack[prm_sp].prm_" $1 ";" }';;
+    esac
+)

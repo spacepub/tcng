@@ -1,0 +1,71 @@
+# pragma: parse and repeat external data --------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echo 2>&1 >/dev/null
+pragma("a" "b" "c");
+$p = police(rate 1kbps,burst 2kB,pragma "what.ever" "et_cetera");
+eth0 (pragma "foo=bar") {
+    prio {
+        class if conform police $p && count police $p;
+        class if 1;
+    }
+}
+EOF
+pragma a b c
+bucket 1 = 125 0 2048 2048 0 what.ever et_cetera
+block eth0 egress foo=bar
+action 3 = conform 1 action 0 action 2
+action 0 = count 1 action 1
+action 1 = class 1:1
+action 2 = class 1:2
+match action 3
+# pragma: test pragma on device without prior use of parameters ---------------
+PATH=$PATH:tcc/ext tcc -xif:echo 2>&1 >/dev/null
+eth0 (pragma "foobar") {
+    prio {
+	class if 1;
+    }
+}
+EOF
+block eth0 egress foobar
+action 1 = class 1:1
+match action 1
+# pragma: qdiscs and classes --------------------------------------------------
+PATH=$PATH:tcc/ext tcc -xif:echo -Xx,all 2>&1 >/dev/null | grep -v warning
+dsmark (indices 4,pragma "hello") {
+    class (1,pragma "just" "a" "test") if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = dsmark indices 4 pragma hello
+class 1 = pragma just a test
+action 1 = class 1:1
+match action 1
+# pragma: empty global pragma is ignored (1) ----------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+pragma ("");
+fifo; /* put something so that grep doesn't fail */
+EOF
+block eth0 egress
+qdisc 1 = fifo
+action 0 = unspec
+match action 0
+# pragma: empty global pragma is ignored (2) ----------------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+pragma ("" "other");
+EOF
+pragma other
+# pragma: empty pragma in parameters is ignored (1) ---------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+fifo (pragma "");
+EOF
+block eth0 egress
+qdisc 1 = fifo
+action 0 = unspec
+match action 0
+# pragma: empty pragma in parameters is ignored (2) ---------------------------
+tcc -xif:err -Xx,all 2>&1 >/dev/null | grep -v '^#'
+fifo (pragma "foo" "" "bar");
+EOF
+block eth0 egress
+qdisc 1 = fifo pragma foo bar
+action 0 = unspec
+match action 0

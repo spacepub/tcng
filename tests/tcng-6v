@@ -1,0 +1,11 @@
+# || is not associative in the presence of side-effects -----------------------
+tcc -xif:err 2>&1 >/dev/null | grep -v '^#'
+prio {
+    class if (raw[0] == 0 || drop) && 0;
+}
+EOF
+block eth0 egress
+action 0 = drop
+action 1 = unspec
+match 0:0:8=0x00 action 1
+match action 0

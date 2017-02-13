@@ -1,0 +1,29 @@
+# unprintable file names are flagged as such in location map ------------------
+(echo '# 1 "a b"'; echo "fifo;"; ) | tcc -l _out.loc >/dev/null; \
+  cat _out.loc; rm -f _out.loc
+EOF
+device eth0 - <unprintable> 1
+qdisc eth0:1 - <unprintable> 1
+# empty tags are ignored ------------------------------------------------------
+tcc -c -l stderr 2>&1 >/dev/null
+fifo("");
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:1 - <stdin> 1
+# swap_bits gets the reference counts right -----------------------------------
+tcc -xif:err -B 2>&1 >/dev/null | grep -v '^#'
+prio  {
+    class if raw[0] == 0;
+    drop if count police(rate 0bps,burst 0B) && raw[1] == 1;
+}
+EOF
+block eth0 egress
+bucket 1 = 0 0 0 0 0
+action 0 = unspec
+action 1 = count 1 action 0
+action 2 = drop
+action 3 = count 1 action 2
+action 4 = class 1:1
+match 0:0:8=0x0 action 4
+match 0:8:8=0x1 action 3
+match action 1

@@ -1,0 +1,16 @@
+# "if" tc reference example ---------------------------------------------------
+tcsim -v examples/u32 | sed '/.*u32 .* returns /s///p;d'
+OK (0) (1:1, 0x1)
+OK (0) (1:2, 0x2)
+OK (0) (1:3, 0x3)
+OK (0) (1:4, 0x4)
+OK (0) (1:5, 0x5)
+UNSPEC (-1)
+# "if" tcng equivalent --------------------------------------------------------
+tcsim -v examples-ng/u32 | sed '/.*u32 .* returns /s///p;d'
+OK (0) (1:1, 0x1)
+OK (0) (1:2, 0x2)
+OK (0) (1:3, 0x3)
+OK (0) (1:4, 0x4)
+OK (0) (1:5, 0x5)
+UNSPEC (-1)

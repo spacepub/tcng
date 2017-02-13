@@ -1,0 +1,29 @@
+# variable use list does include forward-declared variables (1) ---------------
+tcc -c -u stderr 2>&1
+prio (priomap $c) {
+    $c = class();
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+$c = class eth0:1:1
+}
+}
+# variable use list does include forward-declared variables (2) ---------------
+tcc -c -u stderr 2>&1
+dsmark {
+    class (<$c>) if 1;
+    prio {
+	$c = class();
+    }
+}
+EOF
+{ device eth0
+{ qdisc eth0:1
+{ class eth0:1:0
+{ qdisc eth0:2
+$c = class eth0:2:1
+}
+}
+}
+}

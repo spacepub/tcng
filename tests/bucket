@@ -1,0 +1,60 @@
+# bucket: can define variables ------------------------------------------------
+tcc -c -Wnounused
+$b1 = bucket(rate 1Mbps,burst 10kB);
+
+prio {
+    $b2 = bucket(rate 1.5Mbps,burst 10kB);
+}
+EOF
+# bucket: can use with conform, count -----------------------------------------
+tcc -c
+$b = bucket(rate 1Mbps,burst 10kB);
+
+prio {
+    class if conform $b;
+    class if conform bucket $b && count bucket(rate 1kbps,burst 1GB);
+}
+EOF
+# bucket: policer parameters are refused --------------------------------------
+tcc -c 2>&1
+$b = bucket(rate 1Mbps,burst 10kB,mtu 2kB);
+EOF
+ERROR
+<stdin>:1: unrecognized parameter "mtu"
+# bucket: "bucket" is no synonym for "police" after filters -------------------
+tcc -c 2>&1
+prio {
+    class on fw element (0) police(rate 1kbps,burst 1kB,mtu 100B);
+    class on fw element (1) bucket(rate 1kbps,burst 1kB);
+}
+EOF
+ERROR
+<stdin>:3: syntax error near "bucket"
+# bucket: tc does not dump buckets --------------------------------------------
+tcc 2>&1
+$b = bucket(rate 1Mbps,burst 10kB);
+
+dsmark {
+    class (0) on fw element (0) police $b;
+}
+EOF
+ERROR
+<stdin>:4: invalid type conversion (expected policer instead of bucket) near ";"
+# bucket: tc does not dump buckets (sneaky) -----------------------------------
+tcc 2>&1 >/dev/null
+$b = bucket(rate 1Mbps,burst 10kB);
+$p = police $b; /* "cast" */
+
+dsmark {
+    class (0) on fw element (0) police $p;
+}
+EOF
+ERROR
+<stdin>:2: invalid type conversion (expected policer instead of bucket) near ";"
+# bucket: can't "cast" from policer -------------------------------------------
+tcc -c 2>&1
+$p = police(rate 1kbps,burst 1kB,mtu 100B);
+$b = bucket $p;
+EOF
+ERROR
+<stdin>:2: invalid type conversion (expected bucket instead of policer) near ";"

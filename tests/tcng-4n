@@ -1,0 +1,39 @@
+# true/false conflict in swap_bits used to crash tcc --------------------------
+tcc -xif:err -Xx,all -B >/dev/null 2>&1
+field ip_nexthdr = ip_hdr[20] if ip_hl == 5;
+
+$p1_telnet = police(rate 1Mbps,burst 10kB);
+$p1_http = police(rate 20Mbps,burst 40kB);
+
+dsmark (indices 64) {
+    class (0x10)
+        if ip_dst:24 == 1.0.1.0 &&
+          conform $p1_telnet && count $p1_telnet;
+    class (0x11)
+        if ip_dst:24 == 1.0.1.0 &&
+          (tcp_sport == PORT_HTTP || tcp_dport == PORT_HTTP) &&
+          conform $p1_http && count $p1_http;
+}
+EOF
+# simpler test case for above problem -----------------------------------------
+tcc -xif:err -Xx,all -B 2>&1 >/dev/null | grep -v '^#'
+$p = police(rate 1Mbps,burst 2kB);
+
+prio {
+    class if conform $p;
+    class if raw[0] == 1;
+    drop if 1;
+}
+EOF
+bucket 1 = 125000 0 2048 2048 0
+block eth0 egress
+qdisc 1 = prio bands 3
+class 1 =
+class 2 =
+action 0 = class 1:1
+action 1 = drop
+action 2 = conform 1 action 0 action 1
+action 3 = class 1:2
+action 4 = conform 1 action 0 action 3
+match 0:0:8=0x1 action 4
+match action 2

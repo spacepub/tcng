@@ -1,0 +1,33 @@
+/*
+ * ef-prio - EF implementation using the prio classifier
+ *
+ * This is a simplified version of iproute2/examples/diffserv/ef-prio
+ */
+
+#define EFRATE 	2Mbit
+#define MTU	1500
+#define BURST	2000	/* Normally, BURST = MTU would be enough. However, we
+			   also need to take into account timer granularity. */
+
+#define TOS_BE		IP_HDR($ip_tos=0)
+#define TOS_EF		IP_HDR($ip_tos=0xb8)
+#define PAYLOAD		0 x 980		/* 1000-sizeof(iphdr) = 980 bytes */
+
+dev eth0 3000 /* 3 Mbps */
+
+tc qdisc add dev eth0 root handle 1:0 dsmark indices 64 set_tc_index
+tc filter add dev eth0 parent 1:0 protocol ip tcindex mask 0xfc shift 2
+tc qdisc add dev eth0 parent 1:0 handle 2:0 prio bands 2 \
+  priomap 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+
+tc qdisc add dev eth0 parent 2:1 tbf rate EFRATE burst BURST mtu MTU limit 3000
+tc filter add dev eth0 parent 2:0 protocol ip handle 0x2e tcindex classid 2:1
+
+tc qdisc add dev eth0 parent 2:2 red limit 60KB min 15KB max 45KB burst 20 \
+  avpkt 1000 bandwidth 3Mbit probability 0.4
+
+every 0.005s send TOS_BE PAYLOAD		/* 1.6 Mbps */
+every 0.005s send TOS_EF PAYLOAD		/* 1.6 Mbps */
+
+time 10s
+end 

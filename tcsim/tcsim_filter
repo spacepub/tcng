@@ -1,0 +1,179 @@
+#!/usr/bin/perl
+#
+# tcsim_filter - Packet filter for tcsim output
+#
+# Written 2001-2003 by Werner Almesberger
+# Copyright 2001 EPFL-ICA
+# Copyright 2002 Bivio Networks, Werner Almesberger
+# Copyright 2003 Werner Almesberger
+#
+
+$DEV_MAGIC = -1; # length if accessing device field
+
+$count = 0;
+($enqueue,$dequeue) = (1,1);
+
+
+sub select
+{
+    local ($str,$off,$len) = @_;
+
+    push(@val,$str);
+    # offset in the hex string
+    push(@off,$off);
+    push(@len,$len);
+    push(@off_str,2*$off+int($off/4));
+    push(@len_str,$len*2);
+}
+
+
+sub byte
+{
+    local ($v) = eval($_[0]);
+
+    return undef if !defined $v;
+    die "not a byte" if $v < 0 || $v > 255;
+    return unpack("H2",pack("C",$v));
+}
+
+
+sub net_short
+{
+    local ($v) = eval($_[0]);
+
+    return undef if !defined $v;
+    die "not a short" if $v < 0 || $v > 65535;
+    return unpack("H4",pack("n",$v));
+}
+
+
+sub dotted_quad
+{
+    local ($v) = $_[0];
+
+    return undef if !defined $v;
+    die "not a dotted quad" unless $v =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+    return unpack("H8",pack("CCCC",$1,$2,$3,$4));
+}
+
+
+sub add
+{
+    local ($field,$value) = @_;
+
+    push(@sel,$field);
+    if ($field eq "tos") {
+	&select(&byte($value),1,1);
+    }
+    elsif ($field eq "len") {
+	&select(&net_short($value),2,2);
+    }
+    elsif ($field =~ /src/) {
+	&select(&dotted_quad($value),12,4);
+    }
+    elsif ($field =~ /dst/) {
+	&select(&dotted_quad($value),16,4);
+    }
+    elsif ($field =~ /(.)port/) {
+	&select(&net_short($value),20+($1 eq "s" ? 0 : 2),2);
+    }
+    elsif ($field =~ /dev/) {
+	&select($value,0,$DEV_MAGIC);
+    }
+    else {
+	die;
+    }
+}
+
+
+sub usage
+{
+    print STDERR "usage: $0 [-c] [-s time ...] [-e|-d] [field=value ...] ".
+      "[field ...]\n";
+    print STDERR (" "x 20)."[file ...]\n";
+    print STDERR "  -c      count results instead of printing them\n"; 
+    print STDERR "  -s time counter snapshot at the specified time ".
+      "(seconds)\n";
+    print STDERR "  -e      only consider enqueue events\n"; 
+    print STDERR "  -d      only consider dequeue events\n"; 
+    print STDERR "  field   one of: tos,len,src,dst,sport,dport,dev\n";
+    print STDERR "  value   expected numeric value of field\n";
+    print STDERR "  file    file to read from\n";
+    exit(1);
+}
+
+
+while (@ARGV) {
+    if ($ARGV[0] eq "-c") { $count = 1; }
+    elsif ($ARGV[0] eq "-d") {
+	&usage unless $dequeue;
+	($enqueue,$dequeue) = (0,1);
+    }
+    elsif ($ARGV[0] eq "-e") {
+	&usage unless $enqueue;
+	($enqueue,$dequeue) = (1,0);
+    }
+    elsif ($ARGV[0] eq "-s") {
+	shift(@ARGV);
+	&usage unless defined $ARGV[0];
+	&usage unless $ARGV[0] =~ /^(\d+|\d*\.\d*)$/;
+	push(@snap,$ARGV[0]);
+    }
+    elsif ($ARGV[0] =~ /^-/) { &usage; }
+    elsif ($ARGV[0] =~ /^(tos|len|src|dst|sport|dport|dev)(=(.*))?/) {
+	&add($1,$3);
+    }
+    else {
+	last;
+    }
+    shift(@ARGV);
+}
+
+@snap = sort({ $a <=> $b } @snap);
+
+record: while (<>) {
+    chop;
+    s/ \.\.\.$//;
+    next unless /^(\d+\.\d+) ([ED]) : (0x[0-9a-f]+) (\d+) : ((\S+): )?/;
+    next if $2 eq "E" && !$enqueue;
+    next if $2 eq "D" && !$dequeue;
+    for ($i = 0; $i <= $#sel; $i++) {
+	next unless defined $val[$i];
+	if ($len[$i] == $DEV_MAGIC) {
+	    next record if $6 ne $val[$i];
+	    next;
+	}
+	next if $len[$i]+$off[$i] > $4;
+	next record unless substr($',$off_str[$i],$len_str[$i]) eq $val[$i];
+    }
+    $id = $2;
+    for ($i = 0; $i <= $#sel; $i++) {
+	next if defined $val[$i];
+	if ($len[$i] == $DEV_MAGIC) {
+	    $id .= ":$6";
+	    next;
+	}
+	if ($len[$i]+$off[$i] > $4) {
+	    print STDERR "can't read $off[$i]+$len[$i] in packet of size $4\n";
+	    next record;
+	}
+	$id .= ":".substr($',$off_str[$i],$len_str[$i]);
+    }
+    if (defined $snap[0] && $1 >= $snap[0]) {
+	print "# t=".($snap[0]+0.0)."\n";
+	for (sort keys %stat) {
+	    print "# $_ $stat{$_}\n";
+	}
+	shift(@snap);
+    }
+    $stat{$id}++;
+    if (!$count) {
+	print "$1 $id $4 $3\n";	# packet ID is used for delay calculation
+    }
+}
+
+if ($count) {
+    for (sort keys %stat) {
+	print "$_ $stat{$_}\n";
+    }
+}

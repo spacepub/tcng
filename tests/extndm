@@ -1,0 +1,85 @@
+# ext_all: allow non-dsmark at root -------------------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+prio {
+    class (2)
+	if 1;
+}
+EOF
+block eth0 egress
+qdisc 1 = prio bands 3
+class 2 =
+action 2 = class 1:2
+match action 2
+# ext_all: don't allow classful child qdiscs ----------------------------------
+tcc -xif:err -Xx,all 2>&1
+prio {
+    class (1)
+	if 1
+    {
+	prio {
+	    class (2);
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:2: dump_all: if not using ingress or egress/dsmark, only root qdisc may have classes
+# ext_all: handle qdiscs hidden in class tree ---------------------------------
+tcc -xif:err -Xx,all 2>&1 | grep -v '^#'
+#include "tcngreg.def"
+
+cbq (bandwidth 50Bps,allot 1.5kB,avpkt 1kB,maxburst 2p) {
+    class (rate 20Bps)
+	if raw[0] == 1
+    {
+	class (rate 10Bps)
+	    if raw[0] != 1
+	{
+	    fifo;
+	}
+    }
+}
+EOF
+block eth0 egress
+qdisc 2 = fifo
+qdisc 1 = cbq
+class 0 = allot 1536 avpkt 1024 bandwidth 50 maxburst 2 rate 50
+class 1 = allot 1536 avpkt 1024 bandwidth 50 maxburst 2 parent 0 rate 20
+class 2 = allot 1536 avpkt 1024 bandwidth 50 maxburst 2 parent 1 qdisc 2 rate 10
+action 2 = class 1:2
+action 1 = class 1:1
+match 0:0:8=0x01 action 1
+match action 2
+# ext_all: don't allow filters hidden in class tree ---------------------------
+tcc -xif:err -Xx,all 2>&1
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 20Bps)
+	if raw[0] == 1
+    {
+	class (rate 10Bps)
+	    on fw element (1);
+    }
+}
+EOF
+ERROR
+<stdin>:8: dump_all: classes of root qdisc may not have filters
+# ext_all: don't allow classful qdiscs hidden in class tree -------------------
+tcc -xif:err -Xx,all 2>&1
+#include "tcngreg.def"
+
+cbq (CBQ_PARAMS) {
+    class (rate 20Bps)
+        if raw[0] == 1
+    {
+        class (rate 10Bps)
+            if raw[0] != 0
+	{
+	    prio;
+	}
+    }
+}
+EOF
+ERROR
+<stdin>:7: dump_all: if not using ingress or egress/dsmark, only root qdisc may have classes

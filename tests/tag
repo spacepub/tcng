@@ -1,0 +1,38 @@
+# tag: check output format ----------------------------------------------------
+tcc -c -l stderr 2>&1
+prio ("a_tag");
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:1 a_tag <stdin> 1
+# tag: can set tag on all elements --------------------------------------------
+tcc -c -l stderr 2>&1 | tr -cd 'A-Z' && echo
+"dev" ("D") {
+    prio ("Q") {
+	fw ("F") {
+	    class ("C")
+		on ("E",1)
+		    police ("P",rate 1Mbps,burst 800b);
+	}
+    }
+}
+/* we don't test tunnels here */
+EOF
+DQCFEP
+# tag: fools may no longer use bare words -------------------------------------
+tcc -c -l stderr 2>&1
+prio (bare_word);
+EOF
+ERROR
+<stdin>:1: syntax error near "bare_word"
+# tag: refuse blanks and such -------------------------------------------------
+tcc -c -l stderr 2>&1
+prio ("a tag");
+EOF
+ERROR
+<stdin>:1: invalid character(s) in tag near ")"
+# tag: tags can be introduced by keyword "tag" --------------------------------
+tcc -c -l stderr 2>&1
+prio (tag "a_tag");
+EOF
+device eth0 - <stdin> 1
+qdisc eth0:1 a_tag <stdin> 1

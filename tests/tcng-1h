@@ -1,0 +1,79 @@
+# TCNG: direction of left-shift -----------------------------------------------
+echo 'dsmark (indices 1 << 1);' | tcc
+tc qdisc add dev eth0 handle 1:0 root dsmark indices 2
+# TCNG: direction of right-shift ----------------------------------------------
+echo 'dsmark (indices 9 >> 1);' | tcc
+tc qdisc add dev eth0 handle 1:0 root dsmark indices 4
+# TCNG: class variables can be used to attach filters -------------------------
+tcsim
+dev eth0 {
+    prio {
+	$c = class ();
+	fw {
+	    class $c on (1);
+	}
+    }
+}
+EOF
+# TCNG: synchronization between variable scoping and parser state -------------
+tcc
+prio {
+    $c = class ();
+    $d = class ();
+    class $c; /* "use" variables to avoid warning */
+    class $d;
+}
+EOF
+tc qdisc add dev eth0 handle 1:0 root prio
+# TCNG: filter variable de-referenced in different qdisc (1) ------------------
+tcc 2>&1
+prio {
+    $f = fw;
+    class {
+	prio {
+	    class on $f(1);
+	}   
+    }
+}
+EOF
+ERROR
+<stdin>:5: filter was created in different scope near "("
+# TCNG: filter variable de-referenced in different qdisc (2) ------------------
+tcc 2>&1
+prio {
+    $f = fw;
+    class {
+	prio {
+	    class on filter $f element (1);
+	}   
+    }
+}
+EOF
+ERROR
+<stdin>:5: filter was created in different scope near "element"
+# TCNG: filter variable de-referenced in different qdisc (3) ------------------
+tcc 2>&1
+prio {
+    $f = fw;
+    class {
+	prio {
+	    filter $f {
+		class on (1);
+	    }
+	}   
+    }
+}
+EOF
+ERROR
+<stdin>:5: filter was created in different scope near "{"
+# TCNG: filter variables can be used to provide context -----------------------
+tcsim
+dev eth0 {
+    prio {
+	$f = fw;
+	filter $f {
+	    class on (1);
+	}
+    }
+}
+EOF
